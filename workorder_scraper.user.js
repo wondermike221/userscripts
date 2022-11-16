@@ -6,7 +6,7 @@
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
 // @icon         https://www.google.com/s2/favicons?domain=docs.bmc.com
-// @grant        GM_xmlhttpRequest
+// @grant        GM.xmlhttpRequest
 // @require      https://raw.githubusercontent.com/wondermike221/userscripts/main/lib.js
 // @connect      *
 // @connect      https://hub.corp.ebay.com/searchsvc/profile/*
@@ -53,7 +53,7 @@ function doc_keyUp(e) {
 /**
  * Scrapes a specific workorder for relevant data, organize's it to my spreadsheet's format and adds a button/keyboard shortcut to copy to clipboard
  */
-async function scrapeAndCopy(document) {
+function scrapeAndCopy(document) {
   const spinner = document.getElementById('scraper_spinner');
   if (!spinner.classList.contains('hidden')) {
     spinner.classList.add('hidden');
@@ -120,37 +120,33 @@ async function scrapeAndCopy(document) {
   const what = yubi || '';
 
   let cost_center = 'default';
-  await fetch(HUB_PROFILE_URL, {
+  GM.xmlhttpRequest({
+    url: HUB_PROFILE_URL,
     method: 'GET',
-    mode: "cors",
-    headers: {
-      "sec-fetch-mode": "cors",
-      "sec-fetch-site": "cross-origin",
-    }
-  })
-  .then((r) => {
-    let data;
-    try {
-      data = JSON.parse(r.response).data;
-    } catch (e) {
-      let title = 'Failure!';
-      let body =
-        'Data was not scraped successfully. Check that the hub is still logged in.';
-      notify({ title, FAILURE_ICON, body });
-      return;
-    }
-    cost_center = data.costCenterCode;
-    const csv = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\tUSA\t\t\t\t\tn\t`;
-    console.log(csv);
-    copyTextToClipboard(csv);
+    onload: ((r) => {
+      let data;
+      try {
+        data = JSON.parse(r.response).data;
+      } catch (e) {
+        let title = 'Failure!';
+        let body =
+          'Data was not scraped successfully. Check that the hub is still logged in.';
+        notify({ title, FAILURE_ICON, body });
+        return;
+      }
+      cost_center = data.costCenterCode;
+      const csv = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\tUSA\t\t\t\t\tn\t`;
+      console.log(csv);
+      copyTextToClipboard(csv);
 
-    if (!spinner.classList.contains('hidden')) {
-      spinner.classList.add('hidden');
-    }
-    let title = 'Success!';
-    let body = 'Data was scraped successfully';
-    notify({ title, SUCCESS_ICON, body });
-  });
+      if (!spinner.classList.contains('hidden')) {
+        spinner.classList.add('hidden');
+      }
+      let title = 'Success!';
+      let body = 'Data was scraped successfully';
+      notify({ title, SUCCESS_ICON, body });
+    })
+  })
 }
 
 // const WORK_ORDER_URL_LAYOUT = `https://ebay-smartit.onbmc.com/smartit/app/#/workorder/${id}`
