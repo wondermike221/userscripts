@@ -12,96 +12,97 @@
 // @homepageURL  https://github.com/wondermike221/userscripts
 // ==/UserScript==
 
-(function () {
+// CONSTANTS
+const TEXTAREA_STYLES = `
+      margin-bottom: 5px;
+      padding-bottom: 10px;
+      width:calc(100% - 5px);
+      border-bottom: solid 2px #660099;
+      font-weight:bold;
+      resize: vertical;
+  `;
+
+const FORM_FIELDS = {
+  name: {
+    selector: "#toData\\.contactName",
+    value: null,
+    type: "text",
+  },
+  email: {
+    selector: "#notificationData\\.recipientNotifications\\.email",
+    value: null,
+    type: "text",
+  },
+  address1: {
+    selector: "#toData\\.addressLine1",
+    value: null,
+    type: "text",
+  },
+  address2: {
+    selector: "#toData\\.addressLine2",
+    value: null,
+    type: "text",
+  },
+  city: {
+    selector: "#toData\\.city",
+    value: null,
+    type: "text",
+  },
+  state: {
+    selector: "#toData\\.stateProvinceCode",
+    value: null,
+    type: "dropdown",
+  },
+  zip: {
+    selector: "#toData\\.zipPostalCode",
+    value: null,
+    type: "text",
+  },
+  phone: {
+    selector: "#toData\\.phoneNumber",
+    value: null,
+    type: "text",
+  },
+  personalMessage: {
+    selector: '[name="notificationData.emailMessage"]',
+    value: null,
+    type: "text",
+  },
+  cost_center: {
+    selector: "#billingData\\.yourReference",
+    value: null,
+    type: "text",
+  },
+  signature: {
+    selector: "#ss\\.signature\\.sel",
+    value: 3,
+    type: "dropdown",
+  },
+  "delivery notification": {
+    selector:
+      "#notificationData\\.senderNotifications\\.deliveryNotificationFlag",
+    value: true,
+    type: "checkbox",
+  },
+  "exceptions notification": {
+    selector:
+      "#notificationData\\.recipientNotifications\\.exceptionNotificationFlag",
+    value: true,
+    type: "checkbox",
+  },
+  "estimated delivery notification": {
+    selector:
+      "#notificationData\\.recipientNotifications\\.estimatedDeliveryNotificationFlag",
+    value: true,
+    type: "checkbox",
+  },
+};
+
+(() => {
   "use strict";
 
-  // CONSTANTS
-  const TEXTAREA_STYLES = `
-        margin-bottom: 5px;
-        padding-bottom: 10px;
-        width:calc(100% - 5px);
-        border-bottom: solid 2px #660099;
-        font-weight:bold;
-        resize: vertical;
-    `;
-
-  const FORM_FIELDS = {
-    name: {
-      selector: "#toData\\.contactName",
-      value: null,
-      type: "text",
-    },
-    email: {
-      selector: "#notificationData\\.recipientNotifications\\.email",
-      value: null,
-      type: "text",
-    },
-    address1: {
-      selector: "#toData\\.addressLine1",
-      value: null,
-      type: "text",
-    },
-    address2: {
-      selector: "#toData\\.addressLine2",
-      value: null,
-      type: "text",
-    },
-    city: {
-      selector: "#toData\\.city",
-      value: null,
-      type: "text",
-    },
-    state: {
-      selector: "#toData\\.stateProvinceCode",
-      value: null,
-      type: "dropdown",
-    },
-    zip: {
-      selector: "#toData\\.zipPostalCode",
-      value: null,
-      type: "text",
-    },
-    phone: {
-      selector: "#toData\\.phoneNumber",
-      value: null,
-      type: "text",
-    },
-    personalMessage: {
-      selector: '[name="notificationData.emailMessage"]',
-      value: null,
-      type: "text",
-    },
-    cost_center: {
-      selector: "#billingData\\.yourReference",
-      value: null,
-      type: "text",
-    },
-    signature: {
-      selector: "#ss\\.signature\\.sel",
-      value: 3,
-      type: "dropdown",
-    },
-    "delivery notification": {
-      selector:
-        "#notificationData\\.senderNotifications\\.deliveryNotificationFlag",
-      value: true,
-      type: "checkbox",
-    },
-    "exceptions notification": {
-      selector:
-        "#notificationData\\.recipientNotifications\\.exceptionNotificationFlag",
-      value: true,
-      type: "checkbox",
-    },
-    "estimated delivery notification": {
-      selector:
-        "#notificationData\\.recipientNotifications\\.estimatedDeliveryNotificationFlag",
-      value: true,
-      type: "checkbox",
-    },
-  };
-
   addFedExAutofillTextArea(FORM_FIELDS, TEXTAREA_STYLES);
+  
 })();
 
 function addFedExAutofillTextArea(FORM_FIELDS, TEXTAREA_STYLES) {
