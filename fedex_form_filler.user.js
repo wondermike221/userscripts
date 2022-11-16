@@ -1,14 +1,15 @@
 // ==UserScript==
 // @name         Autofill FedEx Shipment Form
-// @namespace    http://tampermonkey.net/
+// @namespace    https://hixon.dev
 // @version      0.1
 // @description  Adds a textarea to the form that will take in a copied row from a spreadsheet (format below), parses it and fills each input. FORMAT (Date	Site	What	Qty.	Work Order	Email	Cost Center	Who	Address	Address 2	City	State	Zip	Phone)
-// @author       You
 // @match        https://www.fedex.com/shipping/*
 // @icon         https://www.google.com/s2/favicons?domain=fedex.com
 // @require      https://raw.githubusercontent.com/wondermike221/userscripts/main/lib.js
 // @grant        none
 // @run-at       document-idle
+// @downloadURL  https://raw.githubusercontent.com/wondermike221/userscripts/main/fedex_form_filler.user.js
+// @homepageURL  https://github.com/wondermike221/userscripts
 // ==/UserScript==
 
 (function () {

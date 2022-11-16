@@ -1,9 +1,8 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
-// @namespace    http://tampermonkey.net/
+// @namespace    https://hixon.dev
 // @version      0.1
 // @description  Various automations to workorder pages
-// @author       You
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
 // @icon         https://www.google.com/s2/favicons?domain=docs.bmc.com
@@ -12,6 +11,8 @@
 // @connect      *
 // @connect      https://hub.corp.ebay.com/searchsvc/profile/*
 // @run-at       document-idle
+// @downloadURL  https://raw.githubusercontent.com/wondermike221/userscripts/main/workorder_scraper.user.js
+// @homepageURL  https://github.com/wondermike221/userscripts
 // ==/UserScript==
 
 // Constants
