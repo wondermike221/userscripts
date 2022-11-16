@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1
+// @version      0.1.1
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -120,7 +120,15 @@ async function scrapeAndCopy(document) {
   const what = yubi || '';
 
   let cost_center = 'default';
-  await fetch(HUB_PROFILE_URL, { method: 'GET' }).then((r) => {
+  await fetch(HUB_PROFILE_URL, {
+    method: 'GET',
+    mode: "cors",
+    headers: {
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "cross-origin",
+    }
+  })
+  .then((r) => {
     let data;
     try {
       data = JSON.parse(r.response).data;
@@ -169,28 +177,28 @@ function scrapeCheckedAndCopy() {
   }
   const workorders = getWorkOrdersFromSelected(selectedRows);
 
-  //   fetch("https://ebay-smartit.onbmc.com/smartit/rest/v2/person/workitems/get", {
-  //     "headers": {
-  //       "accept": "application/json, text/plain, */*",
-  //       "accept-language": "en-US,en;q=0.9",
-  //       "cache-control": "no-cache",
-  //       "content-type": "application/json;charset=UTF-8",
-  //       "pragma": "no-cache",
-  //       "sec-ch-ua": "\"Google Chrome\";v=\"107\", \"Chromium\";v=\"107\", \"Not=A?Brand\";v=\"24\"",
-  //       "sec-ch-ua-mobile": "?0",
-  //       "sec-ch-ua-platform": "\"Windows\"",
-  //       "sec-fetch-dest": "empty",
-  //       "sec-fetch-mode": "cors",
-  //       "sec-fetch-site": "same-origin",
-  //       "x-xsrf-token": "189b8q5j2cecuvpgfqo9jqb2a31vrvs53ijtjsdtg3nes0gs0b6b"
-  //     },
-  //     "referrer": "https://ebay-smartit.onbmc.com/",
-  //     "referrerPolicy": "origin",
-  //     "body": "{\"filterCriteria\":{\"ticketSpecificStatuses\":[\"Assigned\"],\"assignees\":[{\"loginId\":\"mhixon\"}]},\"chunkInfo\":{\"startIndex\":0,\"chunkSize\":75},\"sortInfo\":{},\"attributeNames\":[\"priority\",\"id\",\"slaStatus\",\"customerName\",\"assignee\",\"summary\",\"status\",\"actualStartDate\",\"submitDate\",\"lastModifiedDate\",\"customerSite\",\"needsAttention\"],\"customAttributeNames\":[]}",
-  //     "method": "POST",
-  //     "mode": "cors",
-  //     "credentials": "include"
-  //   });
+    fetch("https://ebay-smartit.onbmc.com/smartit/rest/v2/person/workitems/get", {
+      "headers": {
+        "accept": "application/json, text/plain, */*",
+        "accept-language": "en-US,en;q=0.9",
+        "cache-control": "no-cache",
+        "content-type": "application/json;charset=UTF-8",
+        "pragma": "no-cache",
+        "sec-ch-ua": "\"Google Chrome\";v=\"107\", \"Chromium\";v=\"107\", \"Not=A?Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "x-xsrf-token": "189b8q5j2cecuvpgfqo9jqb2a31vrvs53ijtjsdtg3nes0gs0b6b"
+      },
+      "referrer": "https://ebay-smartit.onbmc.com/",
+      "referrerPolicy": "origin",
+      "body": "{\"filterCriteria\":{\"ticketSpecificStatuses\":[\"Assigned\"],\"assignees\":[{\"loginId\":\"mhixon\"}]},\"chunkInfo\":{\"startIndex\":0,\"chunkSize\":75},\"sortInfo\":{},\"attributeNames\":[\"priority\",\"id\",\"slaStatus\",\"customerName\",\"assignee\",\"summary\",\"status\",\"actualStartDate\",\"submitDate\",\"lastModifiedDate\",\"customerSite\",\"needsAttention\"],\"customAttributeNames\":[]}",
+      "method": "POST",
+      "mode": "cors",
+      "credentials": "include"
+    });
 
   // Promise.allSettled()
   //   .then((results) => {
