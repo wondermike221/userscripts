@@ -6,14 +6,10 @@
 // @author       You
 // @match        https://www.fedex.com/shipping/*
 // @icon         https://www.google.com/s2/favicons?domain=fedex.com
-// @connect      https://raw.githubusercontent.com/*
+// @require      https://raw.githubusercontent.com/wondermike221/userscripts/main/lib.js
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
-
-const lib_url = 'https://raw.githubusercontent.com/wondermike221/userscripts/main/lib.js';
-
-import { Shipment } from lib_url;
 
 (function () {
   "use strict";

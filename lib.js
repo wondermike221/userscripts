@@ -1,4 +1,4 @@
-export default function __init() {
+function __init() {
   //add spinner
   //const spinner_container = spinner_setup();
 }
@@ -40,7 +40,7 @@ var SPINNER_CSS = `.spinner {
     display: none;
   }`;
 
-export function spinner_setup() {
+function spinner_setup() {
   //add spinner css to page
   const style = document.createElement("style");
   style.textContent = SPINNER_CSS;
@@ -62,7 +62,7 @@ export function spinner_setup() {
   return container;
 }
 
-export function notify({ title, icon, body }) {
+function notify({ title, icon, body }) {
   checkPermission().then((pr) => {
     if (typeof Notification === "undefined" || pr === false) {
       alert("Done");
@@ -83,7 +83,7 @@ function checkPermission() {
   }
 }
 
-export function copyTextToClipboard(text) {
+function copyTextToClipboard(text) {
   if (!navigator.clipboard) {
     fallbackCopyTextToClipboard(text);
     return;
@@ -122,7 +122,7 @@ function fallbackCopyTextToClipboard(text) {
   document.body.removeChild(textArea);
 }
 
-export class Shipment {
+class Shipment {
     name = "";
     email = "";
     what = "";

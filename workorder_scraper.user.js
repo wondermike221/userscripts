@@ -8,15 +8,11 @@
 // @match        https://hub.corp.ebay.com/
 // @icon         https://www.google.com/s2/favicons?domain=docs.bmc.com
 // @grant        GM_xmlhttpRequest
+// @require      https://raw.githubusercontent.com/wondermike221/userscripts/main/lib.js
 // @connect      *
 // @connect      https://hub.corp.ebay.com/searchsvc/profile/*
-// @connect      https://raw.githubusercontent.com/*
 // @run-at       document-idle
 // ==/UserScript==
-
-const lib_url = 'https://raw.githubusercontent.com/wondermike221/userscripts/main/lib.js';
-
-import { spinner_setup, notify, copyTextToClipboard } from lib_url;
 
 // Constants
 var SUCCESS_ICON =
