@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.3
+// @version      0.1.4
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -23,7 +23,20 @@ const FAILURE_ICON =
 
 (() => {
   'use strict';
-  // request interceptor
+  request_interceptor();
+  
+  // register the handler
+  document.addEventListener('keyup', doc_keyUp, false);
+  console.log('event listener added');
+  
+  document.addEventListener('DOMContentLoaded', e => {
+    //add spinner
+    const spinner_container = spinner_setup();
+  });
+})();
+
+function request_interceptor() {
+  // monkey patch fetch
   const { fetch: originalFetch } = window;
   window.fetch = async (...args) => {
     let [resource, config ] = args;
@@ -42,15 +55,27 @@ const FAILURE_ICON =
     return response;
   };
 
-  // register the handler
-  document.addEventListener('keyup', doc_keyUp, false);
-  console.log('event listener added');
-  
-  document.addEventListener('DOMContentLoaded', e => {
-    //add spinner
-    const spinner_container = spinner_setup();
-  });
-})();
+  //monkey patch xhr
+  (function(xhr) {
+    function the_patch(xhrInstance) { // Example
+        console.log('Monkey RS: ' + xhrInstance.readyState);
+        console.log(`Intercepted call to ${xhrInstance} with response ${1}`);
+    }
+    // Capture request before any network activity occurs:
+    var send = xhr.send;
+    xhr.send = function(data) {
+        var rsc = this.onreadystatechange;
+        if (rsc) {
+            // "onreadystatechange" exists. Monkey-patch it
+            this.onreadystatechange = function() {
+                the_patch(this);
+                return rsc.apply(this, arguments);
+            };
+        }
+        return send.apply(this, arguments);
+    };
+  })(XMLHttpRequest.prototype);
+}
 
 /**
  * Keyboard shortcuts:
@@ -171,6 +196,7 @@ function scrapeAndCopy(document) {
 }
 
 // const WORK_ORDER_URL_LAYOUT = `https://ebay-smartit.onbmc.com/smartit/app/#/workorder/${id}`
+// const WORK_ORDER_REST_URL = `https://ebay-smartit.onbmc.com/rest/v2/person/workitems/get
 
 /**
  * Scrapes all workorders that are checked on the current listing and copy's to the clipboard in my spreadsheet's format.
