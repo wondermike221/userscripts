@@ -10,7 +10,7 @@
 // @require      https://raw.githubusercontent.com/wondermike221/userscripts/main/lib.js
 // @connect      *
 // @connect      https://hub.corp.ebay.com/searchsvc/profile/*
-// @run-at       document-idle
+// @run-at       document-start
 // @downloadURL  https://raw.githubusercontent.com/wondermike221/userscripts/main/workorder_scraper.user.js
 // @homepageURL  https://github.com/wondermike221/userscripts
 // ==/UserScript==
@@ -23,12 +23,33 @@ const FAILURE_ICON =
 
 (() => {
   'use strict';
+  // request interceptor
+  const { fetch: originalFetch } = window;
+  window.fetch = async (...args) => {
+    let [resource, config ] = args;
 
-  //add spinner
-  const spinner_container = spinner_setup();
+    // request interceptor here
+    // resource = 'https://jsonplaceholder.typicode.com/todos/2';
+    
+
+    const response = await originalFetch(resource, config);
+
+    // response interceptor here
+    // const json = () => response.clone().json().then(data => ({...data, title: `Intercepted: ${data.title}` }));
+    console.log(`Intercepted call to ${resource} with response ${response.clone()}`);
+
+    // return the response for the caller.
+    return response;
+  };
+
   // register the handler
   document.addEventListener('keyup', doc_keyUp, false);
   console.log('event listener added');
+  
+  document.addEventListener('DOMContentLoaded', e => {
+    //add spinner
+    const spinner_container = spinner_setup();
+  });
 })();
 
 /**
