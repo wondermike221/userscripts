@@ -23,7 +23,7 @@ const FAILURE_ICON =
 
 (() => {
   'use strict';
-  request_interceptor();
+  //request_interceptor();
   
   // register the handler
   document.addEventListener('keyup', doc_keyUp, false);
@@ -83,11 +83,13 @@ function request_interceptor() {
  * Ctrl + Alt + c == set workorder to completed with Reported Source = Web
  * Ctrl + Alt + p == debug whatever I'm working on. (in the future add a command palette)
  */
-function doc_keyUp(e) {
+async function doc_keyUp(e) {
   if (e.ctrlKey && e.altKey && e.key === 'd') {
-    scrapeAndCopy(document);
+    const row = await scrapeWorkOrder();
+    copyRowsToClipboard([row]);
   } else if (e.ctrlKey && e.altKey && e.key === 'x') {
-    scrapeCheckedAndCopy();
+    const rows = await scrapeCheckedItems();
+    copyRowsToClipboard(rows);
   } else if (e.ctrlKey && e.altKey && e.key === 'c') {
     setWOComplete();
   } else if (e.ctrlKey && e.altKey && e.key === 'p') {
@@ -97,31 +99,17 @@ function doc_keyUp(e) {
 }
 
 /**
- * Scrapes a specific workorder for relevant data, organize's it to my spreadsheet's format and adds a button/keyboard shortcut to copy to clipboard
+ * Scrapes a specific workorder for relevant data, organize's it to my spreadsheet's format and returns it as a string
  */
-function scrapeAndCopy(document) {
+async function scrapeWorkOrder() {
   const spinner = document.getElementById('scraper_spinner');
   if (!spinner.classList.contains('hidden')) {
     spinner.classList.add('hidden');
   }
-  const name = document
-    .querySelector(
-      '#ticket-record-summary > div.editable-content-section__content > div.ticket__customized-main-section.ng-scope > div.layout-renderer.ng-isolate-scope > div:nth-child(1) > div > div:nth-child(1) > div:nth-child(1) > div > div:nth-child(1) > div > div > div.person-name__details.ng-isolate-scope > label > span > a'
-    )
-    .text.trim();
-  const email = document
-    .querySelector(
-      '#ticket-record-summary > div.editable-content-section__content > div.ticket__customized-main-section.ng-scope > div.layout-renderer.ng-isolate-scope > div:nth-child(1) > div > div:nth-child(1) > div:nth-child(2) > div > div:nth-child(2) > div > div > label > a'
-    )
-    .text.trim();
-  const work_order = document
-    .querySelector(
-      '#ticket-record-summary > div.editable-content-section__content > title-bar > div.title-bar__section.col-md-12 > div > div.pull-left.row.col-md-12.title-bar__display > div.title-bar__configuration-section.panel-field-area.ng-scope > div > div:nth-child(1) > div > div > label > span'
-    )
-    .textContent.trim();
-  const description = document.querySelector(
-    '#ticket-record-summary > div.editable-content-section__content > div.ticket__customized-main-section.ng-scope > div.layout-renderer.ng-isolate-scope > div:nth-child(2) > div.col-sm-8.layout-renderer__column > div:nth-child(2) > div > div > div.custom-field.col-md-12 > div > div'
-  );
+  const name = document.querySelector('#ticket-record-summary > div.editable-content-section__content > div.ticket__customized-main-section.ng-scope > div.layout-renderer.ng-isolate-scope > div:nth-child(1) > div > div:nth-child(1) > div:nth-child(1) > div > div:nth-child(1) > div > div > div.person-name__details.ng-isolate-scope > label > span > a').text.trim();
+  const email = document.querySelector('#ticket-record-summary > div.editable-content-section__content > div.ticket__customized-main-section.ng-scope > div.layout-renderer.ng-isolate-scope > div:nth-child(1) > div > div:nth-child(1) > div:nth-child(2) > div > div:nth-child(2) > div > div > label > a').text.trim();
+  const work_order = document.querySelector('#ticket-record-summary > div.editable-content-section__content > title-bar > div.title-bar__section.col-md-12 > div > div.pull-left.row.col-md-12.title-bar__display > div.title-bar__configuration-section.panel-field-area.ng-scope > div > div:nth-child(1) > div > div > label > span').textContent.trim();
+  const description = document.querySelector('#ticket-record-summary > div.editable-content-section__content > div.ticket__customized-main-section.ng-scope > div.layout-renderer.ng-isolate-scope > div:nth-child(2) > div.col-sm-8.layout-renderer__column > div:nth-child(2) > div > div > div.custom-field.col-md-12 > div > div');
   const descText = description.textContent || description.innerText;
 
   const isYubikeyRequest = descText.indexOf('I need a Yubikey') !== -1;
@@ -166,7 +154,8 @@ function scrapeAndCopy(document) {
   const what = yubi || '';
 
   let cost_center = 'default';
-  GM.xmlhttpRequest({
+  let spreadsheetRowResult = '';
+  await GM.xmlhttpRequest({
     url: HUB_PROFILE_URL,
     method: 'GET',
     onload: ((r) => {
@@ -181,72 +170,63 @@ function scrapeAndCopy(document) {
         return;
       }
       cost_center = data.costCenterCode;
-      const csv = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\tUSA\t\t\t\t\tn\t`;
-      console.log(csv);
-      copyTextToClipboard(csv);
-
-      if (!spinner.classList.contains('hidden')) {
-        spinner.classList.add('hidden');
-      }
-      let title = 'Success!';
-      let body = 'Data was scraped successfully';
-      notify({ title, SUCCESS_ICON, body });
+      spreadsheetRowResult = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\tUSA\t\t\t\t\tn\t`;
     })
-  })
+  });
+  if (!spinner.classList.contains('hidden')) {
+    spinner.classList.add('hidden');
+  }
+  return spreadsheetRowResult;
 }
-
-// const WORK_ORDER_URL_LAYOUT = `https://ebay-smartit.onbmc.com/smartit/app/#/workorder/${id}`
-// const WORK_ORDER_REST_URL = `https://ebay-smartit.onbmc.com/rest/v2/person/workitems/get
 
 /**
  * Scrapes all workorders that are checked on the current listing and copy's to the clipboard in my spreadsheet's format.
+ * Only works when smart-it is set to accessibilty view
  */
-function scrapeCheckedAndCopy() {
-  const selectedRows = document.querySelectorAll(
-    "[ux-id='ticket-console-grid-list'] .ngViewport [ng-row].ngRow.selected"
-  );
+async function scrapeCheckedItems() {
+  const selectedRows = document.querySelectorAll("#main div.tc__accessible table tbody tr.ng-scope.tc__cell-selected");
+  const selectedHrefs = [...selectedRows].map(v => v.querySelector('td:last-child a').href);
   // Assert that we are on the correct page and have selected an item.
-  if (
-    window.location.href !=
-      'https://ebay-smartit.onbmc.com/smartit/app/#/ticket-console' ||
-    selectedRows.length === 0
-  ) {
+  const listingHref = 'https://ebay-smartit.onbmc.com/smartit/app/#/ticket-console';
+  if (window.location.href != listingHref || selectedRows.length === 0) {
     console.log('wrong page');
     let title = 'Error!';
     let body =
-      'Please ensure you are on a listing page and have selected at least one item.';
+      'Please ensure you are on a listing page and have selected at least one item and are set to accessibility view.';
     notify({ title, SUCCESS_ICON, body });
     return;
   }
-  const workorders = getWorkOrdersFromSelected(selectedRows);
+  console.log(selectedHrefs);
+  selectedHrefs.map(href => {
+    return new Promise((resolve, reject) => {
+      GM.xmlhttpRequest({
+        url: href,
+        method: 'GET',
+        onload: resolve,
+        onerror: reject
+      });
+    })
+  });
+  await Promise.allSettled(selectedHrefs).then(r => {
+    console.log(r);
+  })
 
-    fetch("https://ebay-smartit.onbmc.com/smartit/rest/v2/person/workitems/get", {
-      "headers": {
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "en-US,en;q=0.9",
-        "cache-control": "no-cache",
-        "content-type": "application/json;charset=UTF-8",
-        "pragma": "no-cache",
-        "sec-ch-ua": "\"Google Chrome\";v=\"107\", \"Chromium\";v=\"107\", \"Not=A?Brand\";v=\"24\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "x-xsrf-token": "189b8q5j2cecuvpgfqo9jqb2a31vrvs53ijtjsdtg3nes0gs0b6b"
-      },
-      "referrer": "https://ebay-smartit.onbmc.com/",
-      "referrerPolicy": "origin",
-      "body": "{\"filterCriteria\":{\"ticketSpecificStatuses\":[\"Assigned\"],\"assignees\":[{\"loginId\":\"mhixon\"}]},\"chunkInfo\":{\"startIndex\":0,\"chunkSize\":75},\"sortInfo\":{},\"attributeNames\":[\"priority\",\"id\",\"slaStatus\",\"customerName\",\"assignee\",\"summary\",\"status\",\"actualStartDate\",\"submitDate\",\"lastModifiedDate\",\"customerSite\",\"needsAttention\"],\"customAttributeNames\":[]}",
-      "method": "POST",
-      "mode": "cors",
-      "credentials": "include"
-    });
+}
 
-  // Promise.allSettled()
-  //   .then((results) => {
-
-  // });
+function copyRowsToClipboard(rows) {
+  if(rows.length === 0) return;
+  if(rows.length === 1) {
+    copyTextToClipboard(row[0]);
+  } else {
+    finalStr = '';
+    for(let row in rows) {
+      finalStr += `${row}\n`;
+    }
+    copyTextToClipboard(finalStr);
+  }
+  let title = 'Success!';
+  let body = 'Data was scraped successfully';
+  notify({ title, SUCCESS_ICON, body });
 }
 
 function getWorkOrdersFromSelected(selectedRows) {
