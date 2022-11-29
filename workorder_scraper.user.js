@@ -15,6 +15,12 @@
 // @homepageURL  https://github.com/wondermike221/userscripts
 // ==/UserScript==
 
+/** TODOS
+ * [ ] scrape multiple workorders at once using the checkboxes
+ * 
+*/
+
+
 // Constants
 const SUCCESS_ICON =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAAbUlEQVRIiWNgGE7Am4GB4QkDA8N/MjFB8JgCw4mygGiFpAAmahtIigXkxsljBgYGT2wGogcRJXHyiBgLyI0TFH0DGgejFoxaMFIsYEFiM9LCggENoidQmpyK5zExlnsykFeiPmJgYPAgxoKhAQAobmMW+E0ohwAAAABJRU5ErkJggg==';

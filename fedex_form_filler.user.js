@@ -12,6 +12,13 @@
 // @homepageURL  https://github.com/wondermike221/userscripts
 // ==/UserScript==
 
+
+/** TODOS
+ * [ ] Automatically click check address
+ * [ ] Add second submit button near top
+ * [ ] 
+*/
+
 // CONSTANTS
 const TEXTAREA_STYLES = `
       margin-bottom: 5px;
