@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.15
+// @version      0.1.16
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -197,10 +197,13 @@ function scrapeAndCopy(document, sheet) {
         notify({ title, FAILURE_ICON, body })
         return
       }
+      if(name != signee){
+        notify({title:"Name and signee are different", FAILURE_ICON, body:"The name and Signee are different values"})
+      }
       cost_center = data.costCenterCode
-      const firstName = name.split(' ')[0];
-      const lastName = name.split(' ')[1];
-      const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
+      const firstName = signee.split(' ')[0];
+      const lastName = signee.split(' ')[1];
+      const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${signee}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
       const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
       
       if(sheet == 'accessories') {
