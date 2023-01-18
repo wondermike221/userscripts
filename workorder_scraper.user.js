@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.13
+// @version      0.1.14
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -372,18 +372,19 @@ function parseYubiDesc(description, wfh = true) {
     const statusEl = document.querySelector(
       `#ticket-record-summary div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`
     )
-    statusEl.click()
-    if(reason != '') {
-      const reasonEl = document.querySelector(
-        `#ticket-record-summary div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`
-      )
-      reasonEl.click()
-    }
-    if(source != '') {
-      const sourceEl = document.querySelector(
-        `#ticket-record-summary div[ux-id="field_reported_source"] label ul li a[aria-label="${source}"]`
-      )
-      sourceEl.click()
-    }
+    Promise.resolve(statusEl.click()).then(() => {
+      if(reason != '') {
+        const reasonEl = document.querySelector(
+          `#ticket-record-summary div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`
+        )
+        reasonEl.click()
+      }
+      if(source != '') {
+        const sourceEl = document.querySelector(
+          `#ticket-record-summary div[ux-id="field_reported_source"] label ul li a[aria-label="${source}"]`
+        )
+        sourceEl.click()
+      }
+    })
   })
 }
