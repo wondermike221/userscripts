@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.19
+// @version      0.1.20
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -164,12 +164,7 @@ function scrapeAndCopy(document, sheet) {
     ) {
       //nothing to parse in the description
     } else {
-      let temp = parseDesc(descText)
-      if(temp.length == 3) {
-        [signee, addr, phone] = temp
-      } else if (temp.length == 7) {
-        [signee, addr, city, state, zip, country, phone] = temp
-      }
+      [signee, addr, city, state, zip, country, phone] = parseDesc(descText)
     }
   }
 
@@ -345,7 +340,7 @@ function parseDesc(description) {
   } else if(/Phone Number:/.test(description)) {
     const addr = description.match(/Shipping Address:(.*?)\n/)[1]
     const phone = description.match(/Phone Number:(.*?)\n/)[1]
-    return [signee, addr, phone]
+    return [signee, addr, '', '', '', '', phone]
   }
 }
 
