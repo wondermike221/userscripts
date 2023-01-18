@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.12
+// @version      0.1.13
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -116,21 +116,21 @@ function scrapeAndCopy(document, sheet) {
   }
   const name = document
     .querySelector(
-      '#ticket-record-summary > div.editable-content-section__content > div.ticket__customized-main-section.ng-scope > div.layout-renderer.ng-isolate-scope > div:nth-child(1) > div > div:nth-child(1) > div:nth-child(1) > div > div:nth-child(1) > div > div > div.person-name__details.ng-isolate-scope > label > span > a'
+      '#ticket-record-summary a[ux-id="assignee-name"]'
     )
     .text.trim()
   const email = document
     .querySelector(
-      '#ticket-record-summary > div.editable-content-section__content > div.ticket__customized-main-section.ng-scope > div.layout-renderer.ng-isolate-scope > div:nth-child(1) > div > div:nth-child(1) > div:nth-child(2) > div > div:nth-child(2) > div > div > label > a'
+      '#ticket-record-summary a[ux-id="email-value"]'
     )
     .text.trim()
   const work_order = document
     .querySelector(
-      '#ticket-record-summary > div.editable-content-section__content > title-bar > div.title-bar__section.col-md-12 > div > div.pull-left.row.col-md-12.title-bar__display > div.title-bar__configuration-section.panel-field-area.ng-scope > div > div:nth-child(1) > div > div > label > span'
+      '#ticket-record-summary div[ux-id="field_id"] span[ux-id="character-field-value"]'
     )
     .textContent.trim()
   const description = document.querySelector(
-    '#ticket-record-summary > div.editable-content-section__content > div.ticket__customized-main-section.ng-scope > div.layout-renderer.ng-isolate-scope > div:nth-child(2) > div.col-sm-8.layout-renderer__column > div:nth-child(2) > div > div > div.custom-field.col-md-12 > div > div'
+    '#ticket-record-summary div[ux-id="field_desc"]'
   )
   const descText = description.textContent || description.innerText
 
@@ -366,22 +366,22 @@ function parseYubiDesc(description, wfh = true) {
  */
  function setWOStatus(status='Completed', reason, source) {
   const actionBtn = document.querySelector(
-    '#ticket-record-summary > div.editable-content-section__content > div.status-bar__section.ng-scope.ng-isolate-scope > div > div > div.status-bar__status.ng-scope > div'
+    '#ticket-record-summary div[ux-id="status-value"]'
   )
   Promise.resolve(actionBtn.click()).then(() => {
     const statusEl = document.querySelector(
-      `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.status-bar__section.ng-scope.ng-isolate-scope.status-bar__section-edit > div > div > div.col-sm-4.update-status__dropdown > label > div > ul > li > a[aria-label="${status}"]`
+      `#ticket-record-summary div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`
     )
     statusEl.click()
     if(reason != '') {
       const reasonEl = document.querySelector(
-        `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.status-bar__section.ng-isolate-scope.status-bar__section-edit > div > div > div.col-sm-4.update-status-reason_section > div > label > div > ul > li > a[aria-label="${reason}"]`
+        `#ticket-record-summary div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`
       )
       reasonEl.click()
     }
     if(source != '') {
       const sourceEl = document.querySelector(
-        `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.ticket__customized-main-section.ng-scope > div > div:nth-child(2) > div.col-sm-4.layout-renderer__column > div > div:nth-child(4) > div > div > label > div > div > div > ul > li > a[aria-label="${source}"]`
+        `#ticket-record-summary div[ux-id="field_reported_source"] label ul li a[aria-label="${source}"]`
       )
       sourceEl.click()
     }
