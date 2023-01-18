@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.14
+// @version      0.1.15
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -372,7 +372,9 @@ function parseYubiDesc(description, wfh = true) {
     const statusEl = document.querySelector(
       `#ticket-record-summary div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`
     )
-    Promise.resolve(statusEl.click()).then(() => {
+    Promise.resolve(statusEl.click())
+    .then(wait(500))
+    .then(() => {
       if(reason != '') {
         const reasonEl = document.querySelector(
           `#ticket-record-summary div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`
