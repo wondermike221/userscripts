@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.8
+// @version      0.1.10
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -97,7 +97,9 @@ function doc_keyUp(e) {
   } else if (e.ctrlKey && e.altKey && e.key === 'x') {
     scrapeCheckedAndCopy()
   } else if (e.ctrlKey && e.altKey && e.key === 'c') {
-    setWOComplete()
+    setWOStatus('Complete', '', 'Web')
+  } else if (e.ctrlKey && e.altKey && e.key === 'z') {
+    setWOComplete('Pending', 'Supplier Delivery', '')
   } else if (e.ctrlKey && e.altKey && e.key === 'p') {
     //TODO: command palette
     document.getElementById('scraper_spinner').classList.toggle('hidden')
@@ -360,25 +362,28 @@ function parseYubiDesc(description, wfh = true) {
 }
 
 /**
- * Clicks status element then set's status to complete and reported source to web and finally focuses the save element.
- * Focuses the save element instead of clicking so you can back out in case the shortcut was accidentally pressed.
+ * Clicks status element then set's status to $status, status reason to $reason and reported source to $source.
  */
-function setWOComplete() {
+ function setWOStatus(status='Completed', reason, source) {
   const actionBtn = document.querySelector(
     '#ticket-record-summary > div.editable-content-section__content > div.status-bar__section.ng-scope.ng-isolate-scope > div > div > div.status-bar__status.ng-scope > div'
   )
   Promise.resolve(actionBtn.click()).then(() => {
-    const completedEl = document.querySelector(
-      '#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.status-bar__section.ng-scope.ng-isolate-scope.status-bar__section-edit > div > div > div.col-sm-4.update-status__dropdown > label > div > ul > li > a[aria-label="Completed"'
+    const statusEl = document.querySelector(
+      `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.status-bar__section.ng-scope.ng-isolate-scope.status-bar__section-edit > div > div > div.col-sm-4.update-status__dropdown > label > div > ul > li > a[aria-label="${status}"`
     )
-    const webEl = document.querySelector(
-      '#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.ticket__customized-main-section.ng-scope > div > div:nth-child(2) > div.col-sm-4.layout-renderer__column > div > div:nth-child(4) > div > div > label > div > div > div > ul > li > a[aria-label="Web"'
-    )
-    const saveEl = document.querySelector(
-      '#ticket-record-summary > div.editable-content-section__controls.ng-scope.editable-layout-section__controls-active > div > button.small-btn_primary.ng-binding.ng-scope'
-    )
-    completedEl.click()
-    webEl.click()
-    saveEl.focus()
+    statusEl.click()
+    if(reason != '') {
+      const reasonEl = document.querySelector(
+        `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.status-bar__section.ng-isolate-scope.status-bar__section-edit > div > div > div.col-sm-4.update-status-reason_section > div > label > div > ul > li > a[aria-label="${reason}"`
+      )
+      reasonEl.click()
+    }
+    if(source != '') {
+      const sourceEl = document.querySelector(
+        `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.ticket__customized-main-section.ng-scope > div > div:nth-child(2) > div.col-sm-4.layout-renderer__column > div > div:nth-child(4) > div > div > label > div > div > div > ul > li > a[aria-label="${source}"`
+      )
+      sourceEl.click()
+    }
   })
 }
