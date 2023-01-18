@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.11
+// @version      0.1.12
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -370,18 +370,18 @@ function parseYubiDesc(description, wfh = true) {
   )
   Promise.resolve(actionBtn.click()).then(() => {
     const statusEl = document.querySelector(
-      `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.status-bar__section.ng-scope.ng-isolate-scope.status-bar__section-edit > div > div > div.col-sm-4.update-status__dropdown > label > div > ul > li > a[aria-label="${status}"`
+      `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.status-bar__section.ng-scope.ng-isolate-scope.status-bar__section-edit > div > div > div.col-sm-4.update-status__dropdown > label > div > ul > li > a[aria-label="${status}"]`
     )
     statusEl.click()
     if(reason != '') {
       const reasonEl = document.querySelector(
-        `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.status-bar__section.ng-isolate-scope.status-bar__section-edit > div > div > div.col-sm-4.update-status-reason_section > div > label > div > ul > li > a[aria-label="${reason}"`
+        `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.status-bar__section.ng-isolate-scope.status-bar__section-edit > div > div > div.col-sm-4.update-status-reason_section > div > label > div > ul > li > a[aria-label="${reason}"]`
       )
       reasonEl.click()
     }
     if(source != '') {
       const sourceEl = document.querySelector(
-        `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.ticket__customized-main-section.ng-scope > div > div:nth-child(2) > div.col-sm-4.layout-renderer__column > div > div:nth-child(4) > div > div > label > div > div > div > ul > li > a[aria-label="${source}"`
+        `#ticket-record-summary > div.editable-content-section__content.editable-layout-section__content > div.ticket__customized-main-section.ng-scope > div > div:nth-child(2) > div.col-sm-4.layout-renderer__column > div > div:nth-child(4) > div > div > label > div > div > div > ul > li > a[aria-label="${source}"]`
       )
       sourceEl.click()
     }
