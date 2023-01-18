@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.7
+// @version      0.1.8
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -91,7 +91,9 @@ function request_interceptor() {
  */
 function doc_keyUp(e) {
   if (e.ctrlKey && e.altKey && e.key === 'd') {
-    scrapeAndCopy(document)
+    scrapeAndCopy(document, 'accessories')
+  } else if (e.ctrlKey && e.altKey && e.key === 's') {
+    scrapeAndCopy(document, 'purchasing')
   } else if (e.ctrlKey && e.altKey && e.key === 'x') {
     scrapeCheckedAndCopy()
   } else if (e.ctrlKey && e.altKey && e.key === 'c') {
@@ -105,7 +107,7 @@ function doc_keyUp(e) {
 /**
  * Scrapes a specific workorder for relevant data, organize's it to my spreadsheet's format and adds a button/keyboard shortcut to copy to clipboard
  */
-function scrapeAndCopy(document) {
+function scrapeAndCopy(document, sheet) {
   const spinner = document.getElementById('scraper_spinner')
   if (!spinner.classList.contains('hidden')) {
     spinner.classList.add('hidden')
@@ -194,9 +196,16 @@ function scrapeAndCopy(document) {
         return
       }
       cost_center = data.costCenterCode
-      const csv = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\tn\t`
-      console.log(csv)
-      copyTextToClipboard(csv)
+      const firstName = name.split(' ')[0];
+      const lastName = name.split(' ')[1];
+      const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
+      const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
+      
+      if(sheet == 'accessories') {
+        copyTextToClipboard(csvAccessoriesSheet)
+      } else if(sheet == 'purchasing') {
+        copyTextToClipboard(csvPurchasingSheet)
+      }
 
       if (!spinner.classList.contains('hidden')) {
         spinner.classList.add('hidden')
