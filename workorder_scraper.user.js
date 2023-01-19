@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.21
+// @version      0.1.22
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -368,21 +368,18 @@ function parseYubiDesc(description, wfh = true) {
 /**
  * Clicks status element then set's status to $status, status reason to $reason and reported source to $source.
  */
-async function setWOStatus(status='Completed', reason, source) {
-  await document
-        .querySelector('#ticket-record-summary div[ux-id="status-value"]')
-        .click()
-  await document
-        .querySelector(`#ticket-record-summary div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`)
-        .click()
+function setWOStatus(status='Completed', reason, source) {
+  const statusBtn = document.querySelector('#ticket-record-summary div[ux-id="status-value"]')
+        statusBtn?.click()
+  const statusDropdown = document.querySelector(`#ticket-record-summary div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`)
+        statusDropdown?.click()
+  wait(500)
   if(reason != '') {
-    await document
-          .querySelector(`#ticket-record-summary div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`)
-          .click()
+    const reasonDropdown = document.querySelector(`#ticket-record-summary div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`)
+          reasonDropdown?.click()
   }
   if(source != '') {
-    await document
-          .querySelector(`#ticket-record-summary div[ux-id="field_reported_source"] label ul li a[aria-label="${source}"]`)
-          .click()
+    const sourceDropdown = document.querySelector(`#ticket-record-summary div[ux-id="field_reported_source"] label ul li a[aria-label="${source}"]`)
+          sourceDropdown?.click()
   }
 }
