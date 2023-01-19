@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.26
+// @version      0.1.27
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -368,14 +368,14 @@ function parseYubiDesc(description, wfh = true) {
 /**
  * Clicks status element then set's status to $status, status reason to $reason and reported source to $source.
  */
-function setWOStatus(status='Completed', reason, source) {
+async function setWOStatus(status='Completed', reason, source) {
   const statusBtn = document.querySelector('#ticket-record-summary div[ux-id="status-value"]')
   statusBtn?.click()
   const statusDropdown = document.querySelector(`#ticket-record-summary div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`)
   statusDropdown?.click()
-  wait(100)
-    .then(setReason(reason))
-    .then(setSource(source))
+  await wait(100)
+  setReason(reason)
+  setSource(source)
 }
 
 function setReason(reason) {
