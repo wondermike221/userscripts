@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.35
+// @version      0.1.36
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -143,7 +143,7 @@ function scrapeAndCopy(document, sheet) {
     }
   } else {
     const shipOrOfficeRegex = /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
-    if( !descText.match(shipOrOfficeRegex)[1] == 'No' ) {
+    if( !(descText.match(shipOrOfficeRegex)[1] == 'No') ) {
       [signee, addr, city, state, zip, country, phone] = parseDesc(descText)
     }
   }
