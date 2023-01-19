@@ -135,17 +135,12 @@ function scrapeAndCopy(document, sheet) {
     zip = '',
     country = '',
     phone = '' // default any missing info to empty strings
-  if (isYubikeyRequest) { //check if we're scraping a yubikey request.
-    [signee, yubi, addr, city, state, zip, phone] = parseYubiDesc(descText)
-  } else {
-    const shipOrOfficeRegex =
-      /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
-    const priviledgedTokenRequest = /Assign YubiKey for Regular Account/
-    if (
-      priviledgedTokenRequest.test(descText) ||
-      descText.match(shipOrOfficeRegex)[1] == 'No'
-    ) {
-      //nothing to parse in the description
+  const shipOrOfficeRegex = /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
+  const priviledgedTokenRequest = /Assign YubiKey for Regular Account/
+  if (!(priviledgedTokenRequest.test(descText) ||
+    descText.match(shipOrOfficeRegex)[1] == 'No')) { //nothing to parse in the description
+    if (isYubikeyRequest) { //check if we're scraping a yubikey request.
+      [signee, addr, city, state, zip, country, phone, yubi] = parseYubiDesc(descText)
     } else {
       [signee, addr, city, state, zip, country, phone] = parseDesc(descText)
     }
@@ -170,8 +165,7 @@ function scrapeAndCopy(document, sheet) {
         data = JSON.parse(r.response).data
       } catch (e) {
         let title = 'Failure!'
-        let body =
-          'Data was not scraped successfully. Check that the hub is still logged in.'
+        let body = 'Data was not scraped successfully. Check that the hub is still logged in.'
         notify({ title, FAILURE_ICON, body })
         return
       }
@@ -334,16 +328,19 @@ function parseYubiDesc(description) {
   const yubiType = description.match(/Do you want a Standard USB Yubikey, or the USB-c type\? : (USB|USB-c)\n/)[1]
   const yubi = yubiType === 'USB' ? 'Yubikey' : 'Yubikey USB-C'
   const shipOrOfficeRegex = /Where would you like your Yubikey shipped\? : (.*?)(Request\sType|\n)/
-  if (description.match(shipOrOfficeRegex)[1] == 'Desk Location') {
+  if (description.match(shipOrOfficeRegex)[1] != 'Desk Location') {
     const signee = description.match(/Name : (.*)\n/)[1]
     const addr = description.match(/Street Address : (.*)\n/)[1]
     const city = description.match(/City : (.*?)\n/)[1]
     const state = description.match(/State\\\\Province : (.*?)\n/)[1]
     const zip = description.match(/Postal Code : (.*?)\n/)[1]
+    const countryMatch = description.match(/Country : (.*?)\n/)[1]
+    const country = (countryMatch == "United States") ? "USA" : countryMatch
     const phone = description.match(/Phone Number : (.*?)(Show more|\sShow less)/)[1]
-    return [signee, yubi, addr, city, state, zip, phone]
+    return [signee, addr, city, state, zip, country, phone, yubi]
   }
-  return ['', yubi, '', '', '', '', '']
+  //      signee, addr, city, state, zip, country, phone, yubi
+  return ['',     '',   '',   '',    '',  '',      '',    yubi]
 }
 
 /**
