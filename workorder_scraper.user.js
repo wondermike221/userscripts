@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.33
+// @version      0.1.34
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -126,7 +126,7 @@ function scrapeAndCopy(document, sheet) {
   const description = document.querySelector('#ticket-record-summary div[ux-id="field_desc"]')
   const descText = description.textContent || description.innerText
 
-  const isYubikeyRequest = descText.indexOf('I need a Yubikey') !== -1
+  const isYubikeyRequest = descText.toLowerCase().indexOf('yubikey') !== -1
   let yubi = '',
     signee = '',
     addr = '',
