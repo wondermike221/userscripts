@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.27
+// @version      0.1.28
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -115,23 +115,15 @@ function scrapeAndCopy(document, sheet) {
     spinner.classList.add('hidden')
   }
   const name = document
-    .querySelector(
-      '#ticket-record-summary a[ux-id="assignee-name"]'
-    )
+    .querySelector('#ticket-record-summary a[ux-id="assignee-name"]')
     .text.trim()
   const email = document
-    .querySelector(
-      '#ticket-record-summary a[ux-id="email-value"]'
-    )
+    .querySelector('#ticket-record-summary a[ux-id="email-value"]')
     .text.trim()
   const work_order = document
-    .querySelector(
-      '#ticket-record-summary div[ux-id="field_id"] span[ux-id="character-field-value"]'
-    )
+    .querySelector('#ticket-record-summary div[ux-id="field_id"] span[ux-id="character-field-value"]')
     .textContent.trim()
-  const description = document.querySelector(
-    '#ticket-record-summary div[ux-id="field_desc"]'
-  )
+  const description = document.querySelector('#ticket-record-summary div[ux-id="field_desc"]')
   const descText = description.textContent || description.innerText
 
   const isYubikeyRequest = descText.indexOf('I need a Yubikey') !== -1
@@ -143,17 +135,8 @@ function scrapeAndCopy(document, sheet) {
     zip = '',
     country = '',
     phone = '' // default any missing info to empty strings
-  if (isYubikeyRequest) {
-    //check if we're scraping a yubikey request.
-    const shipOrOfficeRegex =
-      /Where would you like your Yubikey shipped\? : (.*?)(Request\sType|\n)/
-    if (descText.match(shipOrOfficeRegex)[1] == 'Desk Location') {
-      // In office request doesn't have shipping information
-      //nothing to parse. TODO:in the future will parse yubiType.
-      yubi = parseYubiDesc(descText, false)
-    } else {
-      [yubi, addr, city, state, zip, phone] = parseYubiDesc(descText)
-    }
+  if (isYubikeyRequest) { //check if we're scraping a yubikey request.
+    [signee, yubi, addr, city, state, zip, phone] = parseYubiDesc(descText)
   } else {
     const shipOrOfficeRegex =
       /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
@@ -347,22 +330,20 @@ function parseDesc(description) {
 /**
  * Parses the description on a yubikey workorder and returns each item in an array.
  */
-function parseYubiDesc(description, wfh = true) {
-  const yubiType = description.match(
-    /Do you want a Standard USB Yubikey, or the USB-c type\? : (USB|USB-c)\n/
-  )[1]
+function parseYubiDesc(description) {
+  const yubiType = description.match(/Do you want a Standard USB Yubikey, or the USB-c type\? : (USB|USB-c)\n/)[1]
   const yubi = yubiType === 'USB' ? 'Yubikey' : 'Yubikey USB-C'
-  if (wfh) {
+  const shipOrOfficeRegex = /Where would you like your Yubikey shipped\? : (.*?)(Request\sType|\n)/
+  if (description.match(shipOrOfficeRegex)[1] == 'Desk Location') {
+    const signee = description.match(/Name : (.*)\n/)[1]
     const addr = description.match(/Street Address : (.*)\n/)[1]
     const city = description.match(/City : (.*?)\n/)[1]
     const state = description.match(/State\\\\Province : (.*?)\n/)[1]
     const zip = description.match(/Postal Code : (.*?)\n/)[1]
-    const phone = description.match(
-      /Phone Number : (.*?)(Show more|\sShow less)/
-    )[1]
-    return [yubi, addr, city, state, zip, phone]
+    const phone = description.match(/Phone Number : (.*?)(Show more|\sShow less)/)[1]
+    return [signee, yubi, addr, city, state, zip, phone]
   }
-  return yubi
+  return ['', yubi, '', '', '', '', '']
 }
 
 /**
