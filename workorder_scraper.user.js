@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.29
+// @version      0.1.30
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -135,16 +135,19 @@ function scrapeAndCopy(document, sheet) {
     zip = '',
     country = '',
     phone = '' // default any missing info to empty strings
-  const shipOrOfficeRegex = /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
-  const priviledgedTokenRequest = /Assign YubiKey for Regular Account/
-  if (!(priviledgedTokenRequest.test(descText) ||
-    descText.match(shipOrOfficeRegex)[1] == 'No')) { //nothing to parse in the description
-    if (isYubikeyRequest) { //check if we're scraping a yubikey request.
+
+  if (isYubikeyRequest) {
+    const priviledgedTokenRequest = /Assign YubiKey for Regular Account/
+    if (!priviledgedTokenRequest.test(descText)) {
       [signee, addr, city, state, zip, country, phone, yubi] = parseYubiDesc(descText)
-    } else {
+    }
+  } else {
+    const shipOrOfficeRegex = /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
+    if( !descText.match(shipOrOfficeRegex)[1] == 'No' ) {
       [signee, addr, city, state, zip, country, phone] = parseDesc(descText)
     }
   }
+
 
   const nametag = email.split('@')[0]
   const HUB_PROFILE_URL = `https://hub.corp.ebay.com/searchsvc/profile/${nametag}`
