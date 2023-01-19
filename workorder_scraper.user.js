@@ -97,7 +97,7 @@ function doc_keyUp(e) {
   } else if (e.ctrlKey && e.altKey && e.key === 'x') {
     scrapeCheckedAndCopy()
   } else if (e.ctrlKey && e.altKey && e.key === 'c') {
-    setWOStatus('Complete', '', 'Web')
+    setWOStatus('Completed', '', 'Web')
   } else if (e.ctrlKey && e.altKey && e.key === 'z') {
     setWOStatus('Pending', 'Supplier Delivery', '')
   } else if (e.ctrlKey && e.altKey && e.key === 'p') {
@@ -368,29 +368,21 @@ function parseYubiDesc(description, wfh = true) {
 /**
  * Clicks status element then set's status to $status, status reason to $reason and reported source to $source.
  */
- function setWOStatus(status='Completed', reason, source) {
-  const actionBtn = document.querySelector(
-    '#ticket-record-summary div[ux-id="status-value"]'
-  )
-  Promise.resolve(actionBtn.click()).then(() => {
-    const statusEl = document.querySelector(
-      `#ticket-record-summary div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`
-    )
-    Promise.resolve(statusEl.click())
-    .then(wait(500))
-    .then(() => {
-      if(reason != '') {
-        const reasonEl = document.querySelector(
-          `#ticket-record-summary div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`
-        )
-        reasonEl.click()
-      }
-      if(source != '') {
-        const sourceEl = document.querySelector(
-          `#ticket-record-summary div[ux-id="field_reported_source"] label ul li a[aria-label="${source}"]`
-        )
-        sourceEl.click()
-      }
-    })
-  })
+async function setWOStatus(status='Completed', reason, source) {
+  await document
+        .querySelector('#ticket-record-summary div[ux-id="status-value"]')
+        .click()
+  await document
+        .querySelector(`#ticket-record-summary div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`)
+        .click()
+  if(reason != '') {
+    await document
+          .querySelector(`#ticket-record-summary div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`)
+          .click()
+  }
+  if(source != '') {
+    await document
+          .querySelector(`#ticket-record-summary div[ux-id="field_reported_source"] label ul li a[aria-label="${source}"]`)
+          .click()
+  }
 }
