@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.25
+// @version      0.1.26
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -373,23 +373,15 @@ function setWOStatus(status='Completed', reason, source) {
   statusBtn?.click()
   const statusDropdown = document.querySelector(`#ticket-record-summary div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`)
   statusDropdown?.click()
-  // wait(500)
-  setTimeout(() => {
-    setReason(reason, 15)
-    setSource(source)
-  }, 500)
+  wait(100)
+    .then(setReason(reason))
+    .then(setSource(source))
 }
 
-
-function setReason(reason, maxCall) {
-  if(reason == '') return 
+function setReason(reason) {
+  if(reason == '') return
   const reasonDropdown = document.querySelector(`#ticket-record-summary div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`)
   reasonDropdown?.click()
-  if(reasonDropdown == null) {
-    wait(25)
-    if(maxCall <= 0) return
-    setReason(reason, maxCall-1)
-  }
 }
 
 function setSource(source) {
