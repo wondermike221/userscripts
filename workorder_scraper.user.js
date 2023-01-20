@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.38
+// @version      0.1.39
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -339,7 +339,7 @@ function parseYubiDesc(description) {
     const zip = description.match(/Postal Code : (.*?)\n/)[1]
     const countryMatch = description.match(/Country : (.*?)\n/)[1]
     const country = (countryMatch.toLowerCase().includes("united") && countryMatch.toLowerCase().includes("states")) ? "USA" : countryMatch
-    const phone = description.match(/Phone Number : (.*?)(Show more|\sShow less)/)[1]
+    const phone = description.match(/Phone Number : (.*?)(Show more|\sShow less|\n)/)[1]
     return [signee, addr, city, state, zip, country, phone, yubi]
   }
   //      signee, addr, city, state, zip, country, phone, yubi
