@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.40
+// @version      0.1.41
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -17,6 +17,8 @@
 
 /** TODOS
  * [ ] scrape multiple workorders at once using the checkboxes
+ * [x] get the actual last name not just the second item in the name.split(' ')
+ * [x] expand description on page load
  * 
 */
 
@@ -31,6 +33,7 @@ const FAILURE_ICON =
   'use strict'
   // request_interceptor()
   
+  
   // register the handler
   document.addEventListener('keyup', doc_keyUp, false)
   console.log('event listener added')
@@ -38,6 +41,7 @@ const FAILURE_ICON =
   document.addEventListener('DOMContentLoaded', e => {
     //add spinner
     const spinner_container = spinner_setup()
+    expand_description()
   })
 })()
 
@@ -81,6 +85,10 @@ function request_interceptor() {
         return send.apply(this, arguments)
     }
   })(XMLHttpRequest.prototype)
+}
+
+function expand_description() {
+  document.querySelector('button[ux-id="show-more"]').click()
 }
 
 /**
@@ -178,11 +186,13 @@ function scrapeAndCopy(document, sheet) {
       cost_center = data.costCenterCode
       let firstName, lastName = '';
       if(signee != '') {
-        firstName = signee.split(' ')[0];
-        lastName = signee.split(' ')[1];
+        const split = signee.split(' ')
+        firstName = split[0]
+        lastName = split[split.length-1]
       } else {
-        firstName = name.split(' ')[0];
-        lastName = name.split(' ')[1];
+        const split = name.split(' ')
+        firstName = split[0]
+        lastName = split[split.length-1]
       }
       const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${signee || name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
       const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
