@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.41
+// @version      0.1.42
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -39,9 +39,11 @@ const FAILURE_ICON =
   console.log('event listener added')
   
   document.addEventListener('DOMContentLoaded', e => {
-    //add spinner
-    const spinner_container = spinner_setup()
-    expand_description()
+    wait(500).then(() => {
+      //add spinner
+      const spinner_container = spinner_setup()
+      expand_description()
+    })
   })
 })()
 
@@ -167,6 +169,8 @@ function scrapeAndCopy(document, sheet) {
   const what = yubi || ''
 
   let cost_center = 'default'
+
+  spinner.classList.remove('hidden')
   GM.xmlhttpRequest({
     url: HUB_PROFILE_URL,
     method: 'GET',
