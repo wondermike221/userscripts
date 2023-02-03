@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.46
+// @version      0.1.47
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -41,7 +41,7 @@ const FAILURE_ICON =
   document.addEventListener('DOMContentLoaded', e => {
     //add spinner
     const spinner_container = spinner_setup()
-    expand_description(new Date())
+    expand_description(Date())
   })
 })()
 
