@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.45
+// @version      0.1.46
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -90,7 +90,7 @@ function request_interceptor() {
 async function expand_description(first_attempt_time) {
   //stop the poll after 1 minute
   const minutes = 1
-  if((first_attempt_time + new Date(oldDateObj.getTime() + minutes*60000)) < new Date()) return
+  if((first_attempt_time + new Date(first_attempt_time.getTime() + minutes*60000)) < new Date()) return
   
   let showMoreBtn = document.querySelector('button[ux-id="show-more"]')
   if(showMoreBtn) {
