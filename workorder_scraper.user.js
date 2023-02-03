@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.47
+// @version      0.1.50
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -90,7 +90,8 @@ function request_interceptor() {
 async function expand_description(first_attempt_time) {
   //stop the poll after 1 minute
   const minutes = 1
-  if((first_attempt_time + new Date(first_attempt_time.getTime() + minutes*60000)) < new Date()) return
+  let firstAttempt = new Date(first_attempt_time)
+  if((first_attempt_time + new Date(firstAttempt.getTime() + minutes*60000)) < new Date()) return
   
   let showMoreBtn = document.querySelector('button[ux-id="show-more"]')
   if(showMoreBtn) {
@@ -107,17 +108,17 @@ async function expand_description(first_attempt_time) {
  * Ctrl + Alt + p == debug whatever I'm working on. (in the future add a command palette)
  */
 function doc_keyUp(e) {
-  if (e.ctrlKey && e.altKey && e.key === 'd') {
+  if (e.ctrlKey && e.altKey && (e.key === 'd' || e.key === '∂' || e.which === 68)) {
     scrapeAndCopy(document, 'accessories')
-  } else if (e.ctrlKey && e.altKey && e.key === 's') {
+  } else if (e.ctrlKey && e.altKey && (e.key === 's' || e.key === 'ß' || e.which === 83)) {
     scrapeAndCopy(document, 'purchasing')
-  } else if (e.ctrlKey && e.altKey && e.key === 'x') {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'x' || e.key === '≈' || e.which === 88)) {
     scrapeCheckedAndCopy()
-  } else if (e.ctrlKey && e.altKey && e.key === 'c') {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'c' || e.key === 'ç' || e.which === 67)) {
     setWOStatus('Completed', '', 'Web')
-  } else if (e.ctrlKey && e.altKey && e.key === 'z') {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'z' || e.key === 'Ω' || e.which === 90)) {
     setWOStatus('Pending', 'Supplier Delivery', '')
-  } else if (e.ctrlKey && e.altKey && e.key === 'p') {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'p' || e.key === 'π' || e.which === 80)) {
     //TODO: command palette
     document.getElementById('scraper_spinner').classList.toggle('hidden')
   }
@@ -131,6 +132,9 @@ function scrapeAndCopy(document, sheet) {
   if (!spinner.classList.contains('hidden')) {
     spinner.classList.add('hidden')
   }
+  const title = document
+    .querySelector('div[ux-id="title-bar"] div[ux-id="ticket-title-value"]')
+    .textContent.trim()
   const name = document
     .querySelector('#ticket-record-summary a[ux-id="assignee-name"]')
     .text.trim()
@@ -143,7 +147,7 @@ function scrapeAndCopy(document, sheet) {
   const description = document.querySelector('#ticket-record-summary div[ux-id="field_desc"] div[ux-id="field-value"]')
   const descText = description.textContent || description.innerText
 
-  const isYubikeyRequest = descText.toLowerCase().indexOf('yubikey') !== -1
+  const isYubikeyRequest = title.toLowerCase().indexOf('yubikey') !== -1 || title.toLowerCase().indexOf('priveleged token') !== -1
   let yubi = '',
     signee = '',
     addr = '',
@@ -162,6 +166,7 @@ function scrapeAndCopy(document, sheet) {
     const shipOrOfficeRegex = /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
     if( !(descText.match(shipOrOfficeRegex)[1] == 'No') ) {
       [signee, addr, city, state, zip, country, phone] = parseDesc(descText)
+      signee = signee.trim()
     }
   }
 
