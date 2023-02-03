@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.51
+// @version      0.1.52
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -356,7 +356,7 @@ function parseDesc(description) {
 function parseYubiDesc(description) {
   const yubiType = description.match(/Do you want a Standard USB Yubikey, or the USB-c type\? : (USB|USB-c)\n/)[1]
   const yubi = yubiType === 'USB' ? 'Yubikey' : 'Yubikey USB-C'
-  const shipOrOfficeRegex = /Where would you like your Yubikey shipped\? : (.*?)(Request\sType|\n)/
+  const shipOrOfficeRegex = /Where would you like your Yubikey shipped\? : (.*?)(Request\sType|\n|$)/
   if (description.match(shipOrOfficeRegex)[1] != 'Desk Location') {
     const signee = description.match(/Name : (.*)\n/)[1]
     const addr = description.match(/Street Address : (.*)\n/)[1]
