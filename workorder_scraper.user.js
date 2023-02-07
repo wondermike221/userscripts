@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.52
+// @version      0.1.53
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -112,6 +112,8 @@ function doc_keyUp(e) {
     scrapeAndCopy(document, 'accessories')
   } else if (e.ctrlKey && e.altKey && (e.key === 's' || e.key === 'ß' || e.which === 83)) {
     scrapeAndCopy(document, 'purchasing')
+  } else if (e.ctrlKey && e.altKey && (e.key === 'g' || e.key === '©' || e.which === 71)) {
+    scrapeAndCopy(document, 'cross-charge')
   } else if (e.ctrlKey && e.altKey && (e.key === 'x' || e.key === '≈' || e.which === 88)) {
     scrapeCheckedAndCopy()
   } else if (e.ctrlKey && e.altKey && (e.key === 'c' || e.key === 'ç' || e.which === 67)) {
@@ -212,11 +214,14 @@ function scrapeAndCopy(document, sheet) {
       }
       const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${signee || name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
       const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
+      const csvCrossChargeSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}`
       
       if(sheet == 'accessories') {
         copyTextToClipboard(csvAccessoriesSheet)
       } else if(sheet == 'purchasing') {
         copyTextToClipboard(csvPurchasingSheet)
+      } else if (sheet == 'cross-charge') {
+        copyTextToClipboard(csvCrossChargeSheet)
       }
 
       if (!spinner.classList.contains('hidden')) {
