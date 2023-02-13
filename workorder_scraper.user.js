@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.53
+// @version      0.1.54
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -19,6 +19,7 @@
  * [ ] scrape multiple workorders at once using the checkboxes
  * [x] get the actual last name not just the second item in the name.split(' ')
  * [x] expand description on page load
+ * [x] press 's' to search
  * 
 */
 
@@ -32,12 +33,11 @@ const FAILURE_ICON =
 ;(() => {
   'use strict'
   // request_interceptor()
-  
-  
+
+
   // register the handler
   document.addEventListener('keyup', doc_keyUp, false)
-  console.log('event listener added')
-  
+
   document.addEventListener('DOMContentLoaded', e => {
     //add spinner
     const spinner_container = spinner_setup()
@@ -120,6 +120,8 @@ function doc_keyUp(e) {
     setWOStatus('Completed', '', 'Web')
   } else if (e.ctrlKey && e.altKey && (e.key === 'z' || e.key === 'Ω' || e.which === 90)) {
     setWOStatus('Pending', 'Supplier Delivery', '')
+  } else if ((e.key === 's' || e.which === 83)) {
+    focusSearch();
   } else if (e.ctrlKey && e.altKey && (e.key === 'p' || e.key === 'π' || e.which === 80)) {
     //TODO: command palette
     document.getElementById('scraper_spinner').classList.toggle('hidden')
@@ -400,4 +402,9 @@ function setSource(source) {
   if(source == '') return
   const sourceDropdown = document.querySelector(`#ticket-record-summary div[ux-id="field_reported_source"] label ul li a[aria-label="${source}"]`)
   sourceDropdown?.click()
+}
+
+function focusSearch() {
+  const searchBtn = document.querySelector('#header-search_button')
+  searchBtn.click()
 }
