@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.56
+// @version      0.1.57
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -20,6 +20,7 @@
  * [x] get the actual last name not just the second item in the name.split(' ')
  * [x] expand description on page load
  * [x] press 's' to search
+ * [x] auto expand notes so puclic checkbox shows.
  * 
 */
 
@@ -42,6 +43,7 @@ const FAILURE_ICON =
     //add spinner
     const spinner_container = spinner_setup()
     expand_description(Date())
+    expand_notes(Date())
   })
 })()
 
@@ -98,6 +100,19 @@ async function expand_description(first_attempt_time) {
     showMoreBtn.click()
   } else {
     setTimeout(expand_description, 500)
+  }
+}
+
+async function expand_notes(first_attempt_time) {
+  const minutes = 1
+  let firstAttempt = new Date(first_attempt_time)
+  if((first_attempt_time + new Date(firstAttempt.getTime() + minutes*60000)) < new Date()) return
+
+  let notesTextBox =  document.querySelector('div[ux-id="add-note-textbox"]')
+  if(notesTextBox) {
+    notesTextBox.click()
+  } else {
+    setTimeout(expand_notes, 500)
   }
 }
 
