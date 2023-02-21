@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.57
+// @version      0.1.58
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -42,8 +42,7 @@ const FAILURE_ICON =
   document.addEventListener('DOMContentLoaded', e => {
     //add spinner
     const spinner_container = spinner_setup()
-    expand_description(Date())
-    expand_notes(Date())
+    poll(expand_things, Date(), 0.5, 500)
   })
 })()
 
@@ -89,31 +88,43 @@ function request_interceptor() {
   })(XMLHttpRequest.prototype)
 }
 
-async function expand_description(first_attempt_time) {
-  //stop the poll after 1 minute
-  const minutes = 1
-  let firstAttempt = new Date(first_attempt_time)
-  if((first_attempt_time + new Date(firstAttempt.getTime() + minutes*60000)) < new Date()) return
-  
-  let showMoreBtn = document.querySelector('button[ux-id="show-more"]')
-  if(showMoreBtn) {
-    showMoreBtn.click()
-  } else {
-    setTimeout(expand_description, 500)
-  }
+const EXPANDED_STATE = {
+  showMoreBtn: false,
+  notesTextBox: false,
 }
 
-async function expand_notes(first_attempt_time) {
-  const minutes = 1
-  let firstAttempt = new Date(first_attempt_time)
-  if((first_attempt_time + new Date(firstAttempt.getTime() + minutes*60000)) < new Date()) return
-
-  let notesTextBox =  document.querySelector('div[ux-id="add-note-textbox"]')
-  if(notesTextBox) {
-    notesTextBox.click()
+function expand_things() {
+  let showMoreBtn = document.querySelector('button[ux-id="show-more"]')
+  if(EXPANDED_STATE.showMoreBtn || showMoreBtn) {
+    showMoreBtn.click()
+    EXPANDED_STATE.showMoreBtn = true
   } else {
-    setTimeout(expand_notes, 500)
+    return false
   }
+
+  let notesTextBox =  document.querySelector('[ux-id="add-note-textbox"]')
+  if(EXPANDED_STATE.notesTextBox || notesTextBox) {
+    notesTextBox.click()
+    EXPANDED_STATE.notesTextBox = true
+  } else {
+    return false
+  }
+
+  const statusValue = document.querySelector('[ux-id="status-value"]')
+  statusValue.focus()
+    
+  return true
+}
+
+function poll(work_func, first_attempt_time, max_attempt_minutes, frequency) {
+  let firstAttempt = new Date(first_attempt_time)
+  if((first_attempt_time + new Date(firstAttempt.getTime() + max_attempt_minutes*60000)) < new Date()) return
+
+  let work_result = work_func();
+  if(!work_result) {
+    setTimeout(poll, frequency, work_func, first_attempt_time, max_attempt_minutes, frequency)
+  }
+
 }
 
 /**
