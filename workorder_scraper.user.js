@@ -143,7 +143,7 @@ function doc_keyUp(e) {
   } else if (e.ctrlKey && e.altKey && (e.key === 'x' || e.key === '≈' || e.which === 88)) {
     scrapeCheckedAndCopy()
   } else if (e.ctrlKey && e.altKey && (e.key === 'c' || e.key === 'ç' || e.which === 67)) {
-    setWOStatus('Completed', '', 'Web')
+    setWOStatus('Completed', '', 'Self Service')
   } else if (e.ctrlKey && e.altKey && (e.key === 'z' || e.key === 'Ω' || e.which === 90)) {
     setWOStatus('Pending', 'Supplier Delivery', '')
   } else if ((e.key === 's' || e.which === 83)) {
