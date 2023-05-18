@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.62
+// @version      0.1.63
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -246,7 +246,7 @@ function scrapeAndCopy(document, sheet) {
       firstName = split[0]
       lastName = split[split.length-1]
       
-      const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${signee || name}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
+      const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
       const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
       const csvCrossChargeSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}`
       
