@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.63
+// @version      0.1.64
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -146,6 +146,8 @@ function doc_keyUp(e) {
     setWOStatus('Completed', '', 'Self Service')
   } else if (e.ctrlKey && e.altKey && (e.key === 'z' || e.key === 'Ω' || e.which === 90)) {
     setWOStatus('Pending', 'Supplier Delivery', 'Self Service')
+  } else if (e.ctrlKey && e.altKey && (e.key === 'f' || e.key === 'ƒ' || e.which === 70)) {
+    getCostCenter(document)
   } else if ((e.key === 's' || e.which === 83)) {
     if (
       !(e.target instanceof HTMLTextAreaElement ||
@@ -264,6 +266,41 @@ function scrapeAndCopy(document, sheet) {
       let title = 'Success!'
       let body = 'Data was scraped successfully'
       notify({ title, SUCCESS_ICON, body })
+    })
+  })
+}
+
+function getCostCenter(document) {
+  const spinner = document.getElementById('scraper_spinner')
+  if (!spinner.classList.contains('hidden')) {
+    spinner.classList.add('hidden')
+  }
+  const email = document
+  .querySelector('#ticket-record-summary a[ux-id="email-value"]')
+  .text.trim()
+  const nametag = email.split('@')[0]
+  const HUB_PROFILE_URL = `https://hub.corp.ebay.com/searchsvc/profile/${nametag}`
+  GM.xmlhttpRequest({
+    url: HUB_PROFILE_URL,
+    method: 'GET',
+    onload: ((r) => {
+      let data
+      try {
+        data = JSON.parse(r.response).data
+      } catch (e) {
+        let title = 'Failure!'
+        let body = 'Data was not scraped successfully. Check that the hub is still logged in.'
+        notify({ title, FAILURE_ICON, body })
+        return
+      }
+      cost_center = data.costCenterCode
+      if (!spinner.classList.contains('hidden')) {
+        spinner.classList.add('hidden')
+      }
+      let title = 'Success!'
+      let body = 'Data was scraped successfully'
+      notify({ title, SUCCESS_ICON, body })
+      copyTextToClipboard(cost_center)
     })
   })
 }
