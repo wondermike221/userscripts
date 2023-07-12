@@ -1,4 +1,4 @@
-// ==UserScript==
+
 // @name         Autofill FedEx Shipment Form
 // @namespace    https://hixon.dev
 // @version      0.1
@@ -31,42 +31,47 @@ const TEXTAREA_STYLES = `
 
 const FORM_FIELDS = {
   name: {
-    selector: "#toData\\.contactName",
+    selector: 'fedex-input-field[data-test-id="receiver-name"] input',
     value: null,
     type: "text",
   },
   email: {
-    selector: "#notificationData\\.recipientNotifications\\.email",
-    value: null,
-    type: "text",
-  },
-  address1: {
-    selector: "#toData\\.addressLine1",
-    value: null,
-    type: "text",
-  },
-  address2: {
-    selector: "#toData\\.addressLine2",
-    value: null,
-    type: "text",
-  },
-  city: {
-    selector: "#toData\\.city",
-    value: null,
-    type: "text",
-  },
-  state: {
-    selector: "#toData\\.stateProvinceCode",
-    value: null,
-    type: "dropdown",
-  },
-  zip: {
-    selector: "#toData\\.zipPostalCode",
+    selector: 'fedex-input-field[data-test-id="receiver-email"] input',
     value: null,
     type: "text",
   },
   phone: {
-    selector: "#toData\\.phoneNumber",
+    selector: "fedex-input-field[data-test-id='receiver-telephone-number'] input",
+    value: null,
+    type: "text",
+  },
+  country: {
+    selector: "fedex-input-field[data-test-id='receiver-country-code'] input",
+    value: "193", // 193 = United States
+    type: "dropdown",
+  },
+  address1: {
+    selector: "fedex-input-field[data-test-id='receiver-address-line1'] input",
+    value: null,
+    type: "text",
+  },
+  address2: {
+    selector: "fedex-input-field[data-test-id='receiver-address-line2'] input",
+    value: null,
+    type: "text",
+  },
+  zip: {
+    selector: "fedex-input-sanitised[data-test-id='receiver-postal-code'] input",
+    value: null,
+    type: "text",
+  },
+  state: {
+    selector: "fedex-input-search[data-test-id='receiver-state-or-province'] input",
+    value: null,
+    type: "text",
+  },
+  city: {
+    selector: "fedex-input-search[data-test-id='receiver-city'] input",
     value: null,
     type: "text",
   },
@@ -85,9 +90,18 @@ const FORM_FIELDS = {
     value: 3,
     type: "dropdown",
   },
+  add_email: {
+    selector: 'button[data-test-id="add-notification-dropdown"]',
+    value: null,
+    type: "button",
+  },
+  add_recipient_email: {
+    selector: 'button[data-test-id="add-receiver-notifications"]',
+    value: null,
+    type: "button",
+  },
   "delivery notification": {
-    selector:
-      "#notificationData\\.senderNotifications\\.deliveryNotificationFlag",
+    selector:'fedex-checkbox[data-test-id="notification-checkbox"] input',
     value: true,
     type: "checkbox",
   },
@@ -152,6 +166,9 @@ function autofillAction(FORM_FIELDS, e) {
         break;
       case "checkbox":
         fieldItem.checked = FORM_FIELDS[field].value;
+        break;
+      case "button":
+        fieldItem.click();
         break;
       default:
         console.log("you shouldn't be here");
