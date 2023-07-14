@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.69
+// @version      0.1.70
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -342,7 +342,9 @@ function scrapeCollectPC(document, sheet) {
     }, {})
   const PEOPLEX_PROFILE_URL = `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${parsedDesc['Login ID']}`
   const description_nt = parsedDesc['Login ID'];
-  const date = new Date().toLocaleDateString('en-us', {
+  const timeline_feed = document.querySelector('div[ux-id="activity-feed"] div.timeline-feed')
+  const create_date_text = [...timeline_feed.children].at(-2).querySelector('span.feed-item__date-time').textContent
+  const create_date = new Date(create_date_text).toLocaleDateString('en-us', {
     year: 'numeric',
     month: 'numeric',
     day: 'numeric',
@@ -376,7 +378,7 @@ function scrapeCollectPC(document, sheet) {
             return
           }
           const manager_email = manager_data.payload.email
-          const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t\t\t\t${user_data.payload.userSrcSys}`
+          const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t\t\t${create_date}\t${user_data.payload.userSrcSys}`
           copyTextToClipboard(csvCollectPCSheet)
 
           if (!spinner.classList.contains('hidden')) {
