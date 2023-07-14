@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.68
+// @version      0.1.69
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -376,7 +376,7 @@ function scrapeCollectPC(document, sheet) {
             return
           }
           const manager_email = manager_data.payload.email
-          const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t\t${date}\t${user_data.payload.userSrcSys}`
+          const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t\t\t\t${user_data.payload.userSrcSys}`
           copyTextToClipboard(csvCollectPCSheet)
 
           if (!spinner.classList.contains('hidden')) {
