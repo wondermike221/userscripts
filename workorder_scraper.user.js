@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.65
+// @version      0.1.66
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -352,10 +352,10 @@ function scrapeCollectPC(document, sheet) {
   GM.xmlhttpRequest({
     url: PEOPLEX_PROFILE_URL,
     method: 'GET',
-    onload: ((r) => {
-      let data
+    onload: ((userResponse) => {
+      let user_data
       try {
-        data = JSON.parse(r.response).data
+        user_data = JSON.parse(userResponse.response)
       } catch (e) {
         let title = 'Failure!'
         let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
@@ -363,19 +363,19 @@ function scrapeCollectPC(document, sheet) {
         return
       }
       GM.xmlhttpRequest({
-        url: `https://hub.corp.ebay.com/searchsvc/profile/${data.managerUserId}`,
+        url: `https://hub.corp.ebay.com/searchsvc/profile/${data.payload.managerUserId}`,
         method: 'GET',
-        onload: ((r) => {
+        onload: ((managerResponse) => {
           let manager_data
           try{
-            manager_data = JSON.parse(r.response).data
+            manager_data = JSON.parse(managerResponse.response)
           } catch (e) {
             let title = 'Failure!'
             let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
             notify({ title, FAILURE_ICON, body })
             return
           }
-          const manager_email = manager_data.email
+          const manager_email = manager_data.payload.email
           const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}`
           copyTextToClipboard(csvCollectPCSheet)
 
