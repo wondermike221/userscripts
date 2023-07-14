@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.64
+// @version      0.1.65
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -10,6 +10,7 @@
 // @require      https://raw.githubusercontent.com/wondermike221/userscripts/main/lib.js
 // @connect      *
 // @connect      https://hub.corp.ebay.com/searchsvc/profile/*
+// @connect      https://peoplex.corp.ebay.com/peoplexservices/*
 // @run-at       document-start
 // @downloadURL  https://raw.githubusercontent.com/wondermike221/userscripts/main/workorder_scraper.user.js
 // @homepageURL  https://github.com/wondermike221/userscripts
@@ -132,6 +133,7 @@ function poll(work_func, first_attempt_time, max_attempt_minutes, frequency) {
  * Ctrl + Alt + d == scrape data off workorder and copy to the clipboard
  * Ctrl + Alt + c == set workorder to completed with Reported Source = Web
  * Ctrl + Alt + p == debug whatever I'm working on. (in the future add a command palette)
+ * Ctrl + Alt + x == scrape data off collect pc ticket and copy to the clipboard
  */
 function doc_keyUp(e) {
   if (e.ctrlKey && e.altKey && (e.key === 'd' || e.key === '∂' || e.which === 68)) {
@@ -141,7 +143,7 @@ function doc_keyUp(e) {
   } else if (e.ctrlKey && e.altKey && (e.key === 'g' || e.key === '©' || e.which === 71)) {
     scrapeAndCopy(document, 'cross-charge')
   } else if (e.ctrlKey && e.altKey && (e.key === 'x' || e.key === '≈' || e.which === 88)) {
-    scrapeCheckedAndCopy()
+    scrapeCollectPC(document, 'collect-pc')
   } else if (e.ctrlKey && e.altKey && (e.key === 'c' || e.key === 'ç' || e.which === 67)) {
     setWOStatus('Completed', '', 'Self Service')
   } else if (e.ctrlKey && e.altKey && (e.key === 'z' || e.key === 'Ω' || e.which === 90)) {
@@ -248,15 +250,14 @@ function scrapeAndCopy(document, sheet) {
       firstName = split[0]
       lastName = split[split.length-1]
       
-      const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
-      const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
-      const csvCrossChargeSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}`
-      
       if(sheet == 'accessories') {
+        const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
         copyTextToClipboard(csvAccessoriesSheet)
       } else if(sheet == 'purchasing') {
+        const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
         copyTextToClipboard(csvPurchasingSheet)
       } else if (sheet == 'cross-charge') {
+        const csvCrossChargeSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}`
         copyTextToClipboard(csvCrossChargeSheet)
       }
 
@@ -311,85 +312,83 @@ function getCostCenter(document) {
 /**
  * Scrapes all workorders that are checked on the current listing and copy's to the clipboard in my spreadsheet's format.
  */
-function scrapeCheckedAndCopy() {
-  const selectedRows = document.querySelectorAll(
-    "[ux-id='ticket-console-grid-list'] .ngViewport [ng-row].ngRow.selected"
-  )
-  // Assert that we are on the correct page and have selected an item.
-  if (
-    window.location.href !=
-      'https://ebay-smartit.onbmc.com/smartit/app/#/ticket-console' ||
-    selectedRows.length === 0
-  ) {
-    console.log('wrong page')
-    let title = 'Error!'
-    let body =
-      'Please ensure you are on a listing page and have selected at least one item.'
-    notify({ title, SUCCESS_ICON, body })
-    return
+function scrapeCollectPC(document, sheet) {
+  const spinner = document.getElementById('scraper_spinner')
+  if (!spinner.classList.contains('hidden')) {
+    spinner.classList.add('hidden')
   }
-  const workorders = getWorkOrdersFromSelected(selectedRows)
+  
+  const title = document
+    .querySelector('div[ux-id="title-bar"] div[ux-id="ticket-title-value"]')
+    .textContent.trim()
+  const name = document
+    .querySelector('#ticket-record-summary a[ux-id="assignee-name"]')
+    .text.trim()
+  const email = document
+    .querySelector('#ticket-record-summary a[ux-id="email-value"]')
+    .text.trim()
+  const work_order = document
+    .querySelector('#ticket-record-summary div[ux-id="field_id"] span[ux-id="character-field-value"]')
+    .textContent.trim()
+  const description = document.querySelector('#ticket-record-summary div[ux-id="field_desc"] div[ux-id="field-value"]')
+  const descText = description.textContent || description.innerText
+  const parsedDesc = descText
+    .split('\n')
+    .reduce((acc, item)=>{
+      if(item.indexOf(':')==-1) return acc;
+      let [key, value] = item.split(':');
+      acc[key.trim()]=value ? value.trim() : "";
+      return acc;
+    }, {})
+  const PEOPLEX_PROFILE_URL = `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${parsedDesc['Login ID']}`
+  const description_nt = parsedDesc['Login ID'];
+  const date = new Date().toLocaleDateString('en-us', {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  })
 
-    fetch("https://ebay-smartit.onbmc.com/smartit/rest/v2/person/workitems/get", {
-      "headers": {
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "en-US,enq=0.9",
-        "cache-control": "no-cache",
-        "content-type": "application/jsoncharset=UTF-8",
-        "pragma": "no-cache",
-        "sec-ch-ua": "\"Google Chrome\"v=\"107\", \"Chromium\"v=\"107\", \"Not=A?Brand\"v=\"24\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "x-xsrf-token": "189b8q5j2cecuvpgfqo9jqb2a31vrvs53ijtjsdtg3nes0gs0b6b"
-      },
-      "referrer": "https://ebay-smartit.onbmc.com/",
-      "referrerPolicy": "origin",
-      "body": "{\"filterCriteria\":{\"ticketSpecificStatuses\":[\"Assigned\"],\"assignees\":[{\"loginId\":\"mhixon\"}]},\"chunkInfo\":{\"startIndex\":0,\"chunkSize\":75},\"sortInfo\":{},\"attributeNames\":[\"priority\",\"id\",\"slaStatus\",\"customerName\",\"assignee\",\"summary\",\"status\",\"actualStartDate\",\"submitDate\",\"lastModifiedDate\",\"customerSite\",\"needsAttention\"],\"customAttributeNames\":[]}",
-      "method": "POST",
-      "mode": "cors",
-      "credentials": "include"
+  spinner.classList.remove('hidden')
+  GM.xmlhttpRequest({
+    url: PEOPLEX_PROFILE_URL,
+    method: 'GET',
+    onload: ((r) => {
+      let data
+      try {
+        data = JSON.parse(r.response).data
+      } catch (e) {
+        let title = 'Failure!'
+        let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
+        notify({ title, FAILURE_ICON, body })
+        return
+      }
+      GM.xmlhttpRequest({
+        url: `https://hub.corp.ebay.com/searchsvc/profile/${data.managerUserId}`,
+        method: 'GET',
+        onload: ((r) => {
+          let manager_data
+          try{
+            manager_data = JSON.parse(r.response).data
+          } catch (e) {
+            let title = 'Failure!'
+            let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
+            notify({ title, FAILURE_ICON, body })
+            return
+          }
+          const manager_email = manager_data.email
+          const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}`
+          copyTextToClipboard(csvCollectPCSheet)
+
+          if (!spinner.classList.contains('hidden')) {
+            spinner.classList.add('hidden')
+          }
+          let title = 'Success!'
+          let body = 'Data was scraped successfully'
+          notify({ title, SUCCESS_ICON, body })
+          })
+      })
     })
-
-  // Promise.allSettled()
-  //   .then((results) => {
-
-  // })
-}
-
-function getWorkOrdersFromSelected(selectedRows) {
-  const headerHTML = document.querySelector(
-    '#main > div > div.tc__panel > div.tc__list.ng-scope > div > div.ngTopPanel.ng-scope .ngHeaderContainer .ngHeaderScroller'
-  )
-  const headers = parseColumnHeaders(headerHTML)
-  let displayId_idx = headers.indexOf('Display Id')
-  console.log({ headers, displayId_idx })
-
-  let workorders = []
-  for (let item of selectedRows) {
-    workorders.push(
-      item.querySelectorAll('span.ng-binding')[displayId_idx - 1].innerText
-    )
-  }
-  console.log({ workorders })
-  return workorders
-}
-
-/**
- * Returns an array of the column headers
- */
-function parseColumnHeaders(container) {
-  const headers = []
-  for (let inner of container.children) {
-    if (inner === container.children[0]) {
-      //headers.push("checkbox")
-    } else {
-      headers.push(inner.querySelector('[ux-id="column-header"]').innerText)
-    }
-  }
-  return headers
+  })
 }
 
 /* Example Description:
