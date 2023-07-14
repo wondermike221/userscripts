@@ -363,7 +363,7 @@ function scrapeCollectPC(document, sheet) {
         return
       }
       GM.xmlhttpRequest({
-        url: `https://hub.corp.ebay.com/searchsvc/profile/${user_data.payload.managerUserId}`,
+        url: `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${user_data.payload.managerUserId}`,
         method: 'GET',
         onload: ((managerResponse) => {
           let manager_data
