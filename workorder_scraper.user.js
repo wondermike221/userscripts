@@ -19,7 +19,7 @@
 /** TODOS
  * [x] press 's' to search
  * [ ] auto expand notes so public checkbox shows.
- * 
+ * [ ] imagus like preview for the summary section.
 */
 
 
