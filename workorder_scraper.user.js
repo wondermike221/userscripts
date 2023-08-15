@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.72
+// @version      0.1.73
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
