@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.71
+// @version      0.1.72
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -17,11 +17,8 @@
 // ==/UserScript==
 
 /** TODOS
- * [ ] scrape multiple workorders at once using the checkboxes
- * [x] get the actual last name not just the second item in the name.split(' ')
- * [x] expand description on page load
  * [x] press 's' to search
- * [x] auto expand notes so puclic checkbox shows.
+ * [ ] auto expand notes so public checkbox shows.
  * 
 */
 
@@ -34,10 +31,7 @@ const FAILURE_ICON =
 
 ;(() => {
   'use strict'
-  // request_interceptor()
-
-
-  // register the handler
+    // register the handler
   document.addEventListener('keyup', doc_keyUp, false)
 
   document.addEventListener('DOMContentLoaded', e => {
@@ -46,48 +40,6 @@ const FAILURE_ICON =
     poll(expand_things, Date(), 0.5, 500)
   })
 })()
-
-function request_interceptor() {
-  // monkey patch fetch
-  const { fetch: originalFetch } = window
-  window.fetch = async (...args) => {
-    let [resource, config ] = args
-
-    // request interceptor here
-    // resource = 'https://jsonplaceholder.typicode.com/todos/2'
-    
-
-    const response = await originalFetch(resource, config)
-
-    // response interceptor here
-    // const json = () => response.clone().json().then(data => ({...data, title: `Intercepted: ${data.title}` }))
-    console.log(`Intercepted call to ${resource} with response ${response.clone()}`)
-
-    // return the response for the caller.
-    return response
-  }
-
-  //monkey patch xhr
-  (function(xhr) {
-    function the_patch(xhrInstance) { // Example
-        console.log('Monkey RS: ' + xhrInstance.readyState)
-        console.log(`Intercepted call to ${xhrInstance} with response ${1}`)
-    }
-    // Capture request before any network activity occurs:
-    var send = xhr.send
-    xhr.send = function(data) {
-        var rsc = this.onreadystatechange
-        if (rsc) {
-            // "onreadystatechange" exists. Monkey-patch it
-            this.onreadystatechange = function() {
-                the_patch(this)
-                return rsc.apply(this, arguments)
-            }
-        }
-        return send.apply(this, arguments)
-    }
-  })(XMLHttpRequest.prototype)
-}
 
 const EXPANDED_STATE = {
   showMoreBtn: false,
@@ -150,6 +102,12 @@ function doc_keyUp(e) {
     setWOStatus('Pending', 'Supplier Delivery', 'Self Service')
   } else if (e.ctrlKey && e.altKey && (e.key === 'a' || e.key === 'å' || e.which === 65)) {
     setWOStatus('In Progress', '', '')
+  } else if (e.ctrlKey && e.altKey && (e.key === 'w' || e.key === '∑' || e.which === 87)) {
+    setAsset('Received', 'In Storage')
+    const nt = document.querySelector('a[ux-id="email"').text().trim().split('@')[0]
+    copyTextToClipboard(nt)
+  } else if (e.ctrlKey && e.altKey && (e.key === 'e' || e.key === '´' || e.which === 69)) {
+    setAsset('Deployed', 'In Production')
   } else if (e.ctrlKey && e.altKey && (e.key === 'f' || e.key === 'ƒ' || e.which === 70)) {
     getCostCenter(document)
   } else if ((e.key === 's' || e.which === 83)) {
@@ -308,12 +266,6 @@ function getCostCenter(document) {
   })
 }
 
-// const WORK_ORDER_URL_LAYOUT = `https://ebay-smartit.onbmc.com/smartit/app/#/workorder/${id}`
-// const WORK_ORDER_REST_URL = `https://ebay-smartit.onbmc.com/rest/v2/person/workitems/get
-
-/**
- * Scrapes all workorders that are checked on the current listing and copy's to the clipboard in my spreadsheet's format.
- */
 function scrapeCollectPC(document, sheet) {
   const spinner = document.getElementById('scraper_spinner')
   if (!spinner.classList.contains('hidden')) {
@@ -479,4 +431,19 @@ function setSource(source) {
 function focusSearch() {
   const searchBtn = document.querySelector('#header-search_button')
   searchBtn.click()
+}
+
+async function setAsset(status, reason) {
+  const statusBtn = document.querySelector('div[ux-id="status-value"]')
+  statusBtn?.click()
+  const statusDropdown = document.querySelector(`div[ux-id="status-dropdown"] ul li a[aria-label="${status}"]`)
+  statusDropdown?.click()
+  await wait(100)
+  setAssetReason(reason)
+}
+
+function setAssetReason(reason) {
+  if(reason == '') return
+  const reasonDropdown = document.querySelector(`div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`)
+  reasonDropdown?.click()
 }
