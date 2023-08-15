@@ -103,8 +103,8 @@ function doc_keyUp(e) {
   } else if (e.ctrlKey && e.altKey && (e.key === 'a' || e.key === 'å' || e.which === 65)) {
     setWOStatus('In Progress', '', '')
   } else if (e.ctrlKey && e.altKey && (e.key === 'w' || e.key === '∑' || e.which === 87)) {
-    setAsset('Received', 'In Storage')
     const nt = document.querySelector('a[ux-id="email"').text().trim().split('@')[0]
+    setAsset('Received', 'Storage')
     copyTextToClipboard(nt)
   } else if (e.ctrlKey && e.altKey && (e.key === 'e' || e.key === '´' || e.which === 69)) {
     setAsset('Deployed', 'In Production')
