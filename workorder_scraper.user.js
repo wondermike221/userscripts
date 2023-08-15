@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.74
+// @version      0.1.75
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -82,10 +82,18 @@ function poll(work_func, first_attempt_time, max_attempt_minutes, frequency) {
 
 /**
  * Keyboard shortcuts:
- * Ctrl + Alt + d == scrape data off workorder and copy to the clipboard
- * Ctrl + Alt + c == set workorder to completed with Reported Source = Web
- * Ctrl + Alt + p == debug whatever I'm working on. (in the future add a command palette)
+ * Ctrl + Alt + d == scrape data off workorder and copy to the clipboard for accessories sheet
+ * Ctrl + Alt + s == scrape data off workorder and copy to the clipboard for purchasing sheet
+ * Ctrl + Alt + g == scrape data off workorder and copy to the clipboard for cross-charge sheet
  * Ctrl + Alt + x == scrape data off collect pc ticket and copy to the clipboard
+ * Ctrl + Alt + c == set workorder to completed with Reported Source = 'Self Service'
+ * Ctrl + Alt + z == set workorder to Pending / Supplier Delivery
+ * Ctrl + Alt + a == set workorder to In Progress
+ * Ctrl + Alt + w == set asset status to Received / Storage and copy NT to clipboard
+ * Ctrl + Alt + e == set asset status to Deployed / In Production
+ * Ctrl + Alt + f == get the cost center for the user on the ticket
+ * s == open search bar
+ * Ctrl + Alt + p == debug whatever I'm working on. (in the future add a command palette)
  */
 function doc_keyUp(e) {
   if (e.ctrlKey && e.altKey && (e.key === 'd' || e.key === '∂' || e.which === 68)) {
@@ -431,6 +439,9 @@ function setSource(source) {
 function focusSearch() {
   const searchBtn = document.querySelector('#header-search_button')
   searchBtn.click()
+  //Automatically set to 'All' 
+  const searchTypeBtn = document.querySelector('div[ux-id="global-search-dropdown"] ul li a[aria-label="All"]')
+  searchTypeBtn.click()
 }
 
 async function setAsset(status, reason) {
