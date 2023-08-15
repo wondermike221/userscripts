@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.75
+// @version      0.1.76
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -437,11 +437,11 @@ function setSource(source) {
 }
 
 function focusSearch() {
-  const searchBtn = document.querySelector('#header-search_button')
-  searchBtn.click()
   //Automatically set to 'All' 
   const searchTypeBtn = document.querySelector('div[ux-id="global-search-dropdown"] ul li a[aria-label="All"]')
   searchTypeBtn.click()
+  const searchBtn = document.querySelector('#header-search_button')
+  searchBtn.click()
 }
 
 async function setAsset(status, reason) {
