@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.78
+// @version      0.1.79
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -104,7 +104,7 @@ function doc_keyUp(e) {
     scrapeAndCopy(document, 'cross-charge')
   } else if (e.ctrlKey && e.altKey && (e.key === 'x' || e.key === '≈' || e.which === 88)) {
     scrapeCollectPC(document, 'collect-pc')
-  } else if (e.ctrlKey && e.altKey && (e.key === 'c' || e.key === 'ç' || e.which === 67)) {
+  } else if ((e.ctrlKey && e.altKey && (e.key === 'c' || e.key === 'ç' || e.which === 67)) || e.which === 106) {
     setWOStatus('Completed', '', 'Self Service')
   } else if (e.ctrlKey && e.altKey && (e.key === 'z' || e.key === 'Ω' || e.which === 90)) {
     setWOStatus('Pending', 'Supplier Delivery', 'Self Service')
