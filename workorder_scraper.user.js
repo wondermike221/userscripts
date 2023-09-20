@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.81
+// @version      0.1.82
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -32,18 +32,17 @@ const FAILURE_ICON =
 ;(() => {
   'use strict'
 
-  setupBtns()
-
     // register the handler
   document.addEventListener('keyup', doc_keyUp, false)
-  document.getElementById('scrape-collect-pc').addEventListener('click', e=>{
-    scrapeCollectPC(document, 'collect-pc')
-  })
 
   document.addEventListener('DOMContentLoaded', e => {
     //add spinner
     const spinner_container = spinner_setup()
     poll(expand_things, Date(), 0.5, 500)
+    setupBtns()
+    document.getElementById('scrape-collect-pc').addEventListener('click', e=>{
+      scrapeCollectPC(document, 'collect-pc')
+    })
   })
 })()
 
@@ -141,10 +140,10 @@ function doc_keyUp(e) {
 function setupBtns() {
   //collect pc
   const markup = `<div class="navigation-bar__item ng-scope"><button id="scrape-collect-pc" style="color:#333;background: #00364F;">Scrape CPC</button></div>`
-  const selector = `div[ux-id="header-navigation"]`
+  const selector = `div[ux-id="header-navigation"] div[ux-id="navigation-item-more"]`
   const elements = document.createElement('div')
   elements.innerHTML = markup
-  document.querySelector(selector).append(elements.firstChild)
+  document.querySelector(selector).after(elements.firstChild)
 
 }
 
