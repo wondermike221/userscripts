@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.80
+// @version      0.1.81
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -31,8 +31,14 @@ const FAILURE_ICON =
 
 ;(() => {
   'use strict'
+
+  setupBtns()
+
     // register the handler
   document.addEventListener('keyup', doc_keyUp, false)
+  document.getElementById('scrape-collect-pc').addEventListener('click', e=>{
+    scrapeCollectPC(document, 'collect-pc')
+  })
 
   document.addEventListener('DOMContentLoaded', e => {
     //add spinner
@@ -130,6 +136,16 @@ function doc_keyUp(e) {
     //TODO: command palette
     document.getElementById('scraper_spinner').classList.toggle('hidden')
   }
+}
+
+function setupBtns() {
+  //collect pc
+  const markup = `<div class="navigation-bar__item ng-scope"><button id="scrape-collect-pc" style="color:#333;background: #00364F;">Scrape CPC</button></div>`
+  const selector = `div[ux-id="header-navigation"]`
+  const elements = document.createElement('div')
+  elements.innerHTML = markup
+  document.querySelector(selector).append(elements.firstChild)
+
 }
 
 /**
