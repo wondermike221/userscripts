@@ -126,6 +126,37 @@ function fallbackCopyTextToClipboard(text) {
   document.body.removeChild(textArea);
 }
 
+function poll(work_func, first_attempt_time, max_attempt_minutes, frequency) {
+  let firstAttempt = new Date(first_attempt_time)
+  if((first_attempt_time + new Date(firstAttempt.getTime() + max_attempt_minutes*60000)) < new Date()) return
+
+  let work_result = work_func();
+  if(!work_result) {
+    setTimeout(poll, frequency, work_func, first_attempt_time, max_attempt_minutes, frequency)
+  }
+
+}
+
+function waitForElm(selector) {
+  return new Promise(resolve => {
+      if (document.querySelector(selector)) {
+          return resolve(document.querySelector(selector));
+      }
+
+      const observer = new MutationObserver(mutations => {
+          if (document.querySelector(selector)) {
+              observer.disconnect();
+              resolve(document.querySelector(selector));
+          }
+      });
+
+      observer.observe(document.body, {
+          childList: true,
+          subtree: true
+      });
+  });
+}
+
 class Shipment {
     name = "";
     email = "";
