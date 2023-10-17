@@ -42,8 +42,13 @@ const FAILURE_ICON =
         poll(expand_things, Date(), 0.5, 500)
   
         if(document.location.href.endsWith('ticket-console')) {
+          addTitles()
           waitForElm('[ux-id="ticket-console-grid-list"]').then(() => {
-            addTitles()
+            const gridListObserver = new MutationObserver(mutations => addTitles())
+            gridListObserver.observe(document.querySelector('[ux-id="ticket-console-grid-list"]'), {
+              childList: true,
+              subtree: true
+            })
           })
         }
       });
