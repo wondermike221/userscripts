@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.87
+// @version      0.1.88
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -195,7 +195,6 @@ async function scrapeAndCopy(document, sheet) {
     }
   }
 
-
   const nametag = email.split('@')[0]
   const HUB_PROFILE_URL = `https://hub.corp.ebay.com/searchsvc/profile/${nametag}`
   const date = new Date().toLocaleDateString('en-us', {
@@ -224,7 +223,12 @@ async function scrapeAndCopy(document, sheet) {
   firstName = split[0]
   lastName = split[split.length-1]
 
-  if(sheet == 'accessories') {
+  const isSoftwareRequest = title.toLowerCase().indexOf('software request') !== -1
+
+  if( isSoftwareRequest) {
+    const csvSoftwareSheet = `${date}\tSLC\t\t\t\t\t\t${work_order}\t${email}\t1\t\t\t\t${cost_center}\t\t\tNormal\t`
+    copyTextToClipboard(csvSoftwareSheet)
+  } else if(sheet == 'accessories') {
     const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
     copyTextToClipboard(csvAccessoriesSheet)
   } else if(sheet == 'purchasing') {
