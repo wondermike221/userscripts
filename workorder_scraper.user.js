@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.86
+// @version      0.1.87
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -31,16 +31,16 @@ const FAILURE_ICON =
 
   ;(() => {
     'use strict'
-  
+
       // register the handler
     document.addEventListener('keyup', doc_keyUp, false)
-  
+
     document.addEventListener('DOMContentLoaded', e => {
       waitForElm('#main').then(()=>{
         //add spinner
         const spinner_container = spinner_setup()
         poll(expand_things, Date(), 0.5, 500)
-  
+
         if(document.location.href.endsWith('ticket-console')) {
           addTitles()
           waitForElm('[ux-id="ticket-console-grid-list"]').then(() => {
@@ -79,7 +79,7 @@ function expand_things() {
 
   const statusValue = document.querySelector('[ux-id="status-value"]')
   statusValue.focus()
-    
+
   return true
 }
 
@@ -137,6 +137,8 @@ function doc_keyUp(e) {
       e.target.contentEditable === 'true')
       ) {
       focusSearch();
+      document.dispatchEvent(new KeyboardEvent('keydown', {'key':'Tab'} ));
+      document.dispatchEvent(new KeyboardEvent( 'keyup' , {'key':'Tab'} ));
     }
   } else if (e.ctrlKey && e.altKey && (e.key === 'p' || e.key === 'π' || e.which === 80)) {
     //TODO: command palette
@@ -149,7 +151,7 @@ function doc_keyUp(e) {
 /**
  * Scrapes a specific workorder for relevant data, organize's it to my spreadsheet's format and adds a button/keyboard shortcut to copy to clipboard
  */
-function scrapeAndCopy(document, sheet) {
+async function scrapeAndCopy(document, sheet) {
   const spinner = document.getElementById('scraper_spinner')
   if (!spinner.classList.contains('hidden')) {
     spinner.classList.add('hidden')
@@ -206,86 +208,91 @@ function scrapeAndCopy(document, sheet) {
   let cost_center = 'default'
 
   spinner.classList.remove('hidden')
-  GM.xmlhttpRequest({
-    url: HUB_PROFILE_URL,
-    method: 'GET',
-    onload: ((r) => {
-      let data
-      try {
-        data = JSON.parse(r.response).data
-      } catch (e) {
-        let title = 'Failure!'
-        let body = 'Data was not scraped successfully. Check that the hub is still logged in.'
-        notify({ title, FAILURE_ICON, body })
-        return
-      }
-      if(signee.split(' ').length > 2) {
-        notify({title:"Signee has more than 2 names", FAILURE_ICON, body:"The name and Signee are different values"})
-      }
-      if(signee != '' && name != signee){
-        notify({title:"Name and signee are different", FAILURE_ICON, body:"The name and Signee are different values"})
-      }
-      cost_center = data.costCenterCode
-      let firstName, lastName = '';
-      
-      const split = name.split(' ')
-      firstName = split[0]
-      lastName = split[split.length-1]
-      
-      if(sheet == 'accessories') {
-        const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
-        copyTextToClipboard(csvAccessoriesSheet)
-      } else if(sheet == 'purchasing') {
-        const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
-        copyTextToClipboard(csvPurchasingSheet)
-      } else if (sheet == 'cross-charge') {
-        const csvCrossChargeSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}`
-        copyTextToClipboard(csvCrossChargeSheet)
-      }
+  const costCenterCode = await getCostCenterFromHub(HUB_PROFILE_URL)
+  cost_center = costCenterCode
 
-      if (!spinner.classList.contains('hidden')) {
-        spinner.classList.add('hidden')
-      }
-      let title = 'Success!'
-      let body = 'Data was scraped successfully'
-      notify({ title, SUCCESS_ICON, body })
-    })
-  })
-}
 
-function getCostCenter(document) {
-  const spinner = document.getElementById('scraper_spinner')
+  if(signee.split(' ').length > 2) {
+    notify({title:"Signee has more than 2 names", FAILURE_ICON, body:"The name and Signee are different values"})
+  }
+  if(signee != '' && name != signee){
+    notify({title:"Name and signee are different", FAILURE_ICON, body:"The name and Signee are different values"})
+  }
+  let firstName, lastName = '';
+
+  const split = name.split(' ')
+  firstName = split[0]
+  lastName = split[split.length-1]
+
+  if(sheet == 'accessories') {
+    const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
+    copyTextToClipboard(csvAccessoriesSheet)
+  } else if(sheet == 'purchasing') {
+    const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
+    copyTextToClipboard(csvPurchasingSheet)
+  } else if (sheet == 'cross-charge') {
+    const csvCrossChargeSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}`
+    copyTextToClipboard(csvCrossChargeSheet)
+  }
+
   if (!spinner.classList.contains('hidden')) {
     spinner.classList.add('hidden')
   }
-  const email = document
-  .querySelector('#ticket-record-summary a[ux-id="email-value"]')
-  .text.trim()
-  const nametag = email.split('@')[0]
-  const HUB_PROFILE_URL = `https://hub.corp.ebay.com/searchsvc/profile/${nametag}`
-  GM.xmlhttpRequest({
-    url: HUB_PROFILE_URL,
-    method: 'GET',
-    onload: ((r) => {
-      let data
-      try {
-        data = JSON.parse(r.response).data
-      } catch (e) {
-        let title = 'Failure!'
-        let body = 'Data was not scraped successfully. Check that the hub is still logged in.'
-        notify({ title, FAILURE_ICON, body })
-        return
-      }
-      cost_center = data.costCenterCode
-      if (!spinner.classList.contains('hidden')) {
-        spinner.classList.add('hidden')
-      }
-      let title = 'Success!'
-      let body = 'Data was scraped successfully'
-      notify({ title, SUCCESS_ICON, body })
-      copyTextToClipboard(cost_center)
+  let notif_title = 'Success!'
+  let body = 'Data was scraped successfully'
+  notify({ notif_title, SUCCESS_ICON, body })
+}
+
+async function getCostCenterFromHub(profileURL) {
+  return new Promise(function(resolve, reject) {
+    GM.xmlhttpRequest({
+      url: profileURL,
+      method: 'GET',
+      onload: ((r) => {
+        let data
+        try {
+          data = JSON.parse(r.response).data
+          resolve(data.costCenterCode)
+        } catch (e) {
+          let title = 'Failure!'
+          let body = 'Data was not scraped successfully. Check that the hub is still logged in.'
+          notify({ title, FAILURE_ICON, body })
+          reject();
+        }
+      })
     })
-  })
+  });
+}
+
+async function getCostCenter(document) {
+    //scrape basic data
+    const email = document
+    .querySelector('#ticket-record-summary a[ux-id="email-value"]')
+    .text.trim()
+    const nametag = email.split('@')[0]
+
+    //start loading spinner
+    const spinner = document.getElementById('scraper_spinner')
+    if (!spinner.classList.contains('hidden')) {
+      spinner.classList.add('hidden')
+    }
+
+    //make request to hub for cost center
+    const HUB_PROFILE_URL = `https://hub.corp.ebay.com/searchsvc/profile/${nametag}`
+    const cost_center = await getCostCenterFromHub(HUB_PROFILE_URL)
+
+    //stop loading spinner
+    if (!spinner.classList.contains('hidden')) {
+      spinner.classList.add('hidden')
+    }
+
+    //notify of success
+    let notif_title = 'Success!'
+    let body = 'Data was scraped successfully'
+    notify({ notif_title, SUCCESS_ICON, body })
+
+    //copy to clipboard
+    copyTextToClipboard(cost_center)
 }
 
 function scrapeCollectPC(document, sheet) {
@@ -293,7 +300,7 @@ function scrapeCollectPC(document, sheet) {
   if (!spinner.classList.contains('hidden')) {
     spinner.classList.add('hidden')
   }
-  
+
   const title = document
     .querySelector('div[ux-id="title-bar"] div[ux-id="ticket-title-value"]')
     .textContent.trim()
@@ -453,7 +460,7 @@ function setSource(source) {
 function focusSearch() {
   const searchBtn = document.querySelector('#header-search_button')
   searchBtn.click()
-  //Automatically set to 'All' 
+  //Automatically set to 'All'
   const searchTypeBtn = document.querySelector('div[ux-id="global-search-dropdown"] ul li a[aria-label="All"]')
   searchTypeBtn.click()
   const searchInput = document.querySelector('input[ux-id="search-text"]')
