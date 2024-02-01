@@ -29,31 +29,32 @@ const SUCCESS_ICON =
 const FAILURE_ICON =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABmJLR0QA/wD/AP+gvaeTAAAEi0lEQVRoge2ZTU8bVxSG33NpU5WCKCUTY4TUWBDCh+hiZmE2LMKCOwKFIqxIbQqb/ICA2k35B+2qVf9D1aZVUkWVgqgrpQsWYVEWVIaqRsIIRIlg4YliyxH4nC74ECB7fMdjFpX8Sl5Yc+fc9xnfc+fcY6Cuuuqq63+j3PRUVB5MNF9VfHkw0ZybnooGuUeZDizMJB4qUtuFw2ub+ZlEPLg9f+VnEvHC4bVNRWq7MH1v1vQ+Mgr+2dQcBN+cfhfIKyLSjd8/eVGN2cvK3Z90CA1JQFrPjAnNv/vD468q3VsRIP/p5JycM39Or0iUbnwUDiJ3f9IBIwmg9fI1EZpvevSLL4QvwOt7E7MgfOszxFOKdOOPT5fN7F5U/pOP48yyCKCl3BgBzTb/9PS7ctfLAuSmdJTV29sAGvxtkMdS1C2PnwWC8BJjcUUNi4CUNX+iIhF3Nv38bK/UxbJJnD9657VwMSvM8P8UW0iw6CXGjBPbS4zFSbAoXGwxiJ/NI/+6XCzfJZSd0jYxJQF8YOILityWJwu+OZGdHHUIquSaryZmxSTO3tU2IMYQBHZbfv295ITZ8VEHqnTCBo11KqNtNHtX28JsDMEsbtvCxYmz46OOHD8II/OlYpSSEQAAZPWIzcp8OQnozEB2/I7DfHGfN723kowBAGBfj9gqwHKCEpeLdKjIfNlAidu28IfxuyUQAAAcjN6JQ9h3775g6FhmY0np6789D7QdBwYAgP2RYRvHT9XklzCRRyz6+vOlwC/EqgCAYwgWTlJoCPIY0O1VmAdCAADA/vCQzWSc2KXkCYtuX3pRlXkgJAAA7A4P2UqME/u8PIBCmQdqAAAAu0OOTUoFgfBIsW5f+jOUeQB4K2wAAIAIMYMAMRpOAIpFqcnDC7+E4rbDYrzPn5cHgtu5vBLqPBEKYMu2HdXASUhg86fyiJXbuVI9RNUAW/agQ0LVPPnL8hTB7VxZrQqiKoCtwUEHyrgwM5HHotzYanCIwACbH/XHScjkJAWATkoJs7FComOra1dXSmwN9jpc5gBeQh5EaRI5FBWgAGRyY+vrtS/mNnp7HUVsfhgh0bG19DIAZPq6bYbxe8IjsBtb36hdOb3R2xUkYT3FpGPp9IWlkO7rthUbF4CeUjCCqAiw0dXloAGmW6XHULrnkvlTpbu7bRCSBDE7FAm5tzb8IXwBNrq6HBHzZSMsuieT8U3CdPeHNth8OYHFvZXJBD/U/337drN6U9gE0GY0Eaii+VP9c/NmHPBvaJ1JcHDYlI8NpPZLtlbK9oW4UGgS5vcr923Yw1HR2DwA9GQyyzgqamH2KsYXbkXuvaZyscoC9G9t/Sssn1cyTyy6Z2cncFXZs7OzTCwGEPLFQCZTsisHGCTxWjQ6R1SquUseq6Ie2HkZqiRe6+iwqWyjgOb7dnerb+6eTRKNXGivA/BEoAdehjN/Fr+jwwYXL0HQl/17e1/XIv7xJJY1m7Kso5Rl7acikZr/wZGKROIpyzo4meNhreMDAP66cSOSsqyyCRVWKctqSllW+1XFr6uuuuqqvf4DtHiJ42XrW+MAAAAASUVORK5CYII='
 
-  ;(() => {
-    'use strict'
+//entry point
+;(() => {
+  'use strict'
 
-      // register the handler
-    document.addEventListener('keyup', doc_keyUp, false)
+    // register the handler
+  document.addEventListener('keyup', doc_keyUp, false)
 
-    document.addEventListener('DOMContentLoaded', e => {
-      waitForElm('#main').then(()=>{
-        //add spinner
-        const spinner_container = spinner_setup()
-        poll(expand_things, Date(), 0.5, 500)
+  document.addEventListener('DOMContentLoaded', e => {
+    waitForElm('#main').then(()=>{
+      //add spinner
+      const spinner_container = spinner_setup()
+      poll(expand_things, Date(), 0.5, 500)
 
-        if(document.location.href.endsWith('ticket-console')) {
-          addTitles()
-          waitForElm('[ux-id="ticket-console-grid-list"]').then(() => {
-            const gridListObserver = new MutationObserver(mutations => addTitles())
-            gridListObserver.observe(document.querySelector('[ux-id="ticket-console-grid-list"]'), {
-              childList: true,
-              subtree: true
-            })
+      if(document.location.href.endsWith('ticket-console')) {
+        addTitles()
+        waitForElm('[ux-id="ticket-console-grid-list"]').then(() => {
+          const gridListObserver = new MutationObserver(mutations => addTitles())
+          gridListObserver.observe(document.querySelector('[ux-id="ticket-console-grid-list"]'), {
+            childList: true,
+            subtree: true
           })
-        }
-      });
-    })
-  })()
+        })
+      }
+    });
+  })
+})()
 
 const EXPANDED_STATE = {
   showMoreBtn: false,
@@ -83,8 +84,6 @@ function expand_things() {
   return true
 }
 
-
-
 function addTitles() {
   const cellsWithText = document.querySelectorAll('span[ng-cell-text]')
   for(let i of cellsWithText) {
@@ -108,29 +107,29 @@ function addTitles() {
  * Ctrl + Alt + p == debug whatever I'm working on. (in the future add a command palette)
  */
 function doc_keyUp(e) {
-  if (e.ctrlKey && e.altKey && (e.key === 'd' || e.key === '∂' || e.which === 68)) {
+  if (e.ctrlKey && e.altKey && (e.key === 'd' || e.key === '∂' || e.which === 68)) { // ctrl + alt + d
     scrapeAndCopy(document, 'accessories')
-  } else if (e.ctrlKey && e.altKey && (e.key === 's' || e.key === 'ß' || e.which === 83)) {
+  } else if (e.ctrlKey && e.altKey && (e.key === 's' || e.key === 'ß' || e.which === 83)) { //ctrl + alt + s
     scrapeAndCopy(document, 'purchasing')
-  } else if (e.ctrlKey && e.altKey && (e.key === 'g' || e.key === '©' || e.which === 71)) {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'g' || e.key === '©' || e.which === 71)) {// crtl + alt + g
     scrapeAndCopy(document, 'cross-charge')
-  } else if ((e.ctrlKey && e.altKey && (e.key === 'x' || e.key === '≈' || e.which === 88)) || e.which === 106) {
+  } else if ((e.ctrlKey && e.altKey && (e.key === 'x' || e.key === '≈' || e.which === 88)) || e.which === 106) { // ctrl + alt + x
     scrapeCollectPC(document, 'collect-pc')
-  } else if (e.ctrlKey && e.altKey && (e.key === 'c' || e.key === 'ç' || e.which === 67)) {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'c' || e.key === 'ç' || e.which === 67)) { // ctrl + alt + c
     setWOStatus('Completed', '', 'Self Service')
-  } else if (e.ctrlKey && e.altKey && (e.key === 'z' || e.key === 'Ω' || e.which === 90)) {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'z' || e.key === 'Ω' || e.which === 90)) { // ctrl + alt + z
     setWOStatus('Pending', 'Supplier Delivery', 'Self Service')
-  } else if (e.ctrlKey && e.altKey && (e.key === 'a' || e.key === 'å' || e.which === 65)) {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'a' || e.key === 'å' || e.which === 65)) { // ctrl + alt + a
     setWOStatus('In Progress', '', '')
-  } else if (e.ctrlKey && e.altKey && (e.key === 'w' || e.key === '∑' || e.which === 87)) {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'w' || e.key === '∑' || e.which === 87)) { // ctrl + alt + w
     const nt = document.querySelector('a[ux-id="email"').text.trim().split('@')[0]
     setAsset('Received', 'Storage')
     copyTextToClipboard(nt)
-  } else if (e.ctrlKey && e.altKey && (e.key === 'e' || e.key === '´' || e.which === 69)) {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'e' || e.key === '´' || e.which === 69)) { // ctrl + alt + e
     setAsset('Deployed', 'In Production')
-  } else if (e.ctrlKey && e.altKey && (e.key === 'f' || e.key === 'ƒ' || e.which === 70)) {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'f' || e.key === 'ƒ' || e.which === 70)) { // ctrl + alt + f
     getCostCenter(document)
-  } else if ((e.key === 's' || e.which === 83)) {
+  } else if ((e.key === 's' || e.which === 83)) { // s
     if (
       !(e.target instanceof HTMLTextAreaElement ||
       e.target instanceof HTMLInputElement ||
@@ -140,7 +139,7 @@ function doc_keyUp(e) {
       document.dispatchEvent(new KeyboardEvent('keydown', {'key':'Tab'} ));
       document.dispatchEvent(new KeyboardEvent( 'keyup' , {'key':'Tab'} ));
     }
-  } else if (e.ctrlKey && e.altKey && (e.key === 'p' || e.key === 'π' || e.which === 80)) {
+  } else if (e.ctrlKey && e.altKey && (e.key === 'p' || e.key === 'π' || e.which === 80)) { // ctrl + alt + p
     //TODO: command palette
     document.getElementById('scraper_spinner').classList.toggle('hidden')
   } else if (e.ctrlKey && e.key === '`') {
