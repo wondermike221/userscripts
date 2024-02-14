@@ -186,3 +186,21 @@ class Shipment {
       this.phone = cols[13];
     }
 }
+
+async function parseAddress(address) {
+  try {
+    const response = await fetch(`https://geocode.xyz/${address}?json=1`)
+    const data = await response.json()
+    const { stnumber, addresst, postal, city, statename } = data.standard
+    return {
+      address1: stnumber,
+      address2: addresst,
+      city: city,
+      state: statename,
+      zip: postal
+    }
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
