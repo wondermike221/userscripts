@@ -188,19 +188,38 @@ class Shipment {
 }
 
 async function parseAddress(address) {
-  try {
-    const response = await fetch(`https://geocode.xyz/${address}?json=1`)
-    const data = await response.json()
-    const { stnumber, addresst, postal, city, statename } = data.standard
-    return {
-      address1: stnumber,
-      address2: addresst,
-      city: city,
-      state: statename,
-      zip: postal
-    }
-  } catch (error) {
-    console.error(error)
-    return null
-  }
+  return new Promise(function(resolve, reject) {
+    GM.xmlhttpRequest({
+      url: `https://geocode.xyz/${address}?json=1`,
+      method: 'GET',
+      onload: ((r) => {
+        let data
+        try {
+          data = r.json()
+          const { stnumber, addresst, postal, city, statename } = data.standard
+          resolve({
+            address1: stnumber,
+            address2: addresst,
+            city: city,
+            state: statename,
+            zip: postal
+          })
+        } catch (error) {
+          console.error(error)
+          reject(null)
+        }
+      })
+    })
+  })
+}
+
+async function promisifyHttpRequest(url, method, resolve, reject) {
+  return new Promise(function(iresolve, ireject) {
+    GM.xmlhttpRequest({
+      url,
+      method,
+      onload: iresolve(resolve()),
+      onerror: ireject(reject())
+    })
+  })
 }
