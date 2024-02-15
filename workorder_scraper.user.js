@@ -155,6 +155,7 @@ async function scrapeAndCopy(document, sheet) {
   if (!spinner.classList.contains('hidden')) {
     spinner.classList.add('hidden')
   }
+  spinner.classList.remove('hidden')
   const title = document
     .querySelector('div[ux-id="title-bar"] div[ux-id="ticket-title-value"]')
     .textContent.trim()
@@ -171,6 +172,8 @@ async function scrapeAndCopy(document, sheet) {
   const descText = description.textContent || description.innerText
 
   const isYubikeyRequest = title.toLowerCase().indexOf('yubikey') !== -1 || title.toLowerCase().indexOf('privileged token') !== -1
+  const isLaptopRequest = title.toLowerCase().indexOf('laptop  request') !== -1 //Yes the title of laptop request has two spaces between the words... 
+
   let yubi = '',
     signee = '',
     addr = '',
@@ -185,6 +188,11 @@ async function scrapeAndCopy(document, sheet) {
     if (!priviledgedTokenRequest.test(descText)) {
       [signee, addr, city, state, zip, country, phone, yubi] = parseYubiDesc(descText)
     }
+  } else if(isLaptopRequest) {//geocode is throttling when using from here but not when manually making the same request. further investigation required.
+    // let shipped, address = ''
+    let [signee, address, phone, shipped] = parseLaptopRequestDesc(descText)
+    const parsedAddress = await parseAddress(address)
+    let { address1: addr, address2: addr2, city, state, zip } = parsedAddress
   } else {
     const shipOrOfficeRegex = /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
     const matched = descText.match(shipOrOfficeRegex)
@@ -205,7 +213,7 @@ async function scrapeAndCopy(document, sheet) {
 
   let cost_center = 'default'
 
-  spinner.classList.remove('hidden')
+ 
   const costCenterCode = await getCostCenterFromHub(HUB_PROFILE_URL)
   cost_center = costCenterCode
 
@@ -227,6 +235,8 @@ async function scrapeAndCopy(document, sheet) {
   if( isSoftwareRequest) {
     const csvSoftwareSheet = `${date}\tSLC\t\t\t\t\t\t${work_order}\t${email}\t1\t\t\t\t${cost_center}\t\t\tNormal\t`
     copyTextToClipboard(csvSoftwareSheet)
+  } else if (isLaptopRequest) {
+    const csvLaptopRequest = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
   } else if(sheet == 'accessories') {
     const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
     copyTextToClipboard(csvAccessoriesSheet)
@@ -433,6 +443,17 @@ function parseYubiDesc(description) {
   }
   //      signee, addr, city, state, zip, country, phone, yubi
   return ['',     '',   '',   '',    '',  '',      '',    yubi]
+}
+
+function parseLaptopRequestDesc(description) {
+  const shipped = description.match(/Would you like it shipped to you\? : (Yes|No) \n/)[1]
+  if(shipped === 'Yes') {
+    const address = description.match(/Shipping Address : ((.|\n)*)\nPhone Number/)[1]
+    const signee = description.match(/Name of Individual who will sign for packages : (.*?)\n/)[1]
+    const phone = description.match(/Phone Number : (.*)\n/)[1]
+    return [signee, address, phone, shipped]
+  }
+  return ['', '', '', shipped]
 }
 
 /**
