@@ -188,38 +188,35 @@ class Shipment {
 }
 
 async function parseAddress(address) {
-  return new Promise(function(resolve, reject) {
-    GM.xmlhttpRequest({
-      url: `https://geocode.xyz/${address}?json=1`,
-      method: 'GET',
-      onload: ((r) => {
-        let data
-        try {
-          data = r.json()
-          const { stnumber, addresst, postal, city, statename } = data.standard
-          resolve({
-            address1: stnumber,
-            address2: addresst,
-            city: city,
-            state: statename,
-            zip: postal
-          })
-        } catch (error) {
-          console.error(error)
-          reject(null)
-        }
-      })
-    })
-  })
+  try {
+    const responseText = await makeRequest(`https://geocode.xyz/${address}?json=1`)
+    data = JSON.parse(responseText)
+    const { stnumber, addresst, postal, city, statename } = data.standard
+    return {
+      address1: stnumber,
+      address2: addresst,
+      city: city,
+      state: statename,
+      zip: postal
+    }
+  } catch (error){
+    console.error(error)
+  }
 }
 
-async function promisifyHttpRequest(url, method, resolve, reject) {
-  return new Promise(function(iresolve, ireject) {
+async function makeRequest(url, method) {
+  return new Promise(function(resolve, reject) {
     GM.xmlhttpRequest({
       url,
       method,
-      onload: iresolve(resolve()),
-      onerror: ireject(reject())
+      onload: r => {
+        if(r.status === 200) {
+          resolve(r.responseText)
+        } else {
+          reject(new Error(`Request failed with status ${r.status}`))
+        }
+      },
+      onerror: e => reject(new Error("Request failed"))
     })
   })
 }
