@@ -257,24 +257,16 @@ async function scrapeAndCopy(document, sheet) {
 }
 
 async function getCostCenterFromHub(profileURL) {
-  return new Promise(function(resolve, reject) {
-    GM.xmlhttpRequest({
-      url: profileURL,
-      method: 'GET',
-      onload: ((r) => {
-        let data
-        try {
-          data = JSON.parse(r.response).data
-          resolve(data.costCenterCode)
-        } catch (e) {
-          let title = 'Failure!'
-          let body = 'Data was not scraped successfully. Check that the hub is still logged in.'
-          notify({ title, FAILURE_ICON, body })
-          reject();
-        }
-      })
-    })
-  });
+  try {
+    const r = await makeRequest(profileURL)
+    data = JSON.parse(r).data
+    return data.costCenterCode
+  } catch (e) {
+    console.error(e)
+    let title = 'Failure!'
+    let body = 'Data was not scraped successfully. Check that the hub is still logged in.'
+    notify({ title, FAILURE_ICON, body })
+  }
 }
 
 async function getCostCenter(document) {
