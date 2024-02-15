@@ -300,7 +300,7 @@ async function getCostCenter(document) {
     copyTextToClipboard(cost_center)
 }
 
-function scrapeCollectPC(document, sheet) {
+async function scrapeCollectPC(document, sheet) {
   const spinner = document.getElementById('scraper_spinner')
   if (!spinner.classList.contains('hidden')) {
     spinner.classList.add('hidden')
@@ -339,46 +339,23 @@ function scrapeCollectPC(document, sheet) {
   })
 
   spinner.classList.remove('hidden')
-  GM.xmlhttpRequest({
-    url: PEOPLEX_PROFILE_URL,
-    method: 'GET',
-    onload: ((userResponse) => {
-      let user_data
-      try {
-        user_data = JSON.parse(userResponse.response)
-      } catch (e) {
-        let title = 'Failure!'
-        let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
-        notify({ title, FAILURE_ICON, body })
-        return
-      }
-      GM.xmlhttpRequest({
-        url: `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${user_data.payload.managerUserId}`,
-        method: 'GET',
-        onload: ((managerResponse) => {
-          let manager_data
-          try{
-            manager_data = JSON.parse(managerResponse.response)
-          } catch (e) {
-            let title = 'Failure!'
-            let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
-            notify({ title, FAILURE_ICON, body })
-            return
-          }
-          const manager_email = manager_data.payload.email
-          const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t\t\t${create_date}\t${user_data.payload.userSrcSys}\t${user_data.payload.costctrCd}`
-          copyTextToClipboard(csvCollectPCSheet)
+  let user_data, manager_data
+  try {
+    const userResponse = await makeRequest(PEOPLEX_PROFILE_URL)
+    user_data = JSON.parse(userResponse)
+    const managerResponse = await makeRequest(`https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${user_data.payload.managerUserId}`)
+    manager_data = JSON.parse(managerResponse)
 
-          if (!spinner.classList.contains('hidden')) {
-            spinner.classList.add('hidden')
-          }
-          let title = 'Success!'
-          let body = 'Data was scraped successfully'
-          notify({ title, SUCCESS_ICON, body })
-          })
-      })
-    })
-  })
+  } catch (e) {
+    console.error(e)
+    let title = 'Failure!'
+    let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
+    notify({ title, FAILURE_ICON, body })
+  }
+  const manager_email = manager_data.payload.email
+  const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t\t\t${create_date}\t${user_data.payload.userSrcSys}\t${user_data.payload.costctrCd}`
+  copyTextToClipboard(csvCollectPCSheet)
+  spinner.classList.add('hidden')
 }
 
 /* Example Description:
