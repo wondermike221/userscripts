@@ -253,7 +253,7 @@ async function scrapeAndCopy(document, sheet) {
   }
   let notif_title = 'Success!'
   let body = 'Data was scraped successfully'
-  notify({ notif_title, SUCCESS_ICON, body })
+  notify({ title: notif_title, SUCCESS_ICON, body })
 }
 
 async function getCostCenterFromHub(profileURL) {
