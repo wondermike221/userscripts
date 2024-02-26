@@ -165,18 +165,21 @@ async function scrapeAndCopy(document, sheet) {
   const email = document
     .querySelector('#ticket-record-summary a[ux-id="email-value"]')
     .text.trim()
-  const work_order = document
+  const ticket_number = document
     .querySelector('#ticket-record-summary div[ux-id="field_id"] span[ux-id="character-field-value"]')
     .textContent.trim()
+  const URL = document.location.href
+  const Ticket_ID = URL.split('/').slice(-1)[0]
   const description = document.querySelector('#ticket-record-summary div[ux-id="field_desc"] div[ux-id="field-value"]')
   const descText = description.textContent || description.innerText
 
   const isYubikeyRequest = title.toLowerCase().indexOf('yubikey') !== -1 || title.toLowerCase().indexOf('privileged token') !== -1
-  const isLaptopRequest = title.toLowerCase().indexOf('laptop  request') !== -1 //Yes the title of laptop request has two spaces between the words... 
+  const isLaptopRequest = title.toLowerCase().indexOf('laptop  request') !== -1 //Yes the title of laptop request has two spaces between the words...
 
   let yubi = '',
     signee = '',
-    addr = '',
+    address = '',
+    address2 = '',
     city = '',
     state = '',
     zip = '',
@@ -188,11 +191,15 @@ async function scrapeAndCopy(document, sheet) {
     if (!priviledgedTokenRequest.test(descText)) {
       [signee, addr, city, state, zip, country, phone, yubi] = parseYubiDesc(descText)
     }
-  } else if(isLaptopRequest) {//geocode is throttling when using from here but not when manually making the same request. further investigation required.
+  } else if(isLaptopRequest) {
     // let shipped, address = ''
-    let [signee, address, phone, shipped] = parseLaptopRequestDesc(descText)
-    const parsedAddress = await parseAddress(address)
-    let { address1: addr, address2: addr2, city, state, zip } = parsedAddress
+    let [signee, addr, phone_number, shipped] = parseLaptopRequestDesc(descText)
+    const parsedAddress = await parseUSAddress(addr)
+    address = parsedAddress.address
+    city = parsedAddress.city
+    state = parsedAddress.state
+    zip = parsedAddress.zip
+    phone = phone_number
   } else {
     const shipOrOfficeRegex = /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
     const matched = descText.match(shipOrOfficeRegex)
@@ -213,7 +220,9 @@ async function scrapeAndCopy(document, sheet) {
 
   let cost_center = 'default'
 
- 
+  let linkedTicketNumber = `${ticket_number}`
+  linkedTicketNumber.link = URL
+
   const costCenterCode = await getCostCenterFromHub(HUB_PROFILE_URL)
   cost_center = costCenterCode
 
@@ -232,19 +241,20 @@ async function scrapeAndCopy(document, sheet) {
 
   const isSoftwareRequest = title.toLowerCase().indexOf('software request') !== -1
 
-  if( isSoftwareRequest) {
-    const csvSoftwareSheet = `${date}\tSLC\t\t\t\t\t\t${work_order}\t${email}\t1\t\t\t\t${cost_center}\t\t\tNormal\t`
+  if(isSoftwareRequest) {
+    const csvSoftwareSheet = `${date}\tSLC\t\t\t\t\t\t${linkedTicketNumber}\t${email}\t1\t\t\t\t${cost_center}\t\t\tNormal\t`
     copyTextToClipboard(csvSoftwareSheet)
   } else if (isLaptopRequest) {
-    const csvLaptopRequest = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t${addr2}\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
+    const csvLaptopRequest = `${date}\tSLC\t${what}\t1\t${linkedTicketNumber}\t${email}\t${cost_center}\t${name || signee}\t${address}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
+    copyTextToClipboard(csvLaptopRequest)
   } else if(sheet == 'accessories') {
-    const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}\t${name || signee}\t${addr}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
+    const csvAccessoriesSheet = `${date}\tSLC\t${what}\t1\t${linkedTicketNumber}\t${email}\t${cost_center}\t${name || signee}\t${address}\t\t${city}\t${state}\t${zip}\t${phone}\t${country || "USA"}\t\t\t\t\t\tn\t`
     copyTextToClipboard(csvAccessoriesSheet)
   } else if(sheet == 'purchasing') {
-    const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${addr}\t\t${city}\t${state}\t${zip}\t\t${work_order}\t1`
+    const csvPurchasingSheet = `${date}\t${firstName}\t${lastName}\t\t\t\t${address}\t\t${city}\t${state}\t${zip}\t\t${linkedTicketNumber}\t1`
     copyTextToClipboard(csvPurchasingSheet)
   } else if (sheet == 'cross-charge') {
-    const csvCrossChargeSheet = `${date}\tSLC\t${what}\t1\t${work_order}\t${email}\t${cost_center}`
+    const csvCrossChargeSheet = `${date}\tSLC\t${what}\t1\t${linkedTicketNumber}\t${email}\t${cost_center}`
     copyTextToClipboard(csvCrossChargeSheet)
   }
 
