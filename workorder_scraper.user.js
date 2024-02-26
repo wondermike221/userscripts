@@ -425,6 +425,43 @@ function parseLaptopRequestDesc(description) {
   return ['', '', '', shipped]
 }
 
+function parseUSAddress(addr) {
+  addr = addr.replace('\n',',')
+  const parts = addr.split(",")
+  const zipRegex = /^\d{5}(?:[-\s]\d{4})?$/
+  const stateRegex = /^[A-Z]{2}$/
+  let address = ""
+  let city = ""
+  let state = ""
+  let zip = ""
+
+  // Parse address line 1 and 2
+  if (parts.length >= 1) {
+    address = parts[0].trim()
+  }
+
+  // Parse city, state, and zip
+  if (parts.length >= 2) {
+    const stateZip = parts[parts.length - 1].trim()
+    const stateZipParts = stateZip.split(" ")
+    city = parts[1]
+
+    if (stateZipParts.length > 1 && stateRegex.test(stateZipParts[stateZipParts.length - 2])) {
+      state = stateZipParts[stateZipParts.length - 2]
+    }
+    if (stateZipParts.length > 1 && zipRegex.test(stateZipParts[stateZipParts.length - 1])) {
+      zip = stateZipParts[stateZipParts.length - 1]
+    }
+  }
+
+  return {
+    address: address,
+    city: city,
+    state: state,
+    zip: zip
+  };
+}
+
 /**
  * Clicks status element then set's status to $status, status reason to $reason and reported source to $source.
  */
