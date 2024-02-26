@@ -436,7 +436,7 @@ function parseLaptopRequestDesc(description) {
 }
 
 function parseUSAddress(addr) {
-  addr = addr.replace('\n',',')
+  addr = addr.trim().replace('\n',',')
   const parts = addr.split(",")
   const zipRegex = /^\d{5}(?:[-\s]\d{4})?$/
   const stateRegex = /^[A-Z]{2}$/
