@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.90
+// @version      0.1.91
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -189,7 +189,7 @@ async function scrapeAndCopy(document, sheet) {
   if (isYubikeyRequest) {
     const priviledgedTokenRequest = /Assign YubiKey for Regular Account/
     if (!priviledgedTokenRequest.test(descText)) {
-      [signee, addr, city, state, zip, country, phone, yubi] = parseYubiDesc(descText)
+      [signee, address, city, state, zip, country, phone, yubi] = parseYubiDesc(descText)
     }
   } else if(isLaptopRequest) {
     // let shipped, address = ''
@@ -204,7 +204,7 @@ async function scrapeAndCopy(document, sheet) {
     const shipOrOfficeRegex = /Do you work primarily from Home or in a site without Local IT\?:(Yes|No)\n/
     const matched = descText.match(shipOrOfficeRegex)
     if( matched && !(matched[1] == 'No') ) {
-      [signee, addr, city, state, zip, country, phone] = parseDesc(descText)
+      [signee, address, city, state, zip, country, phone] = parseDesc(descText)
       signee = signee.trim()
     }
   }
