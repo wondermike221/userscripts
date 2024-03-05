@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.91
+// @version      0.1.92
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -425,7 +425,7 @@ function parseYubiDesc(description) {
 }
 
 function parseLaptopRequestDesc(description) {
-  const shipped = description.match(/Would you like it shipped to you\? : (Yes|No) \n/)[1]
+  const shipped = description.match(/Would you like it shipped to you\? : (Yes|No, I will pickup from my local office) \n/)[1]
   if(shipped === 'Yes') {
     const address = description.match(/Shipping Address : ((.|\n)*)\nPhone Number/)[1]
     const signee = description.match(/Name of Individual who will sign for packages : (.*?)\n/)[1]
