@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.92
+// @version      0.1.93
 // @description  Various automations to workorder pages
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -125,6 +125,8 @@ function doc_keyUp(e) {
     const nt = document.querySelector('a[ux-id="email"').text.trim().split('@')[0]
     setAsset('Received', 'Storage')
     copyTextToClipboard(nt)
+  } else if ((e.ctrlKey && e.altKey && (e.key === 'l' || e.key === '¬' || e.which === 76)) || e.which === 107) { // ctrl + alt + l
+    setAsset('End of Life', 'Ready for Disposal')
   } else if (e.ctrlKey && e.altKey && (e.key === 'e' || e.key === '´' || e.which === 69)) { // ctrl + alt + e
     setAsset('Deployed', 'In Production')
   } else if (e.ctrlKey && e.altKey && (e.key === 'f' || e.key === 'ƒ' || e.which === 70)) { // ctrl + alt + f
