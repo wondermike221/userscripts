@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.93
-// @description  Various automations to workorder pages
+// @version      0.1.94
+// @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
 // @icon         https://www.google.com/s2/favicons?domain=docs.bmc.com
@@ -131,6 +131,10 @@ function doc_keyUp(e) {
     setAsset('Deployed', 'In Production')
   } else if (e.ctrlKey && e.altKey && (e.key === 'f' || e.key === 'ƒ' || e.which === 70)) { // ctrl + alt + f
     getCostCenter(document)
+  } else if (e.ctrlKey && e.altKey && (isNumericKey(e))) {
+    let i = whatNumeralKey(e)
+    let cells = getCells(i)
+    copyTextToClipboard(cells)
   } else if ((e.key === 's' || e.which === 83)) { // s
     if (
       !(e.target instanceof HTMLTextAreaElement ||
@@ -146,6 +150,26 @@ function doc_keyUp(e) {
     document.getElementById('scraper_spinner').classList.toggle('hidden')
   } else if (e.ctrlKey && e.key === '`') {
     console.log('Web Terminal!')
+  }
+}
+
+function isNumericKey(e) {
+  // Get the key value as a string
+  var key = e.key;
+  // Check if the key is a numeric character (0-9)
+  return key >= '0' && key <= '9';
+}
+
+function whatNumeralKey(e) {
+  // Get the key value as a string
+  var key = e.key;
+  // Check if the key is a numeric character (0-9)
+  if (key >= '0' && key <= '9') {
+      // Return the numeric value of the key
+      return parseInt(key, 10);
+  } else {
+      // Return null or some other value to indicate a non-numeric key
+      return null;
   }
 }
 
@@ -522,4 +546,26 @@ function setAssetReason(reason) {
   if(reason == '') return
   const reasonDropdown = document.querySelector(`div[ux-id="status-reason-dropdown"] label ul li a[aria-label="${reason}"]`)
   reasonDropdown?.click()
+}
+
+function getCells(i) {
+  let data = getDataFromCells()
+  let text = ''
+  data.forEach(row => {
+    const cell = row[i]
+    text = text.concat(`${cell}\n`)
+  })
+  return text
+}
+
+function getDataFromCells() {
+  let rows = document.querySelectorAll('div[ng-row]')
+  let data = []
+  
+  rows.forEach((row, rIdx) => {
+    data.push([])
+    let cells = row.querySelectorAll('div[ng-cell] span[ng-cell-text]')
+    cells.forEach(cell => data[rIdx].push(cell.outerText))
+  })
+  return data
 }
