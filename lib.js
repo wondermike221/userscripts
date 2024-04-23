@@ -205,7 +205,7 @@ async function parseAddress(address) {
 }
 
 async function makeRequest(url, method="GET", payload=null) {
-  let body
+  let body = null
   if(payload) {
     body = JSON.stringify(payload)
   }
