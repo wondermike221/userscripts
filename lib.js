@@ -204,11 +204,16 @@ async function parseAddress(address) {
   }
 }
 
-async function makeRequest(url, method) {
+async function makeRequest(url, method, payload=null) {
+  let body
+  if(payload) {
+    body = JSON.stringify(payload)
+  }
   return new Promise(function(resolve, reject) {
     GM.xmlhttpRequest({
       url,
       method,
+      body,
       onload: r => {
         if(r.status === 200) {
           resolve(r.responseText)
