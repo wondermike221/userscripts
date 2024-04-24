@@ -187,23 +187,6 @@ class Shipment {
     }
 }
 
-async function parseAddress(address) {
-  try {
-    const responseText = await makeRequest(`https://geocode.xyz/${address}?json=1`)
-    data = JSON.parse(responseText)
-    const { stnumber, addresst, postal, city, statename } = data.standard
-    return {
-      address1: stnumber,
-      address2: addresst,
-      city: city,
-      state: statename,
-      zip: postal
-    }
-  } catch (error){
-    console.error(error)
-  }
-}
-
 async function makeRequest(url, method="GET", payload=null) {
   return new Promise(function(resolve, reject) {
     GM.xmlhttpRequest({
