@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.94
+// @version      0.1.95
 // @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -122,7 +122,7 @@ function doc_keyUp(e) {
   } else if (e.ctrlKey && e.altKey && (e.key === 'a' || e.key === 'å' || e.which === 65)) { // ctrl + alt + a
     setWOStatus('In Progress', '', '')
   } else if (e.ctrlKey && e.altKey && (e.key === 'w' || e.key === '∑' || e.which === 87)) { // ctrl + alt + w
-    const nt = document.querySelector('a[ux-id="email"').text.trim().split('@')[0]
+    const nt = document.querySelector('a[ux-id="email"]').text.trim().split('@')[0]
     setAsset('Received', 'Storage')
     copyTextToClipboard(nt)
   } else if ((e.ctrlKey && e.altKey && (e.key === 'l' || e.key === '¬' || e.which === 76)) || e.which === 107) { // ctrl + alt + l
@@ -131,10 +131,12 @@ function doc_keyUp(e) {
     setAsset('Deployed', 'In Production')
   } else if (e.ctrlKey && e.altKey && (e.key === 'f' || e.key === 'ƒ' || e.which === 70)) { // ctrl + alt + f
     getCostCenter(document)
-  } else if (e.ctrlKey && e.altKey && (isNumericKey(e))) {
+  } else if (e.ctrlKey && e.altKey && (isNumericKey(e))) { // ctrl + alt + numericKey
     let i = whatNumeralKey(e)
     let cells = getCells(i)
     copyTextToClipboard(cells)
+  } else if ((e.ctrlKey && e.altKey && (e.key === 'n'))) { // ctrl + alt + n
+    startAssetCollectionFromNameTags()
   } else if ((e.key === 's' || e.which === 83)) { // s
     if (
       !(e.target instanceof HTMLTextAreaElement ||
@@ -375,12 +377,14 @@ async function scrapeCollectPC(document, sheet) {
   })
 
   spinner.classList.remove('hidden')
-  let user_data, manager_data
+  let user_data, manager_data, asset_data
   try {
     const userResponse = await makeRequest(PEOPLEX_PROFILE_URL)
     user_data = JSON.parse(userResponse)
     const managerResponse = await makeRequest(`https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${user_data.payload.managerUserId}`)
     manager_data = JSON.parse(managerResponse)
+    const assetResponse = await startSearchAssetByNT(description_nt)
+    asset_data = assetResponse
 
   } catch (e) {
     console.error(e)
@@ -388,8 +392,9 @@ async function scrapeCollectPC(document, sheet) {
     let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
     notify({ title, FAILURE_ICON, body })
   }
+  const assets = asset_data.map((a) => a.sn).join(',')
   const manager_email = manager_data.payload.email
-  const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t\t\t${create_date}\t${user_data.payload.userSrcSys}\t${user_data.payload.costctrCd}`
+  const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t${assets}\t\t${create_date}\t${user_data.payload.userSrcSys}\t${user_data.payload.costctrCd}`
   copyTextToClipboard(csvCollectPCSheet)
   spinner.classList.add('hidden')
 }
@@ -568,4 +573,164 @@ function getDataFromCells() {
     cells.forEach(cell => data[rIdx].push(cell.outerText))
   })
   return data
+}
+
+const ROUTE_APP_PREFIX =  "https://ebay-smartit.onbmc.com/smartit/app/#"
+const ROUTE_REST_PREFIX = "https://ebay-smartit.onbmc.com/smartit/rest"
+const ROUTES = {
+  searchAsset: (Q) => `${ROUTE_REST_PREFIX}/globalsearch?chunk_index=0&chunk_size=50&search_text=${Q}&suggest_search=true`,
+  search: (SEARCH_QUERY) => `${ROUTE_APP_PREFIX}/search/${SEARCH_QUERY}`, // query must be url encoded
+  workOrder: (ID) => `${ROUTE_APP_PREFIX}/workorder/${ID}`, // WOGDHWUVDUMKRAS1NHM1S1NHM1PA41 => 30
+  incident: (ID) => `${ROUTE_APP_PREFIX}/incident/${ID}`, // IDGG1QUMAPMURAS12DSCS12DSC0Z7Q => 30
+  task: (ID) => `${ROUTE_APP_PREFIX}/task/${ID}`, // TMGDHWUVDUMKRAS1NHM2S1NHM2PA6F => 30
+  ticketConsole: () => `${ROUTE_APP_PREFIX}/ticket-console`,
+  allAssets: (NT) => `${ROUTE_REST_PREFIX}/asset/${NT}?allAssets=true`,
+  asset: (ID) => `${ROUTE_REST_PREFIX}/asset/details/${ID}/BMC_COMPUTERSYSTEM`, //OI-621BD3CE368211EEB92ABAD6D1CD7F55 => 
+}
+
+async function startAssetCollectionFromNameTags() {
+  try {
+    const clipboardContents = await navigator.clipboard.read()
+    const blob = await clipboardContents[0].getType('text/plain')
+    const text = await blob.text()
+    const NTS = text.split('\n')
+    let results = await getAssetsInfo(NTS)
+    results = results
+      .map(r => r.value)
+      .flat()
+      .filter(v => v.status != "Disposed" && v.owned == "ownedby" && v.sn != undefined)
+    console.log(results)
+  } catch(e) {
+    console.log(e)
+  }
+}
+
+async function getAssetsInfo(NTS) {
+ try {
+  const promises = NTS.map(NT => getAssetInfo(NT))
+  const r = await Promise.allSettled(promises)
+  return r
+ } catch(e) {
+  console.log(e)
+ }
+}
+
+async function getAssetInfo(NT) {
+  const r = await makeRequest(ROUTES.allAssets(NT))
+  const j = await JSON.parse(r)
+  const results = filterReleventAssetInfo(j)
+  return results
+}
+
+function filterReleventAssetInfo(r_json) {
+  results = [];
+  r_json.forEach( j => {
+    j.items.forEach(item => {
+        item.objects.forEach(object => {
+            let r = { 
+              status:object.status.value, 
+              nt: object.owner.loginId,
+              sn:object.serialNumber, 
+              fullName: object.owner.fullName,
+              id: object.reconciliationId, 
+              name:object.name, 
+              owned: object.role,
+              model:object.product.name, 
+            }
+            results.push(r)
+        })
+    })
+  });
+  return results;
+}
+
+async function startSearchAssetByNT() {
+  const NT = document.querySelector('a[ux-id="email-value"]').text.trim().split('@')[0]
+  let results = await getAssetInfo(NT)
+  results = results
+  // .map(r => r.value)
+  // .flat()
+  .filter(v => v.status != "Disposed" && v.owned == "ownedby")
+  console.log(results)
+  return results
+}
+
+async function startAssetCollectionFromSerials() {
+  try {
+    const clipboardContents = await navigator.clipboard.read()
+    const blob = await clipboardContents[0].getType('text/plain')
+    const text = await blob.text()
+    const serials = text.split('\n')
+      .reduce((acc, sn) => {
+        if(sn.includes(',')) {
+          acc.push.apply(acc, sn.split(','))
+          return acc
+        } else {
+          acc.push(sn.trim())
+          return acc
+        }
+      }, [])
+    let results = await assetsSearch(serials)
+    results = results
+      // .map(r => r.value)
+      // .flat()
+      .filter(v => v.status != "Disposed")
+    console.log(results)
+    return results
+  } catch(e) {
+    console.log(e)
+  }
+}
+
+async function startSearchAssetBySN() {
+  const clipboardContents = await navigator.clipboard.read()
+  const blob = await clilpboardContents[0].getType('text/plain')
+  const text = await blob.text()
+  const SNS = text.split('\n')
+  let results = await assetsSearch(SNS)
+  results = results
+    .map(r => r.value)
+  console.log(results)
+  return results
+}
+
+async function assetsSearch(SNS) {
+  try {
+    const promises = SNS.map(SN => assetSearch(SN))
+    const r = await Promise.allSettled(promises)
+    return r
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+async function assetSearch(SN) {
+  const r = await makeRequest(ROUTES.searchAsset(encodeURI(SN)), "POST", {types: ["asset"]}) //TODO: add payload {types: ["asset"]}
+  const j = await JSON.parse(r)
+  const results = filterReleventAssetSearchInfo(j)
+  return results
+}
+
+function filterReleventAssetSearchInfo(r_json) {
+  results = []
+  r_json.forEach( j => {
+    j.items.forEach(item => {
+      item.results.forEach(res => {
+        let result = res.additionalInformation
+        let r = {
+          manufacturer: result.manufacturer,
+          product: result.product.name,
+          SN: result.serialNumber,
+          ID: result.reconciliationId,
+          hostname: result.name,
+          status: result.status.value,
+          statusReason: result.status.reason,
+          type: result.type,
+          desc: res.desc,
+        }
+        results.push(r)
+      })
+    })
+  })
+  return results
 }
