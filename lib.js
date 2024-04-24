@@ -205,15 +205,11 @@ async function parseAddress(address) {
 }
 
 async function makeRequest(url, method="GET", payload=null) {
-  let body = null
-  if(payload) {
-    body = JSON.stringify(payload)
-  }
   return new Promise(function(resolve, reject) {
     GM.xmlhttpRequest({
       url,
       method,
-      body,
+      data: payload,
       onload: r => {
         if(r.status === 200) {
           resolve(r.responseText)
