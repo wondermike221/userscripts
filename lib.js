@@ -204,3 +204,55 @@ async function makeRequest(url, method="GET", payload=null) {
     })
   })
 }
+
+// Converts a plain text table to an HTML table
+function convertPlainTextToHTMLTable(plainText) {
+  const rows = plainText.trim().split('\n');
+  const htmlRows = rows.map(row => {
+    const cells = row.split('\t').map(cell => `<td>${cell.trim()}</td>`).join('');
+    return `<tr>${cells}</tr>`;
+  });
+  return `<table>${htmlRows.join('')}</table>`;
+}
+
+// Converts an HTML table to a plain text table
+function convertHTMLTableToPlainText(htmlTable) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlTable, 'text/html');
+  const rows = Array.from(doc.querySelectorAll('tr'));
+  const plainTextRows = rows.map(row => {
+    const cells = Array.from(row.querySelectorAll('td, th')).map(cell => cell.textContent.trim()).join('\t');
+    return cells;
+  });
+  return plainTextRows.join('\n');
+}
+
+// Edits a specific cell in a plain text table
+function editPlainTextTableCell(plainText, rowIndex, colIndex, newValue) {
+  const rows = plainText.trim().split('\n');
+  rows[rowIndex] = rows[rowIndex].split('\t').map((cell, i) => i === colIndex ? newValue : cell).join('\t');
+  return rows.join('\n');
+}
+
+// Gets the value of a specific cell in a plain text table
+function getPlainTextTableCell(plainText, rowIndex, colIndex) {
+  const rows = plainText.trim().split('\n');
+  return rows[rowIndex].split('\t')[colIndex].trim();
+}
+
+// Edits a specific cell in an HTML table
+function editHTMLTableCell(htmlTable, rowIndex, colIndex, newValue) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlTable, 'text/html');
+  const cell = doc.querySelectorAll('tr')[rowIndex].querySelectorAll('td, th')[colIndex];
+  cell.textContent = newValue;
+  return doc.body.innerHTML;
+}
+
+// Gets the value of a specific cell in an HTML table
+function getHTMLTableCell(htmlTable, rowIndex, colIndex) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlTable, 'text/html');
+  const cell = doc.querySelectorAll('tr')[rowIndex].querySelectorAll('td, th')[colIndex];
+  return cell.textContent.trim();
+}
