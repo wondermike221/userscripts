@@ -87,12 +87,17 @@ function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function copyTextToClipboard(text) {
+function copyTextToClipboard(text, mime="text/plain") {
   if (!navigator.clipboard) {
     fallbackCopyTextToClipboard(text);
     return;
   }
-  navigator.clipboard.writeText(text).then(
+  const type = mime
+  const blob = new Blob([text], {type})
+  const data = [new ClipboardItem({ [type]: blob})]
+
+  navigator.clipboard.write(data)
+  .then(
     function () {
       console.log("Async: Copying to clipboard was successful!");
     },
