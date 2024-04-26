@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.95
+// @version      0.1.96
 // @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -392,10 +392,13 @@ async function scrapeCollectPC(document, sheet) {
     let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
     notify({ title, FAILURE_ICON, body })
   }
-  const assets = asset_data.map((a) => a.sn).join(',')
+  const assets = asset_data.map((a) => {
+    return `<a href="https://ebay-smartit.onbmc.com/smartit/app/#/asset/${a.ID}/BMC_COMPUTERSYSTEM">${a.sn}</a>`
+  }).join(',')
   const manager_email = manager_data.payload.email
   const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t${assets}\t\t${create_date}\t${user_data.payload.userSrcSys}\t${user_data.payload.costctrCd}`
-  copyTextToClipboard(csvCollectPCSheet)
+  const html_csvCollectPCSheet = convertPlainTextToHTMLTable(csvCollectPCSheet)
+  copyTextToClipboard(html_csvCollectPCSheet, "text/html")
   spinner.classList.add('hidden')
 }
 
@@ -593,12 +596,34 @@ async function startAssetCollectionFromNameTags() {
     const clipboardContents = await navigator.clipboard.read()
     const blob = await clipboardContents[0].getType('text/plain')
     const text = await blob.text()
-    const NTS = text.split('\n')
+    let parsed, NTS = null
+    if(text.includes('\t')) {
+      parsed = text.split('\n')
+        .map(line => line.split('\t'))
+        .map(line => {
+            if(line[3].includes(',')){
+                return [line[0], (line[3].split(',').map(s => s.trim()))]
+            } else {
+                return [line[0], [line[3].trim()]]
+            }
+        })
+        .reduce((prev, curr) => ({...prev, [curr[0]]:curr[1]}), {})
+        NTS = Object.keys(parsed)
+
+    } else {
+      NTS = text.split('\n')
+    }
+
     let results = await getAssetsInfo(NTS)
     results = results
       .map(r => r.value)
       .flat()
       .filter(v => v.status != "Disposed" && v.owned == "ownedby" && v.sn != undefined)
+
+    if(text.includes('\t')){
+      results = results
+        .filter(r => parsed[r.nt].includes(r.sn))
+    }
     console.log(results)
   } catch(e) {
     console.log(e)
@@ -734,3 +759,4 @@ function filterReleventAssetSearchInfo(r_json) {
   })
   return results
 }
+
