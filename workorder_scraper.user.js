@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.96
+// @version      0.1.97
 // @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -359,7 +359,7 @@ async function scrapeCollectPC(document, sheet) {
   const description = document.querySelector('#ticket-record-summary div[ux-id="field_desc"] div[ux-id="field-value"]')
   const descText = description.textContent || description.innerText
   const parsedDesc = descText
-    .split('\n')
+    .split(/\r?\n/)
     .reduce((acc, item)=>{
       if(item.indexOf(':')==-1) return acc;
       let [key, value] = item.split(':');
@@ -396,11 +396,20 @@ async function scrapeCollectPC(document, sheet) {
     return `<a href="https://ebay-smartit.onbmc.com/smartit/app/#/asset/${a.ID}/BMC_COMPUTERSYSTEM">${a.sn}</a>`
   }).join(',')
   const manager_email = manager_data.payload.email
-  const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t${assets}\t\t${create_date}\t${user_data.payload.userSrcSys}\t${user_data.payload.costctrCd}`
+  const template = ((userSrcSys) => {
+    if(userSrcSys == 'FG') {
+      return "MM AWF"
+    } else {
+      return "MM FTE"
+    }
+  })(user_data.payload.userSrcSys)
+  const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t${assets}\t\tTODO\t${create_date}\t${user_data.payload.userSrcSys}\t${user_data.payload.costctrCd}\t${template}`
   const html_csvCollectPCSheet = convertPlainTextToHTMLTable(csvCollectPCSheet)
   copyTextToClipboard(html_csvCollectPCSheet, "text/html")
   spinner.classList.add('hidden')
 }
+
+
 
 /* Example Description:
   Headsets & Webcams: ["[Standard] Wired Headset"]
@@ -598,7 +607,7 @@ async function startAssetCollectionFromNameTags() {
     const text = await blob.text()
     let parsed, NTS = null
     if(text.includes('\t')) {
-      parsed = text.split('\n')
+      parsed = text.trim().split(/\r?\n/)
         .map(line => line.split('\t'))
         .map(line => {
             if(line[3].includes(',')){
@@ -611,7 +620,7 @@ async function startAssetCollectionFromNameTags() {
         NTS = Object.keys(parsed)
 
     } else {
-      NTS = text.split('\n')
+      NTS = text.trim().split(/\r?\n/)
     }
 
     let results = await getAssetsInfo(NTS)
@@ -623,6 +632,23 @@ async function startAssetCollectionFromNameTags() {
     if(text.includes('\t')){
       results = results
         .filter(r => parsed[r.nt].includes(r.sn))
+
+      const copy = results
+        .reduce((prev, curr) => {
+          if(prev.length != 0 && curr.nt == prev[prev.length-1].nt) {
+            prev[prev.length - 1] = {...prev[prev.length - 1], status:`${prev[prev.length - 1].status}, ${curr.status}`}
+            // prev[prev.length - 1].status += ` ${curr.status}`
+            return prev
+          } else {
+            prev.push(curr)
+            return prev
+          }
+        }, [])
+        .map(r => r.status).join('\n')
+      const cBlob = new Blob([copy], {type:"text/plain"})
+      const data = [new ClipboardItem({ ['text/plain']: cBlob})]
+      await navigator.clipboard.write(data)
+      console.log(copy)
     }
     console.log(results)
   } catch(e) {
@@ -685,7 +711,7 @@ async function startAssetCollectionFromSerials() {
     const clipboardContents = await navigator.clipboard.read()
     const blob = await clipboardContents[0].getType('text/plain')
     const text = await blob.text()
-    const serials = text.split('\n')
+    const serials = text.trim().split(/\r?\n/)
       .reduce((acc, sn) => {
         if(sn.includes(',')) {
           acc.push.apply(acc, sn.split(','))
@@ -711,7 +737,7 @@ async function startSearchAssetBySN() {
   const clipboardContents = await navigator.clipboard.read()
   const blob = await clilpboardContents[0].getType('text/plain')
   const text = await blob.text()
-  const SNS = text.split('\n')
+  const SNS = text.trim().split(/\r?\n/)
   let results = await assetsSearch(SNS)
   results = results
     .map(r => r.value)
