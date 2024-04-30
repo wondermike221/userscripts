@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.97
+// @version      0.1.98
 // @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -628,6 +628,12 @@ async function startAssetCollectionFromNameTags() {
       .map(r => r.value)
       .flat()
       .filter(v => v.status != "Disposed" && v.owned == "ownedby" && v.sn != undefined)
+      .map(i => {
+        if(i.status == "None Assigned") {
+          i.sn = parsed[i.nt][0]
+        }
+        return i
+      })
 
     if(text.includes('\t')){
       results = results
@@ -669,14 +675,16 @@ async function getAssetsInfo(NTS) {
 async function getAssetInfo(NT) {
   const r = await makeRequest(ROUTES.allAssets(NT))
   const j = await JSON.parse(r)
-  const results = filterReleventAssetInfo(j)
+  const results = filterReleventAssetInfo(j, NT)
   return results
 }
 
-function filterReleventAssetInfo(r_json) {
-  results = [];
+function filterReleventAssetInfo(r_json, nt) {
+  let results = []
+  let count = 0
   r_json.forEach( j => {
     j.items.forEach(item => {
+      count += item.totalMatches
         item.objects.forEach(object => {
             let r = { 
               status:object.status.value, 
@@ -692,6 +700,14 @@ function filterReleventAssetInfo(r_json) {
         })
     })
   });
+  if(count == 0) {
+    return [{
+      status: "None Assigned",
+      nt,
+      sn: "N/A",
+      owned: "ownedby",
+    }]
+  }
   return results;
 }
 
