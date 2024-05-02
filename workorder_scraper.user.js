@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.98
+// @version      0.1.99
 // @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -396,14 +396,14 @@ async function scrapeCollectPC(document, sheet) {
     return `<a href="https://ebay-smartit.onbmc.com/smartit/app/#/asset/${a.ID}/BMC_COMPUTERSYSTEM">${a.sn}</a>`
   }).join(',')
   const manager_email = manager_data.payload.email
-  const template = ((userSrcSys) => {
+  const template = ((userSrcSys) => { // not currently used.
     if(userSrcSys == 'FG') {
       return "MM AWF"
     } else {
       return "MM FTE"
     }
   })(user_data.payload.userSrcSys)
-  const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t${assets}\t\tTODO\t${create_date}\t${user_data.payload.userSrcSys}\t${user_data.payload.costctrCd}\t${template}`
+  const csvCollectPCSheet = `${work_order}\t${name}\t${parsedDesc['Login ID']}\t${parsedDesc['Manager Name']}\t${manager_email}\t${assets}\t\tTODO\t${create_date}\t${user_data.payload.userSrcSys}\t${user_data.payload.costctrCd}`
   const html_csvCollectPCSheet = convertPlainTextToHTMLTable(csvCollectPCSheet)
   copyTextToClipboard(html_csvCollectPCSheet, "text/html")
   spinner.classList.add('hidden')
