@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.99
+// @version      0.1.100
 // @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -393,7 +393,7 @@ async function scrapeCollectPC(document, sheet) {
     notify({ title, FAILURE_ICON, body })
   }
   const assets = asset_data.map((a) => {
-    return `<a href="https://ebay-smartit.onbmc.com/smartit/app/#/asset/${a.ID}/BMC_COMPUTERSYSTEM">${a.sn}</a>`
+    return `<a href="https://ebay-smartit.onbmc.com/smartit/app/#/asset/${a.id}/BMC_COMPUTERSYSTEM">${a.sn}</a>`
   }).join(',')
   const manager_email = manager_data.payload.email
   const template = ((userSrcSys) => { // not currently used.
@@ -717,7 +717,7 @@ async function startSearchAssetByNT() {
   results = results
   // .map(r => r.value)
   // .flat()
-  .filter(v => v.status != "Disposed" && v.owned == "ownedby")
+  .filter(v => v.status != "Disposed" && v.owned == "ownedby" && v.sn != undefined)
   console.log(results)
   return results
 }
