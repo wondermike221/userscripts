@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.100
+// @version      0.1.101
 // @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -392,9 +392,17 @@ async function scrapeCollectPC(document, sheet) {
     let body = 'Data was not scraped successfully. Check that the peoplex is still logged in.'
     notify({ title, FAILURE_ICON, body })
   }
-  const assets = asset_data.map((a) => {
-    return `<a href="https://ebay-smartit.onbmc.com/smartit/app/#/asset/${a.id}/BMC_COMPUTERSYSTEM">${a.sn}</a>`
-  }).join(',')
+  const assets = ((ad) => {
+    return ad
+      .map((a) => { 
+        if(ad.length > 1) { //excel does not support more than one link per cell.
+          return a.sn
+        } else {
+          return `<a href="https://ebay-smartit.onbmc.com/smartit/app/#/asset/${a.id}/BMC_COMPUTERSYSTEM">${a.sn}</a>`
+        }
+      })
+      .join(',')
+  })(asset_data)
   const manager_email = manager_data.payload.email
   const template = ((userSrcSys) => { // not currently used.
     if(userSrcSys == 'FG') {
