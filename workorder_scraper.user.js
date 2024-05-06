@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.101
+// @version      0.1.102
 // @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -672,8 +672,15 @@ async function startAssetCollectionFromNameTags() {
 
 async function getAssetsInfo(NTS) {
  try {
-  const promises = NTS.map(NT => getAssetInfo(NT))
-  const r = await Promise.allSettled(promises)
+  const CONCURRENT_REQUEST_LIMIT = 5
+  const iterator = NTS.entries()
+  const results = []
+  const workers = Array(CONCURRENT_REQUEST_LIMIT).fill(iterator).map(iter => { 
+    for(let [i, NT] of iter) {
+       results[i] = getAssetInfo(NT)
+    }
+  })
+  const r = await Promise.allSettled(results)
   return r
  } catch(e) {
   console.log(e)
