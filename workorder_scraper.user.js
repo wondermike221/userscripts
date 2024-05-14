@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Scrape Workorder Data
 // @namespace    https://hixon.dev
-// @version      0.1.102
+// @version      0.1.103
 // @description  Various automations on SmartIT
 // @match        https://ebay-smartit.onbmc.com/smartit/app/
 // @match        https://hub.corp.ebay.com/
@@ -107,6 +107,9 @@ function addTitles() {
  * Ctrl + Alt + p == debug whatever I'm working on. (in the future add a command palette)
  */
 function doc_keyUp(e) {
+  if(e.shiftKey) {
+    return
+  }
   if (e.ctrlKey && e.altKey && (e.key === 'd' || e.key === '∂' || e.which === 68)) { // ctrl + alt + d
     scrapeAndCopy(document, 'accessories')
   } else if (e.ctrlKey && e.altKey && (e.key === 's' || e.key === 'ß' || e.which === 83)) { //ctrl + alt + s
