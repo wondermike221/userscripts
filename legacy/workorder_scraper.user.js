@@ -12,7 +12,7 @@
 // @connect      https://hub.corp.ebay.com/searchsvc/profile/*
 // @connect      https://peoplex.corp.ebay.com/peoplexservices/*
 // @run-at       document-start
-// @downloadURL  https://raw.githubusercontent.com/wondermike221/userscripts/main/workorder_scraper.user.js
+// @downloadURL  https://raw.githubusercontent.com/wondermike221/userscripts/main/legacy/workorder_scraper.user.js
 // @homepageURL  https://github.com/wondermike221/userscripts
 // ==/UserScript==
 
