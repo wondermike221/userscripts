@@ -39,9 +39,6 @@ export async function getCostCenter() {
   copyTextToClipboard(cost_center);
 }
 
-
-
-
 /**
  * Clicks status element then set's status to $status, status reason to $reason and reported source to $source.
  * @param status The status to set

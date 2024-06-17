@@ -101,5 +101,6 @@ function simulateClick(elem) {
     view: window,
   });
   // If cancelled, don't dispatch our event
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const canceled = !elem.dispatchEvent(evt);
 }

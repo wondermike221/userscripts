@@ -42,7 +42,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
     },
     'c-a-c': () => {
       console.debug('c-a-c');
-      if(window.location.href.includes('task')) {
+      if (window.location.href.includes('task')) {
         setTicketStatus('Closed', 'Success', '');
       } else {
         setTicketStatus('Completed', '', 'Self Service');

@@ -32,7 +32,6 @@ export function expand_things() {
   return true;
 }
 
-
 /**
  * Focuses on the search bar
  */

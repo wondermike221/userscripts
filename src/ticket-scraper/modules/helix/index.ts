@@ -1,7 +1,5 @@
 import { wait } from '../../utils';
 
-
-
 /**
  * Sets the status to $status and status reason to $reason in Helix.
  * @param status The status to set
