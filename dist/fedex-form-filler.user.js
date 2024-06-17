@@ -3,11 +3,13 @@
 // @namespace   https://hixon.dev
 // @description Various automations on SmartIT
 // @match       https://www.fedex.com/shipping/*
-// @version     0.0.0
+// @version     0.2.0
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2/dist/solid.min.js
+// @downloadURL https://raw.githubusercontent.com/wondermike221/userscripts/main/fedex-form-filler.user.js
+// @homepageURL https://github.com/wondermike221/userscripts
 // @grant       GM_addStyle
 // ==/UserScript==
 
