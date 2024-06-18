@@ -84,6 +84,7 @@ async function assetCollectionFromNameTags() {
       console.log(copy);
       showToast(
         'Success! Asset information has been collected and written to the clipboard.',
+        { theme: 'dark' },
       );
     }
     console.log(results);
