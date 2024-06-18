@@ -66,6 +66,16 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       setAssetStatus('Received', 'Storage');
       copyTextToClipboard(nt);
     },
+    'a-w': () => {
+      console.debug('a-w');
+      const emailElement =
+        document.querySelector('a[ux-id="email-value"]') ??
+        document.querySelector('a[ux-id="email"]');
+
+      const nt = emailElement.textContent.trim().split('@')[0];
+      setAssetStatus('Reserved', 'Data Preservation Hold');
+      copyTextToClipboard(nt);
+    },
     'c-a-l': () => {
       console.debug('c-a-l');
       setAssetStatus('Disposed', 'Ready for Disposal');
