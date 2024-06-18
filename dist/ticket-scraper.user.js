@@ -3,12 +3,12 @@
 // @namespace   https://hixon.dev
 // @description Various automations on SmartIT
 // @match       *://*/*
-// @version     0.2.0
+// @version     0.2.1
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2/dist/solid.min.js
-// @downloadURL https://raw.githubusercontent.com/wondermike221/userscripts/main/ticket-scraper.user.js
+// @downloadURL https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/ticket-scraper.user.js
 // @homepageURL https://github.com/wondermike221/userscripts
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
@@ -574,7 +574,9 @@ async function assetCollectionFromNameTags() {
       })];
       await navigator.clipboard.write(data);
       console.log(copy);
-      ui.showToast('Success! Asset information has been collected and written to the clipboard.');
+      ui.showToast('Success! Asset information has been collected and written to the clipboard.', {
+        theme: 'dark'
+      });
     }
     console.log(results);
   } catch (e) {
@@ -1109,6 +1111,14 @@ function initShortcuts(mainPanel) {
       const emailElement = (_document$querySelect = document.querySelector('a[ux-id="email-value"]')) != null ? _document$querySelect : document.querySelector('a[ux-id="email"]');
       const nt = emailElement.textContent.trim().split('@')[0];
       setAssetStatus('Received', 'Storage');
+      copyTextToClipboard(nt);
+    },
+    'a-w': () => {
+      var _document$querySelect2;
+      console.debug('a-w');
+      const emailElement = (_document$querySelect2 = document.querySelector('a[ux-id="email-value"]')) != null ? _document$querySelect2 : document.querySelector('a[ux-id="email"]');
+      const nt = emailElement.textContent.trim().split('@')[0];
+      setAssetStatus('Reserved', 'Data Preservation Hold');
       copyTextToClipboard(nt);
     },
     'c-a-l': () => {
