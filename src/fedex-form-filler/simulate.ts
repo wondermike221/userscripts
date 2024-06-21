@@ -6,7 +6,8 @@ function isInputOrTextAreaElement(
 ): element is HTMLInputElement | HTMLTextAreaElement {
   return (
     element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement
+    element instanceof HTMLTextAreaElement ||
+    element instanceof HTMLSelectElement
   );
 }
 

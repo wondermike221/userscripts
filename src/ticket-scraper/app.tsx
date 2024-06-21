@@ -21,14 +21,10 @@ function initializeApp() {
     theme: 'dark',
     style: [globalCss, stylesheet].join('\n'),
   });
-  Object.assign(panel.wrapper.style, {
-    top: '10vh',
-    left: '10vw',
-  });
-  panel.setMovable(true);
+
   initShortcuts(panel);
   addTitles();
   addObserver();
   addLoadingSpinner();
-  render(Routing, panel.body);
+  render(() => <Routing panelRef={panel} />, panel.body);
 }

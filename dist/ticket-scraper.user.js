@@ -1300,7 +1300,20 @@ var styles = {"count":"style-module_count__OKr75","plus1":"style-module_plus1__E
 var stylesheet="*,:after,:before{--un-rotate:0;--un-rotate-x:0;--un-rotate-y:0;--un-rotate-z:0;--un-scale-x:1;--un-scale-y:1;--un-scale-z:1;--un-skew-x:0;--un-skew-y:0;--un-translate-x:0;--un-translate-y:0;--un-translate-z:0;--un-pan-x: ;--un-pan-y: ;--un-pinch-zoom: ;--un-scroll-snap-strictness:proximity;--un-ordinal: ;--un-slashed-zero: ;--un-numeric-figure: ;--un-numeric-spacing: ;--un-numeric-fraction: ;--un-border-spacing-x:0;--un-border-spacing-y:0;--un-ring-offset-shadow:0 0 transparent;--un-ring-shadow:0 0 transparent;--un-shadow-inset: ;--un-shadow:0 0 transparent;--un-ring-inset: ;--un-ring-offset-width:0px;--un-ring-offset-color:#fff;--un-ring-width:0px;--un-ring-color:rgba(147,197,253,.5);--un-blur: ;--un-brightness: ;--un-contrast: ;--un-drop-shadow: ;--un-grayscale: ;--un-hue-rotate: ;--un-invert: ;--un-saturate: ;--un-sepia: ;--un-backdrop-blur: ;--un-backdrop-brightness: ;--un-backdrop-contrast: ;--un-backdrop-grayscale: ;--un-backdrop-hue-rotate: ;--un-backdrop-invert: ;--un-backdrop-opacity: ;--un-backdrop-saturate: ;--un-backdrop-sepia: }::backdrop{--un-rotate:0;--un-rotate-x:0;--un-rotate-y:0;--un-rotate-z:0;--un-scale-x:1;--un-scale-y:1;--un-scale-z:1;--un-skew-x:0;--un-skew-y:0;--un-translate-x:0;--un-translate-y:0;--un-translate-z:0;--un-pan-x: ;--un-pan-y: ;--un-pinch-zoom: ;--un-scroll-snap-strictness:proximity;--un-ordinal: ;--un-slashed-zero: ;--un-numeric-figure: ;--un-numeric-spacing: ;--un-numeric-fraction: ;--un-border-spacing-x:0;--un-border-spacing-y:0;--un-ring-offset-shadow:0 0 transparent;--un-ring-shadow:0 0 transparent;--un-shadow-inset: ;--un-shadow:0 0 transparent;--un-ring-inset: ;--un-ring-offset-width:0px;--un-ring-offset-color:#fff;--un-ring-width:0px;--un-ring-color:rgba(147,197,253,.5);--un-blur: ;--un-brightness: ;--un-contrast: ;--un-drop-shadow: ;--un-grayscale: ;--un-hue-rotate: ;--un-invert: ;--un-saturate: ;--un-sepia: ;--un-backdrop-blur: ;--un-backdrop-brightness: ;--un-backdrop-contrast: ;--un-backdrop-grayscale: ;--un-backdrop-hue-rotate: ;--un-backdrop-invert: ;--un-backdrop-opacity: ;--un-backdrop-saturate: ;--un-backdrop-sepia: }.style-module_count__OKr75{--un-text-opacity:1;color:rgb(249 115 22/var(--un-text-opacity))}.style-module_plus1__EdUM3{float:right}";
 
 var _tmpl$ = /*#__PURE__*/web.template(`<div><p>Drag me</p><button>Get Cost Center for </button><p><span></span> people think this is amazing.`);
-function Routing() {
+function Routing(props) {
+  solidJs.onMount(() => {
+    Object.assign(props.panelRef.wrapper.style, {
+      display: 'block',
+      width: '100%',
+      position: 'relative',
+      bottom: 'calc(100 - var(20vh))',
+      left: 0,
+      right: 0,
+      transition: 'all 0.1s ease-out',
+      overflowY: 'scroll'
+    });
+    props.panelRef.setMovable(true);
+  });
   solidJs.createSignal(window.location);
   const [getNT, setNT] = solidJs.createSignal(0);
   return (() => {
@@ -1310,6 +1323,14 @@ function Routing() {
       _el$3.firstChild;
       var _el$5 = _el$3.nextSibling,
       _el$6 = _el$5.firstChild;
+    _el$.style.setProperty("display", "block");
+    _el$.style.setProperty("width", "100%");
+    _el$.style.setProperty("position", "relative");
+    _el$.style.setProperty("bottom", "calc(100 - var(20vh))");
+    _el$.style.setProperty("left", "0");
+    _el$.style.setProperty("right", "0");
+    _el$.style.setProperty("transition", "all 0.1s ease-out");
+    _el$.style.setProperty("overflow-y", "scroll");
     _el$3.$$click = () => getCostCenterFromHub;
     web.insert(_el$3, getNT, null);
     web.insert(_el$6, getNT);
@@ -1340,16 +1361,13 @@ function initializeApp() {
     theme: 'dark',
     style: [css_248z, stylesheet].join('\n')
   });
-  Object.assign(panel.wrapper.style, {
-    top: '10vh',
-    left: '10vw'
-  });
-  panel.setMovable(true);
   initShortcuts(panel);
   addTitles();
   addObserver();
   addLoadingSpinner();
-  web.render(Routing, panel.body);
+  web.render(() => web.createComponent(Routing, {
+    panelRef: panel
+  }), panel.body);
 }
 
 })(VM.solid.web, VM, VM.solid);

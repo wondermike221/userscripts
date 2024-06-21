@@ -1,21 +1,70 @@
 import { render } from 'solid-js/web';
-import { createSignal } from 'solid-js';
 import { getPanel } from '@violentmonkey/ui';
 // global CSS
 import globalCss from './style.css';
 // CSS modules
 import { stylesheet } from './style.module.css';
-import { addFedExAutofillTextArea } from './legacy';
+import { Shipment, addFedExAutofillTextArea } from './legacy';
 import { simulateUserInteraction } from './simulate';
+import { register } from '@violentmonkey/shortcut';
+import { onMount } from 'solid-js';
+import { waitForElm } from '../ticket-scraper/utils';
 
-function Counter() {
-  const [count, setCount] = createSignal(0);
+enum ToggleState {
+  Hidden,
+  Focused,
+  Blurred,
+}
+
+function GUI(props) {
+  let ref: HTMLTextAreaElement;
+  onMount(() => {
+    ref.focus();
+    const panel = props.panelRef;
+
+    panel.show();
+    let toggleState: ToggleState = ToggleState.Focused;
+    register('a-`', () => {
+      switch (toggleState) {
+        case ToggleState.Hidden:
+          toggleState = ToggleState.Focused;
+          ref.focus();
+          panel.show();
+          break;
+        case ToggleState.Focused:
+          toggleState = ToggleState.Hidden;
+          ref.blur();
+          panel.hide();
+          break;
+        case ToggleState.Blurred:
+          toggleState = ToggleState.Focused;
+          ref.focus();
+          break;
+      }
+    });
+    ref.addEventListener('blur', () => {
+      toggleState = ToggleState.Blurred;
+    });
+    ref.addEventListener('focus', () => {
+      toggleState = ToggleState.Focused;
+    });
+  });
 
   return (
-    <div>
-      <p>Count: {count()}</p>
-      <textarea placeholder="Paste excel row here to autofill"></textarea>
-      <button onClick={() => setCount(count() + 1)}>Increment</button>
+    <div
+      style={{
+        height: '10vh',
+        width: '100%',
+        'background-color': 'rgba(0, 0, 0, 0.8)',
+        color: 'rgba(51, 51, 51)',
+      }}
+    >
+      <textarea
+        ref={ref}
+        onInput={props.update}
+        placeholder="Paste excel row here to autofill"
+        style={{ width: '100%' }}
+      ></textarea>
     </div>
   );
 }
@@ -25,108 +74,144 @@ window.addEventListener('load', () => {
 });
 
 function initializeApp() {
+  // example legacy url:
+  //https://www.fedex.com/shipping/shipEntryAction.do?method=doEntry&link=1&locale=en_US&urlparams=us&sType=F
   //Legacy autofill
-  addFedExAutofillTextArea();
+  if (window.location.href.includes('shipping/shipEntryAction')) {
+    addFedExAutofillTextArea();
+  }
 
+  //example new url:
+  //https://www.fedex.com/shippingplus/en-us/shipment/create
   //updated autofill
-  initializeAutofill();
+  if (window.location.href.includes('shippingplus')) {
+    waitForElm('address-to-form').then(() => {
+      initializeAutofill();
+    });
+  }
+}
+
+function initializeAutofill() {
+  const signature_selector = `ui-checkbox[data-test-id="signature-options-checkbox"]`;
+  (document.querySelector(signature_selector) as HTMLElement).click();
+
+  const FORM_FIELDS = {
+    country: {
+      selector: 'receiver-country-code',
+      value: '193: US',
+      type: 'dropdown',
+      elementType: 'select',
+    },
+    // signature_options: {
+    //   selector: 'signature-options-checkbox',
+    //   value: true,
+    //   type: 'checkbox',
+    //   elementType: 'input',
+    // },
+    zip: {
+      selector: 'receiver-postal-code',
+      value: null,
+      type: 'text',
+      elementType: 'input',
+    },
+    name: {
+      selector: 'receiver-name',
+      value: null,
+      type: 'text',
+      elementType: 'input',
+    },
+    email: {
+      selector: 'receiver-email',
+      value: null,
+      type: 'text',
+      elementType: 'input',
+    },
+    address1: {
+      selector: 'receiver-address-line1',
+      value: null,
+      type: 'text',
+      elementType: 'input',
+    },
+    address2: {
+      selector: 'receiver-address-line2',
+      value: null,
+      type: 'text',
+      elementType: 'input',
+    },
+    city: {
+      selector: 'receiver-city',
+      value: null,
+      type: 'text',
+      elementType: 'input',
+    },
+    phone: {
+      selector: 'receiver-telephone-number',
+      value: null,
+      type: 'text',
+      elementType: 'input',
+    },
+    cost_center: {
+      selector: 'references-input-control',
+      value: null,
+      type: 'text',
+      elementType: 'input',
+    },
+    signature: {
+      selector: 'signature-option',
+      value: '4: DIRECT',
+      type: 'dropdown',
+      elementType: 'select',
+    },
+    billing: {
+      selector: 'bill-to',
+      value: '2: Object',
+      type: 'dropdown',
+      elementType: 'select',
+    },
+    weight: {
+      selector: 'weight-0',
+      value: '1',
+      type: 'text',
+      elementType: 'input',
+    },
+    state: {
+      selector: 'receiver-state-or-province',
+      value: null,
+      type: 'dropdown',
+      elementType: 'select',
+    },
+    service: {
+      selector: 'service',
+      value: '5: PRIORITY_OVERNIGHT',
+      type: 'dropdown',
+      elementType: 'select',
+    },
+  };
+
+  function autoFillAction(e) {
+    const ship = new Shipment(e.target.value);
+    for (const field in FORM_FIELDS) {
+      const selector = `[data-test-id="${FORM_FIELDS[field].selector}"] ${FORM_FIELDS[field].elementType}`;
+      const input: HTMLInputElement | HTMLTextAreaElement =
+        document.querySelector(selector);
+      simulateUserInteraction(input, FORM_FIELDS[field].value || ship[field]);
+    }
+  }
+
   const panel = getPanel({
     theme: 'dark',
     style: [globalCss, stylesheet].join('\n'),
   });
   Object.assign(panel.wrapper.style, {
-    top: '10vh',
-    left: '10vw',
+    display: 'block',
+    width: '100%',
+    position: 'relative',
+    bottom: 'calc(100 - var(20vh))',
+    left: 0,
+    right: 0,
+    transition: 'all 0.1s ease-out',
+    overflowY: 'scroll',
   });
-  panel.setMovable(true);
-  panel.show();
-  render(Counter, document);
-}
 
-function initializeAutofill() {
-  for (const span of document.querySelectorAll(
-    'label > span',
-  ) as NodeListOf<HTMLElement>) {
-    span.dataset.label = span.textContent;
-  }
-  //TODO: make list of labels that matter and loop this code through them.
-  const inputs = {
-    country: {
-      selector: ' Country/Territory ',
-      value: '193: US',
-      type: 'dropdown',
-    },
-    signature_options: {
-      selector: ' Signature options ',
-      value: true,
-      type: 'checkbox',
-    },
-    zip: {
-      selector: ' Postal code ',
-      value: null,
-      type: 'text',
-    },
-    name: {
-      selector: ' Contact name *(Required)',
-      type: 'text',
-      value: null,
-    },
-    email: {
-      selector: ' Email ',
-      value: null,
-      type: 'text',
-    },
-    address1: {
-      selector: ' Address line 1 ',
-      value: null,
-      type: 'text',
-    },
-    address2: {
-      selector: ' Address line 2 ',
-      value: null,
-      type: 'text',
-    },
-    city: {
-      selector: ' City ',
-      value: null,
-      type: 'text',
-    },
-    state: {
-      selector: ' State or province ',
-      value: null,
-      type: 'dropdown',
-    },
-    phone: {
-      selector: ' Phone number ',
-      value: null,
-      type: 'text',
-    },
-    cost_center: {
-      selector: ' Cost Center ',
-      value: null,
-      type: 'text',
-    },
-    signature: {
-      selector: ' Select signature type ',
-      value: '4: DIRECT',
-      type: 'dropdown',
-    },
-    billing: {
-      selector: ' Bill transportation cost to ',
-      value: '2: Object',
-      type: 'dropdown',
-    },
-    weight: {
-      selector: ' Weight ',
-      value: '1',
-      type: 'text',
-    },
-  };
-  for (const i of inputs) {
-    const input: HTMLInputElement | HTMLTextAreaElement =
-      document.querySelector(
-        `input:has(+ label > span[data-label="${i.selector}"])`,
-      );
-    simulateUserInteraction(input, i.value);
-  }
+  render(() => <GUI update={autoFillAction} panelRef={panel} />, panel.body);
 }
