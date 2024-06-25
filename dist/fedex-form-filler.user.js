@@ -628,7 +628,7 @@ function GUI(props) {
     const panel = props.panelRef;
     panel.show();
     let toggleState = ToggleState.Focused;
-    register('a-`', () => {
+    const updateToggle = () => {
       switch (toggleState) {
         case ToggleState.Hidden:
           toggleState = ToggleState.Focused;
@@ -645,7 +645,9 @@ function GUI(props) {
           ref.focus();
           break;
       }
-    });
+    };
+    register('alt-`', updateToggle);
+    register('ctrlcmd-k `', updateToggle);
     ref.addEventListener('blur', () => {
       toggleState = ToggleState.Blurred;
     });
