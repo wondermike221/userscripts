@@ -1,5 +1,5 @@
 import { register } from '@violentmonkey/shortcut';
-import { IPanelResult } from '@violentmonkey/ui';
+import { IPanelResult, showToast } from '@violentmonkey/ui';
 import { copyTextToClipboard, getCells } from '../../utils';
 import { scrapeAssetsUsingNameTags } from '../helix/assets';
 import scrapeAndCopy from '../ticket/accessory';
@@ -14,94 +14,158 @@ export default function initShortcuts(mainPanel: IPanelResult) {
   // addEventListener(document.body, 'keydown', handleKeyWithFocusCheck, false);
   mainPanel.hide();
   let panelToggle = false;
-  const shortcuts = {
-    'a-`': () => {
-      if (panelToggle) {
-        mainPanel.hide();
-        panelToggle = false;
-      } else {
-        mainPanel.show();
-        panelToggle = true;
-      }
+  const shortcuts = [
+    {
+      key: ['alt-`', 'cmd-k `'],
+      description: 'Toggle main panel',
+      action: () => {
+        console.debug('a-`');
+        if (panelToggle) {
+          mainPanel.hide();
+          panelToggle = false;
+        } else {
+          mainPanel.show();
+          panelToggle = true;
+        }
+      },
     },
-    'c-a-d': () => {
-      console.debug('c-a-d');
-      scrapeAndCopy('accessories');
+    {
+      key: ['ctrl-alt-d', 'cmd-k d'],
+      description: 'Scrape accessories',
+      action: () => {
+        console.debug('c-a-d');
+        scrapeAndCopy('accessories');
+      },
     },
-    'c-a-s': () => {
-      console.debug('c-a-s');
-      scrapeAndCopy('purchasing');
+    {
+      key: ['ctrl-alt-s', 'cmd-k s'],
+      description: 'Scrape purchasing',
+      action: () => {
+        console.debug('c-a-s');
+        scrapeAndCopy('purchasing');
+      },
     },
-    'c-a-g': () => {
-      console.debug('c-a-g');
-      scrapeAndCopy('cross-charge');
+    {
+      key: ['ctrl-alt-g', 'cmd-k g'],
+      description: 'Scrape cross-charge',
+      action: () => {
+        console.debug('c-a-g');
+        scrapeAndCopy('cross-charge');
+      },
     },
-    'c-a-x': () => {
-      console.debug('c-a-x');
-      scrapeCollectPC();
+    {
+      key: ['ctrl-alt-x', 'cmd-k x'],
+      description: 'Scrape collect pc',
+      action: () => {
+        console.debug('c-a-x');
+        scrapeCollectPC();
+      },
     },
-    'c-a-c': () => {
-      console.debug('c-a-c');
-      if (window.location.href.includes('task')) {
-        setTicketStatus('Closed', 'Success', '');
-      } else {
-        setTicketStatus('Completed', '', 'Self Service');
-      }
+    {
+      key: ['ctrl-alt-c', 'cmd-k c'],
+      description: 'Scrape cost center',
+      action: () => {
+        console.debug('c-a-c');
+        if (window.location.href.includes('task')) {
+          setTicketStatus('Closed', 'Success', '');
+        } else {
+          setTicketStatus('Completed', '', 'Self Service');
+        }
+      },
     },
-    'c-a-z': () => {
-      console.debug('c-a-z');
-      setTicketStatus('Pending', 'Supplier Delivery', 'Self Service');
+    {
+      key: ['ctrl-alt-z', 'cmd-k z'],
+      description: 'Scrape cost center',
+      action: () => {
+        console.debug('c-a-z');
+        setTicketStatus('Pending', 'Supplier Delivery', 'Self Service');
+      },
     },
-    'c-a-a': () => {
-      console.debug('c-a-a');
-      setTicketStatus('In Progress', '', '');
+    {
+      key: ['ctrl-alt-a', 'cmd-k a'],
+      description: 'Scrape cost center',
+      action: () => {
+        console.debug('c-a-a');
+        setTicketStatus('In Progress', '', '');
+      },
     },
-    'c-a-w': () => {
-      console.debug('c-a-w');
-      const emailElement =
-        document.querySelector('a[ux-id="email-value"]') ??
-        document.querySelector('a[ux-id="email"]');
+    {
+      key: ['ctrl-alt-w', 'cmd-k w'],
+      description: 'set asset to received, storage and copy NT to clipboard',
+      action: () => {
+        console.debug('c-a-w');
+        const emailElement =
+          document.querySelector('a[ux-id="email-value"]') ??
+          document.querySelector('a[ux-id="email"]');
 
-      const nt = emailElement.textContent.trim().split('@')[0];
-      setAssetStatus('Received', 'Storage');
-      copyTextToClipboard(nt);
+        const nt = emailElement.textContent.trim().split('@')[0];
+        setAssetStatus('Received', 'Storage');
+        copyTextToClipboard(nt);
+      },
     },
-    'a-w': () => {
-      console.debug('a-w');
-      const emailElement =
-        document.querySelector('a[ux-id="email-value"]') ??
-        document.querySelector('a[ux-id="email"]');
+    {
+      key: ['alt-w', '∑'],
+      description:
+        'set asset to reserved, data preservation hold and copy NT to clipboard',
+      action: () => {
+        console.debug('a-w');
+        const emailElement =
+          document.querySelector('a[ux-id="email-value"]') ??
+          document.querySelector('a[ux-id="email"]');
 
-      const nt = emailElement.textContent.trim().split('@')[0];
-      setAssetStatus('Reserved', 'Data Preservation Hold');
-      copyTextToClipboard(nt);
+        const nt = emailElement.textContent.trim().split('@')[0];
+        setAssetStatus('Reserved', 'Data Preservation Hold');
+        copyTextToClipboard(nt);
+      },
     },
-    'c-a-l': () => {
-      console.debug('c-a-l');
-      setAssetStatus('Disposed', 'Ready for Disposal');
+    {
+      key: ['ctrl-alt-l', 'cmd-k l'],
+      description: 'set asset to disposed, ready for disposal',
+      action: () => {
+        console.debug('c-a-l');
+        setAssetStatus('End of Life', 'Ready for Disposal');
+      },
     },
-    'c-a-e': () => {
-      console.debug('c-a-e');
-      setAssetStatus('Deployed', 'In Production');
+    {
+      key: ['ctrl-alt-e', 'cmd-k e'],
+      description: 'set asset to deployed, in production',
+      action: () => {
+        console.debug('c-a-e');
+        setAssetStatus('Deployed', 'In Production');
+      },
     },
-    'c-a-f': () => {
-      console.debug('c-a-f');
-      getCostCenter();
+    {
+      key: ['ctrl-alt-f', 'cmd-k f'],
+      description: 'get cost center',
+      action: () => {
+        console.debug('c-a-f');
+        getCostCenter();
+      },
     },
-    'c-a-n': () => {
-      console.debug('c-a-n');
-      scrapeAssetsUsingNameTags();
+    {
+      key: ['ctrl-alt-n', 'cmd-k n'],
+      description: 'scrape assets using name tags',
+      action: () => {
+        console.debug('c-a-n');
+        scrapeAssetsUsingNameTags();
+      },
     },
-    'c-a-p': () => {
-      console.debug('c-a-p');
-      document
-        .getElementById('loading-spinner-container')
-        .classList.toggle('hidden');
+    {
+      key: ['ctrl-alt-p', 'cmd-k p'],
+      description: 'debug',
+      action: () => {
+        console.debug('c-a-p');
+        document
+          .getElementById('loading-spinner-container')
+          .classList.toggle('hidden');
+      },
     },
-  };
+  ];
 
-  Object.entries(shortcuts).forEach(([key, value]) => {
-    register(key, value);
+  shortcuts.forEach((item) => {
+    item.key.forEach((k) => {
+      register(k, item.action);
+    });
   });
 }
 
@@ -116,6 +180,7 @@ function customHandleKey(e) {
     const i = whatNumeralKey(e);
     const cells = getCells(i);
     copyTextToClipboard(cells);
+    showToast('Copied cells to clipboard', { theme: 'dark' });
     e.preventDefault();
   }
 }
