@@ -3,7 +3,7 @@
 // @namespace   https://hixon.dev
 // @description Various automations on SmartIT
 // @match       https://www.fedex.com/shipping*
-// @version     0.2.0
+// @version     0.2.1
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
