@@ -43,7 +43,7 @@ function GUI(props) {
       }
     };
     register('alt-`', updateToggle);
-    register('cmd-k `', updateToggle);
+    register('ctrlcmd-k `', updateToggle);
 
     ref.addEventListener('blur', () => {
       toggleState = ToggleState.Blurred;

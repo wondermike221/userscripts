@@ -16,7 +16,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
   let panelToggle = false;
   const shortcuts = [
     {
-      key: ['alt-`', 'cmd-k `'],
+      key: ['alt-`', 'ctrlcmd-k `'],
       description: 'Toggle main panel',
       action: () => {
         console.debug('a-`');
@@ -30,7 +30,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-d', 'cmd-k d'],
+      key: ['ctrl-alt-d', 'ctrlcmd-k d'],
       description: 'Scrape accessories',
       action: () => {
         console.debug('c-a-d');
@@ -38,7 +38,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-s', 'cmd-k s'],
+      key: ['ctrl-alt-s', 'ctrlcmd-k s'],
       description: 'Scrape purchasing',
       action: () => {
         console.debug('c-a-s');
@@ -46,7 +46,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-g', 'cmd-k g'],
+      key: ['ctrl-alt-g', 'ctrlcmd-k g'],
       description: 'Scrape cross-charge',
       action: () => {
         console.debug('c-a-g');
@@ -54,7 +54,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-x', 'cmd-k x'],
+      key: ['ctrl-alt-x', 'ctrlcmd-k x'],
       description: 'Scrape collect pc',
       action: () => {
         console.debug('c-a-x');
@@ -62,7 +62,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-c', 'cmd-k c'],
+      key: ['ctrl-alt-c', 'ctrlcmd-k c'],
       description: 'Scrape cost center',
       action: () => {
         console.debug('c-a-c');
@@ -74,7 +74,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-z', 'cmd-k z'],
+      key: ['ctrl-alt-z', 'ctrlcmd-k z'],
       description: 'Scrape cost center',
       action: () => {
         console.debug('c-a-z');
@@ -82,7 +82,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-a', 'cmd-k a'],
+      key: ['ctrl-alt-a', 'ctrlcmd-k a'],
       description: 'Scrape cost center',
       action: () => {
         console.debug('c-a-a');
@@ -90,7 +90,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-w', 'cmd-k w'],
+      key: ['ctrl-alt-w', 'ctrlcmd-k w'],
       description: 'set asset to received, storage and copy NT to clipboard',
       action: () => {
         console.debug('c-a-w');
@@ -119,7 +119,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-l', 'cmd-k l'],
+      key: ['ctrl-alt-l', 'ctrlcmd-k l'],
       description: 'set asset to disposed, ready for disposal',
       action: () => {
         console.debug('c-a-l');
@@ -127,7 +127,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-e', 'cmd-k e'],
+      key: ['ctrl-alt-e', 'ctrlcmd-k e'],
       description: 'set asset to deployed, in production',
       action: () => {
         console.debug('c-a-e');
@@ -135,7 +135,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-f', 'cmd-k f'],
+      key: ['ctrl-alt-f', 'ctrlcmd-k f'],
       description: 'get cost center',
       action: () => {
         console.debug('c-a-f');
@@ -143,7 +143,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-n', 'cmd-k n'],
+      key: ['ctrl-alt-n', 'ctrlcmd-k n'],
       description: 'scrape assets using name tags',
       action: () => {
         console.debug('c-a-n');
@@ -151,7 +151,7 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       },
     },
     {
-      key: ['ctrl-alt-p', 'cmd-k p'],
+      key: ['ctrl-alt-p', 'ctrlcmd-k p'],
       description: 'debug',
       action: () => {
         console.debug('c-a-p');
