@@ -2,7 +2,7 @@
 // @name        FedEx Form Filler
 // @namespace   https://hixon.dev
 // @description Various automations on SmartIT
-// @match       https://www.fedex.com/shipping*
+// @match       https://www.fedex.com/shipping/*
 // @version     0.2.1
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2

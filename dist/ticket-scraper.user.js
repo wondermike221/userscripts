@@ -1106,7 +1106,7 @@ function initShortcuts(mainPanel) {
     }
   }, {
     key: ['ctrl-alt-c', 'ctrlcmd-k c'],
-    description: 'Scrape cost center',
+    description: 'Set ticket status to closed and self service',
     action: () => {
       console.debug('c-a-c');
       if (window.location.href.includes('task')) {
@@ -1117,7 +1117,7 @@ function initShortcuts(mainPanel) {
     }
   }, {
     key: ['ctrl-alt-z', 'ctrlcmd-k z'],
-    description: 'Scrape cost center',
+    description: 'Set ticket status to pending supplier delivery and self service',
     action: () => {
       console.debug('c-a-z');
       setTicketStatus('Pending', 'Supplier Delivery', 'Self Service');
@@ -1153,7 +1153,7 @@ function initShortcuts(mainPanel) {
     }
   }, {
     key: ['ctrl-alt-l', 'ctrlcmd-k l'],
-    description: 'set asset to disposed, ready for disposal',
+    description: 'set asset to end of life, ready for disposal',
     action: () => {
       console.debug('c-a-l');
       setAssetStatus('End of Life', 'Ready for Disposal');

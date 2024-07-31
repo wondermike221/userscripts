@@ -8,7 +8,7 @@ import { Shipment, addFedExAutofillTextArea } from './legacy';
 import { simulateUserInteraction } from './simulate';
 import { register } from '@violentmonkey/shortcut';
 import { onMount } from 'solid-js';
-import { waitForElm } from '../ticket-scraper/utils';
+import { waitForElm } from '../utils';
 
 enum ToggleState {
   Hidden,

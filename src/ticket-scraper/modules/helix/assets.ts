@@ -1,4 +1,4 @@
-import { makeRequest } from '../../utils';
+import { makeRequest } from '../../../utils';
 import { showToast } from '@violentmonkey/ui';
 
 export async function scrapeAssetsUsingNameTags() {

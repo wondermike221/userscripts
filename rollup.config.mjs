@@ -7,6 +7,7 @@ export default defineConfig(
   Object.entries({
     'ticket-scraper': 'src/ticket-scraper/index.ts',
     'fedex-form-filler': 'src/fedex-form-filler/index.ts',
+    'snow': 'src/snow/index.ts',
   }).map(([name, entry]) => ({
     input: entry,
     plugins: [

@@ -1,5 +1,9 @@
 import { showToast } from '@violentmonkey/ui';
-import { copyTextToClipboard, getCostCenterFromHub, wait } from '../../utils';
+import {
+  copyTextToClipboard,
+  getCostCenterFromHub,
+  wait,
+} from '../../../utils';
 
 /**
  * Retrieves the cost center associated with the user's nametag by scraping the basic data, making a request to the hub, and notifying of success.

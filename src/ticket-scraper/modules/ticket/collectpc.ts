@@ -3,7 +3,7 @@ import {
   makeRequest,
   convertPlainTextToHTMLTable,
   copyTextToClipboard,
-} from '../../utils';
+} from '../../../utils';
 import { startSearchAssetByNT } from '../helix/assets';
 
 export default async function scrapeCollectPC() {

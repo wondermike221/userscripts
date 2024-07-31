@@ -1,5 +1,5 @@
 import { showToast } from '@violentmonkey/ui';
-import { getCostCenterFromHub, copyTextToClipboard } from '../../utils';
+import { getCostCenterFromHub, copyTextToClipboard } from '../../../utils';
 
 /**
  * Scrapes a specific workorder for relevant data, organize's it to my spreadsheet's format and adds a button/keyboard shortcut to copy to clipboard

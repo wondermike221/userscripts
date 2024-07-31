@@ -1,6 +1,6 @@
 import { register } from '@violentmonkey/shortcut';
 import { IPanelResult, showToast } from '@violentmonkey/ui';
-import { copyTextToClipboard, getCells } from '../../utils';
+import { copyTextToClipboard, getCells } from '../../../utils';
 import { scrapeAssetsUsingNameTags } from '../helix/assets';
 import scrapeAndCopy from '../ticket/accessory';
 import { getCostCenter } from '../ticket/index';

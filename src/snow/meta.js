@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name        FedEx Form Filler
+// @name        Snow Helpers
 // @namespace    https://hixon.dev
 // @description  Various automations on SmartIT
-// @match        https://www.fedex.com/shipping/*
+// @match       ebayinc.service-now.com/*
 // @grant       GM_addStyle
-// @version     0.2.1
+// @version     0.2.2
 // @author      process.env.AUTHOR
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2/dist/solid.min.js
-// @downloadURL  https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/fedex-form-filler.user.js
+// @downloadURL  https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/snow.user.js
 // @homepageURL  https://github.com/wondermike221/userscripts
 // ==/UserScript==
 

@@ -1,4 +1,4 @@
-import { wait } from '../../utils';
+import { wait } from '../../../utils';
 
 /**
  * Sets the status to $status and status reason to $reason in Helix.
