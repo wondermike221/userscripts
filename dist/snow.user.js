@@ -3,7 +3,7 @@
 // @namespace   https://hixon.dev
 // @description Various automations on SmartIT
 // @match       ebayinc.service-now.com/*
-// @version     0.2.2
+// @version     0.1.1
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
@@ -17,8 +17,8 @@
 (function (web, ui, solidJs) {
 'use strict';
 
-var styles = {"count":"style-module_count__4hn7L","plus1":"style-module_plus1__RRGIW"};
-var stylesheet="*,:after,:before{--un-rotate:0;--un-rotate-x:0;--un-rotate-y:0;--un-rotate-z:0;--un-scale-x:1;--un-scale-y:1;--un-scale-z:1;--un-skew-x:0;--un-skew-y:0;--un-translate-x:0;--un-translate-y:0;--un-translate-z:0;--un-pan-x: ;--un-pan-y: ;--un-pinch-zoom: ;--un-scroll-snap-strictness:proximity;--un-ordinal: ;--un-slashed-zero: ;--un-numeric-figure: ;--un-numeric-spacing: ;--un-numeric-fraction: ;--un-border-spacing-x:0;--un-border-spacing-y:0;--un-ring-offset-shadow:0 0 transparent;--un-ring-shadow:0 0 transparent;--un-shadow-inset: ;--un-shadow:0 0 transparent;--un-ring-inset: ;--un-ring-offset-width:0px;--un-ring-offset-color:#fff;--un-ring-width:0px;--un-ring-color:rgba(147,197,253,.5);--un-blur: ;--un-brightness: ;--un-contrast: ;--un-drop-shadow: ;--un-grayscale: ;--un-hue-rotate: ;--un-invert: ;--un-saturate: ;--un-sepia: ;--un-backdrop-blur: ;--un-backdrop-brightness: ;--un-backdrop-contrast: ;--un-backdrop-grayscale: ;--un-backdrop-hue-rotate: ;--un-backdrop-invert: ;--un-backdrop-opacity: ;--un-backdrop-saturate: ;--un-backdrop-sepia: }::backdrop{--un-rotate:0;--un-rotate-x:0;--un-rotate-y:0;--un-rotate-z:0;--un-scale-x:1;--un-scale-y:1;--un-scale-z:1;--un-skew-x:0;--un-skew-y:0;--un-translate-x:0;--un-translate-y:0;--un-translate-z:0;--un-pan-x: ;--un-pan-y: ;--un-pinch-zoom: ;--un-scroll-snap-strictness:proximity;--un-ordinal: ;--un-slashed-zero: ;--un-numeric-figure: ;--un-numeric-spacing: ;--un-numeric-fraction: ;--un-border-spacing-x:0;--un-border-spacing-y:0;--un-ring-offset-shadow:0 0 transparent;--un-ring-shadow:0 0 transparent;--un-shadow-inset: ;--un-shadow:0 0 transparent;--un-ring-inset: ;--un-ring-offset-width:0px;--un-ring-offset-color:#fff;--un-ring-width:0px;--un-ring-color:rgba(147,197,253,.5);--un-blur: ;--un-brightness: ;--un-contrast: ;--un-drop-shadow: ;--un-grayscale: ;--un-hue-rotate: ;--un-invert: ;--un-saturate: ;--un-sepia: ;--un-backdrop-blur: ;--un-backdrop-brightness: ;--un-backdrop-contrast: ;--un-backdrop-grayscale: ;--un-backdrop-hue-rotate: ;--un-backdrop-invert: ;--un-backdrop-opacity: ;--un-backdrop-saturate: ;--un-backdrop-sepia: }.style-module_count__4hn7L{--un-text-opacity:1;color:rgb(249 115 22/var(--un-text-opacity))}.style-module_plus1__RRGIW{float:right}";
+var styles = {};
+var stylesheet="";
 
 function copyTextToClipboard(text, mime = 'text/plain') {
   if (!navigator.clipboard) {
@@ -74,6 +74,16 @@ async function makeRequest(url, method = 'GET', payload = null) {
       onerror: () => reject(new Error('Request failed'))
     });
   });
+}
+
+// Converts a plain text table to an HTML table
+function convertPlainTextToHTMLTable(plainText) {
+  const rows = plainText.trim().split('\n');
+  const htmlRows = rows.map(row => {
+    const cells = row.split('\t').map(cell => `<td>${cell.trim()}</td>`).join('');
+    return `<tr>${cells}</tr>`;
+  });
+  return `<table>${htmlRows.join('')}</table>`;
 }
 async function getCostCenterFromHub(profileURL) {
   try {
@@ -139,8 +149,6 @@ function Routing(props) {
   })();
 }
 web.delegateEvents(["click"]);
-
-var css_248z = "";
 
 function _extends() {
   _extends = Object.assign ? Object.assign.bind() : function (target) {
@@ -533,6 +541,69 @@ function getService() {
 }
 const register = (...args) => getService().register(...args);
 
+async function scrapeCollectPC() {
+  const spinner = document.getElementById('loading-spinner-container');
+  if (!spinner.classList.contains('hidden')) {
+    spinner.classList.add('hidden');
+  }
+  const fields = {
+    QID: '',
+    Name: '',
+    NT: '',
+    ManagerName: '',
+    ManagerEmail: '',
+    DeployedAssets: [],
+    AssetStatus: [],
+    Status: 'TODO',
+    Date: '',
+    Source: '',
+    CostCenter: '',
+    PersonalEmail: ''
+  };
+
+  //press i to populate user info popover
+  const info_btn = document.querySelector('#viewr\\.sc_task\\.request_item\\.request\\.requested_for');
+  await info_btn.click();
+  //get NT, QID, Date
+  const elem_nt = document.querySelector('#sys_user\\.u_configuration_item_label');
+  fields.NT = elem_nt.value;
+  const elem_qid = document.querySelector('#sys_readonly\\.sys_user\\.x_ebay_core_config_sam_qid');
+  fields.QID = elem_qid.value;
+  const elem_date = document.querySelector('#sys_readonly\\.sys_user\\.u_termination_date');
+  fields.Date = elem_date.value;
+  const PEOPLEX_PROFILE_URL = NT => `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${NT}`;
+  let user_data, manager_data; //, asset_data;
+  try {
+    const userResponse = await makeRequest(PEOPLEX_PROFILE_URL(fields.NT));
+    user_data = JSON.parse(userResponse);
+    const managerResponse = await makeRequest(PEOPLEX_PROFILE_URL(user_data.payload.managerUserId));
+    manager_data = JSON.parse(managerResponse);
+    // const assetResponse = await startSearchAssetByNT(description_nt);
+    // asset_data = assetResponse;
+  } catch (e) {
+    console.error(e);
+    const title = 'Failure!';
+    const body = 'Data was not scraped successfully. Check that the peoplex is still logged in.';
+    ui.showToast(`${title}: ${body}`, {
+      theme: 'dark'
+    });
+  }
+  if (fields.QID != user_data.payload.qID) {
+    ui.showToast("QID's don't match!");
+  }
+  if (fields.CostCenter != user_data.payload.costctrCd) {
+    ui.showToast("Cost Center's don't match!");
+  }
+  fields.Name = `${user_data.payload.prefFirstName} ${user_data.payload.prefLastName}`;
+  fields.ManagerEmail = manager_data.payload.email;
+  fields.ManagerName = manager_data.payload.mgrName;
+  fields.Source = user_data.payload.userSrcSys;
+  const csvCollectPC = `${fields.QID}\t${fields.Name}\t${fields.NT}\t${fields.ManagerName}\t${fields.ManagerEmail}\t${fields.DeployedAssets}\t${fields.AssetStatus}\t${fields.Status}\t${fields.Date}\t${fields.Source}\t${fields.CostCenter}\t${fields.PersonalEmail}`;
+  const html_csvCollectPC = convertPlainTextToHTMLTable(csvCollectPC);
+  copyTextToClipboard(html_csvCollectPC, 'text/html');
+  spinner.classList.add('hidden');
+}
+
 function initShortcuts(mainPanel) {
   document.addEventListener('keydown', customHandleKey);
   // addEventListener(document.body, 'keydown', handleKeyWithFocusCheck, false);
@@ -557,6 +628,13 @@ function initShortcuts(mainPanel) {
     action: () => {
       console.debug('c-a-f');
       //getCostCenter();
+    }
+  }, {
+    key: ['ctrl-alt-x', 'ctrlcmd-k x'],
+    description: 'scrape collect pc',
+    action: async () => {
+      console.debug('c-a-x');
+      await scrapeCollectPC();
     }
   }, {
     key: ['ctrl-alt-p', 'ctrlcmd-k p'],
@@ -610,6 +688,8 @@ function whatNumeralKey(e) {
     return null;
   }
 }
+
+var css_248z = "";
 
 console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
 window.addEventListener('load', () => {
