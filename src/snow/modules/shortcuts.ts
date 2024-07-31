@@ -1,6 +1,7 @@
 import { register } from '@violentmonkey/shortcut';
 import { IPanelResult, showToast } from '@violentmonkey/ui';
 import { copyTextToClipboard } from '../../utils';
+import scrapeCollectPC from './collectpc';
 
 export default function initShortcuts(mainPanel: IPanelResult) {
   document.addEventListener('keydown', customHandleKey);
@@ -28,6 +29,14 @@ export default function initShortcuts(mainPanel: IPanelResult) {
       action: () => {
         console.debug('c-a-f');
         //getCostCenter();
+      },
+    },
+    {
+      key: ['ctrl-alt-x', 'ctrlcmd-k x'],
+      description: 'scrape collect pc',
+      action: async () => {
+        console.debug('c-a-x');
+        await scrapeCollectPC();
       },
     },
     {
