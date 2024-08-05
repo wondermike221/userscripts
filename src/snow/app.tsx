@@ -7,6 +7,7 @@ import initShortcuts from './modules/shortcuts';
 import globalCss from './style.css';
 // CSS modules
 import { stylesheet } from './style.module.css';
+import scrapeCollectPC, { getManagers, getSources } from './modules/collectpc';
 
 console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
 
@@ -22,6 +23,8 @@ function initializeApp() {
   });
 
   initShortcuts(panel);
-
+  GM_registerMenuCommand('scrape collect pc', scrapeCollectPC);
+  GM_registerMenuCommand('get sources', getSources);
+  GM_registerMenuCommand('get managers', getManagers);
   render(() => <Routing panelRef={panel} />, panel.body);
 }
