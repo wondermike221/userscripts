@@ -108,7 +108,7 @@ export async function getSources() {
     }
     sources.push(user_data.payload.userSrcSys);
   }
-  return sources.join('\n');
+  copyTextToClipboard(sources.join('\n'));
 }
 
 export async function getManagers() {
@@ -140,5 +140,5 @@ export async function getManagers() {
       `${manager_data.payload.mgrName}\t${manager_data.payload.email}`,
     );
   }
-  return managers.join('\n');
+  copyTextToClipboard(managers.join('\n'));
 }
