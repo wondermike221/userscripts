@@ -3,7 +3,7 @@
 // @namespace   https://hixon.dev
 // @description Various automations on SmartIT
 // @match       ebayinc.service-now.com/*
-// @version     0.1.3
+// @version     0.1.4
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
@@ -343,6 +343,9 @@ async function getSources() {
     sources.push(user_data.payload.userSrcSys);
   }
   copyTextToClipboard(sources.join('\n'));
+  ui.showToast('Sources successfully copied to clipboard', {
+    theme: 'dark'
+  });
 }
 async function getManagers() {
   const NTS_raw = prompt('Input NTS', '');
@@ -370,6 +373,9 @@ async function getManagers() {
     managers.push(`${manager_data.payload.mgrName}\t${manager_data.payload.email}`);
   }
   copyTextToClipboard(managers.join('\n'));
+  ui.showToast('Manager information successfully copied to clipboard', {
+    theme: 'dark'
+  });
 }
 
 console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
