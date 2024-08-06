@@ -109,6 +109,7 @@ export async function getSources() {
     sources.push(user_data.payload.userSrcSys);
   }
   copyTextToClipboard(sources.join('\n'));
+  showToast('Sources successfully copied to clipboard', { theme: 'dark' });
 }
 
 export async function getManagers() {
@@ -141,4 +142,7 @@ export async function getManagers() {
     );
   }
   copyTextToClipboard(managers.join('\n'));
+  showToast('Manager information successfully copied to clipboard', {
+    theme: 'dark',
+  });
 }
