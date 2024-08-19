@@ -3,7 +3,7 @@
 // @namespace   https://hixon.dev
 // @description Various automations on SmartIT
 // @match       ebayinc.service-now.com/*
-// @version     0.1.4
+// @version     0.1.5
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
@@ -370,7 +370,7 @@ async function getManagers() {
         theme: 'dark'
       });
     }
-    managers.push(`${manager_data.payload.mgrName}\t${manager_data.payload.email}`);
+    managers.push(`${manager_data.payload.prefFirstName} ${manager_data.payload.prefLastName}\t${manager_data.payload.email}`);
   }
   copyTextToClipboard(managers.join('\n'));
   ui.showToast('Manager information successfully copied to clipboard', {
