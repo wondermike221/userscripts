@@ -138,7 +138,7 @@ export async function getManagers() {
       showToast(`${title}: ${body}`, { theme: 'dark' });
     }
     managers.push(
-      `${manager_data.payload.mgrName}\t${manager_data.payload.email}`,
+      `${manager_data.payload.prefFirstName} ${manager_data.payload.prefLastName}\t${manager_data.payload.email}`,
     );
   }
   copyTextToClipboard(managers.join('\n'));
