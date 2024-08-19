@@ -4,7 +4,7 @@
 // @description  Various automations on SmartIT
 // @match       ebayinc.service-now.com/*
 // @grant       GM_addStyle
-// @version     0.1.4
+// @version     0.1.5
 // @author      process.env.AUTHOR
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
