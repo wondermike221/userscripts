@@ -76,7 +76,7 @@ export default async function scrapeCollectPC() {
   }
   fields.Name = `${user_data.payload.prefFirstName} ${user_data.payload.prefLastName}`;
   fields.ManagerEmail = manager_data.payload.email;
-  fields.ManagerName = manager_data.payload.mgrName;
+  fields.ManagerName = `${manager_data.payload.prefFirstName} ${manager_data.payload.prefLastName}`;
   fields.Source = user_data.payload.userSrcSys;
 
   const csvCollectPC = `${fields.QID}\t${fields.Name}\t${fields.NT}\t${fields.ManagerName}\t${fields.ManagerEmail}\t${fields.DeployedAssets}\t${fields.AssetStatus}\t${fields.Status}\t${fields.Date}\t${fields.Source}\t${fields.CostCenter}\t${fields.PersonalEmail}`;
