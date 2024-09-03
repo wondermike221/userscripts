@@ -85,7 +85,7 @@ export default async function scrapeCollectPC() {
   //   spinner.classList.add('hidden');
 }
 
-export async function getSources() {
+export async function getSourcesAnd() {
   const NTS_raw = prompt('Input NTS', '');
   if (NTS_raw == '') {
     console.error('please input well formed NTS');
@@ -142,6 +142,41 @@ export async function getManagers() {
     );
   }
   copyTextToClipboard(managers.join('\n'));
+  showToast('Manager information successfully copied to clipboard', {
+    theme: 'dark',
+  });
+}
+
+export async function getPeopleXProfileData() {
+  const NTS_raw = prompt('Input NTS', '');
+  if (NTS_raw == '') {
+    console.error('please input well formed NTS');
+  }
+  const NTS = NTS_raw.split(/\r?\n/);
+  const data = [];
+  for (const NT of NTS) {
+    const PEOPLEX_PROFILE_URL = (NT) =>
+      `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${NT}`;
+    let user_data, manager_data;
+    try {
+      const userResponse = await makeRequest(PEOPLEX_PROFILE_URL(NT));
+      user_data = JSON.parse(userResponse);
+      const managerResponse = await makeRequest(
+        PEOPLEX_PROFILE_URL(user_data.payload.managerUserId),
+      );
+      manager_data = JSON.parse(managerResponse);
+    } catch (e) {
+      console.error(e);
+      const title = 'Failure!';
+      const body =
+        'Data was not scraped successfully. Check that the peoplex is still logged in.';
+      showToast(`${title}: ${body}`, { theme: 'dark' });
+    }
+    data.push(
+      `${user_data.payload.userSrcSys}\t${user_data.payload.vendorName}\t${manager_data.payload.prefFirstName} ${manager_data.payload.prefLastName}\t${manager_data.payload.email}`,
+    );
+  }
+  copyTextToClipboard(data.join('\n'));
   showToast('Manager information successfully copied to clipboard', {
     theme: 'dark',
   });

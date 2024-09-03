@@ -2,7 +2,9 @@
 // @name        Ticket Scraper
 // @namespace    https://hixon.dev
 // @description  Various automations on SmartIT
-// @match       *://*/*
+// @match       *://ebay-smartit.onbmc.com/*
+// @match       *://hub.corp.ebay.com/*
+// @match       *://peoplex.corp.ebay.com/*
 // @grant       GM_addStyle
 // @version     0.2.2
 // @author      process.env.AUTHOR

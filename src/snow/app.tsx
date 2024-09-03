@@ -26,5 +26,6 @@ function initializeApp() {
   GM_registerMenuCommand('scrape collect pc', scrapeCollectPC);
   GM_registerMenuCommand('get sources', getSources);
   GM_registerMenuCommand('get managers', getManagers);
+  GM_registerMenuCommand('Get PeopleX Profile Data', getPeopleXProfileData);
   render(() => <Routing panelRef={panel} />, panel.body);
 }
