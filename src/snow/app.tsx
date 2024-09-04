@@ -7,7 +7,11 @@ import initShortcuts from './modules/shortcuts';
 import globalCss from './style.css';
 // CSS modules
 import { stylesheet } from './style.module.css';
-import scrapeCollectPC, { getManagers, getSources } from './modules/collectpc';
+import scrapeCollectPC, {
+  getManagers,
+  getPeopleXProfileData,
+  getSources,
+} from './modules/collectpc';
 
 console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
 

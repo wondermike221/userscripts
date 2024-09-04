@@ -85,7 +85,7 @@ export default async function scrapeCollectPC() {
   //   spinner.classList.add('hidden');
 }
 
-export async function getSourcesAnd() {
+export async function getSources() {
   const NTS_raw = prompt('Input NTS', '');
   if (NTS_raw == '') {
     console.error('please input well formed NTS');
@@ -177,7 +177,7 @@ export async function getPeopleXProfileData() {
     );
   }
   copyTextToClipboard(data.join('\n'));
-  showToast('Manager information successfully copied to clipboard', {
+  showToast('PeopleX information successfully copied to clipboard', {
     theme: 'dark',
   });
 }

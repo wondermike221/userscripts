@@ -3,7 +3,7 @@
 // @namespace   https://hixon.dev
 // @description Various automations on SmartIT
 // @match       ebayinc.service-now.com/*
-// @version     0.1.5
+// @version     0.1.6
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
@@ -312,7 +312,7 @@ async function scrapeCollectPC() {
   }
   fields.Name = `${user_data.payload.prefFirstName} ${user_data.payload.prefLastName}`;
   fields.ManagerEmail = manager_data.payload.email;
-  fields.ManagerName = manager_data.payload.mgrName;
+  fields.ManagerName = `${manager_data.payload.prefFirstName} ${manager_data.payload.prefLastName}`;
   fields.Source = user_data.payload.userSrcSys;
   const csvCollectPC = `${fields.QID}\t${fields.Name}\t${fields.NT}\t${fields.ManagerName}\t${fields.ManagerEmail}\t${fields.DeployedAssets}\t${fields.AssetStatus}\t${fields.Status}\t${fields.Date}\t${fields.Source}\t${fields.CostCenter}\t${fields.PersonalEmail}`;
   const html_csvCollectPC = convertPlainTextToHTMLTable(csvCollectPC);
@@ -377,6 +377,36 @@ async function getManagers() {
     theme: 'dark'
   });
 }
+async function getPeopleXProfileData() {
+  const NTS_raw = prompt('Input NTS', '');
+  if (NTS_raw == '') {
+    console.error('please input well formed NTS');
+  }
+  const NTS = NTS_raw.split(/\r?\n/);
+  const data = [];
+  for (const NT of NTS) {
+    const PEOPLEX_PROFILE_URL = NT => `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${NT}`;
+    let user_data, manager_data;
+    try {
+      const userResponse = await makeRequest(PEOPLEX_PROFILE_URL(NT));
+      user_data = JSON.parse(userResponse);
+      const managerResponse = await makeRequest(PEOPLEX_PROFILE_URL(user_data.payload.managerUserId));
+      manager_data = JSON.parse(managerResponse);
+    } catch (e) {
+      console.error(e);
+      const title = 'Failure!';
+      const body = 'Data was not scraped successfully. Check that the peoplex is still logged in.';
+      ui.showToast(`${title}: ${body}`, {
+        theme: 'dark'
+      });
+    }
+    data.push(`${user_data.payload.userSrcSys}\t${user_data.payload.vendorName}\t${manager_data.payload.prefFirstName} ${manager_data.payload.prefLastName}\t${manager_data.payload.email}`);
+  }
+  copyTextToClipboard(data.join('\n'));
+  ui.showToast('PeopleX information successfully copied to clipboard', {
+    theme: 'dark'
+  });
+}
 
 console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
 window.addEventListener('load', () => {
@@ -392,6 +422,7 @@ function initializeApp() {
   GM_registerMenuCommand('scrape collect pc', scrapeCollectPC);
   GM_registerMenuCommand('get sources', getSources);
   GM_registerMenuCommand('get managers', getManagers);
+  GM_registerMenuCommand('Get PeopleX Profile Data', getPeopleXProfileData);
   web.render(() => web.createComponent(Routing, {
     panelRef: panel
   }), panel.body);
