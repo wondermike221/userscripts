@@ -11,15 +11,13 @@
 // @downloadURL https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/snow.user.js
 // @homepageURL https://github.com/wondermike221/userscripts
 // @grant       GM_addStyle
-// @grant       GM_registerMenuCommand
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
 (function (web, ui, solidJs) {
 'use strict';
 
-var styles = {};
-var stylesheet="";
+// import { showToast } from '@violentmonkey/ui';
 
 function copyTextToClipboard(text, mime = 'text/plain') {
   if (!navigator.clipboard) {
@@ -59,34 +57,35 @@ function fallbackCopyTextToClipboard(text) {
   }
   document.body.removeChild(textArea);
 }
-async function makeRequest(url, method = 'GET', payload = null) {
-  return new Promise(function (resolve, reject) {
-    GM_xmlhttpRequest({
-      url,
-      method,
-      data: payload,
-      onload: r => {
-        if (r.status === 200) {
-          resolve(r.responseText);
-        } else {
-          reject(new Error(`Request failed with status ${r.status}`));
-        }
-      },
-      onerror: () => reject(new Error('Request failed'))
-    });
+
+// deprecated
+/* export function getCells(i) {
+  const data = getDataFromCells();
+  let text = '';
+  data.forEach((row) => {
+    const cell = row[i];
+    text = text.concat(`${cell}\n`);
   });
+  return text;
 }
 
-// Converts a plain text table to an HTML table
-function convertPlainTextToHTMLTable(plainText) {
-  const rows = plainText.trim().split('\n');
-  const htmlRows = rows.map(row => {
-    const cells = row.split('\t').map(cell => `<td>${cell.trim()}</td>`).join('');
-    return `<tr>${cells}</tr>`;
+// deprecated
+export function getDataFromCells() {
+  const rows = document.querySelectorAll('div[ng-row]');
+  const data = [];
+
+  rows.forEach((row, rIdx) => {
+    data.push([]);
+    const cells = row.querySelectorAll(
+      'div[ng-cell] span[ng-cell-text]',
+    ) as NodeListOf<HTMLElement>;
+    cells.forEach((cell) => data[rIdx].push(cell.outerText));
   });
-  return `<table>${htmlRows.join('')}</table>`;
+  return data;
 }
-async function getCostCenterFromHub(profileURL) {
+
+// deprecated
+export async function getCostCenterFromHub(profileURL) {
   try {
     const r = await makeRequest(profileURL);
     const data = JSON.parse(r).data;
@@ -94,146 +93,559 @@ async function getCostCenterFromHub(profileURL) {
   } catch (e) {
     console.error(e);
     const title = 'Failure!';
-    const body = 'Data was not scraped successfully. Check that the hub is still logged in.';
-    ui.showToast(`${title}: ${body}`, {
-      theme: 'dark'
-    });
+    const body =
+      'Data was not scraped successfully. Check that the hub is still logged in.';
+    showToast(`${title}: ${body}`, { theme: 'dark' });
   }
-}
+} */
 
-var _tmpl$ = /*#__PURE__*/web.template(`<div><p>Drag me</p><button>Get Cost Center for </button><p><span></span> people think this is amazing.`);
+function snow_api_url(table, id) {
+  const BASE_URL = 'https://ebayinc.service-now.com';
+  const base = new URL(`/${table}.do`, BASE_URL);
+  base.searchParams.append('JSONv2', '');
+  base.searchParams.append('sysparm_sys_id', id);
+  base.searchParams.append('displayvalue', 'all');
+  base.searchParams.append('displayvariables', 'true');
+  return base.href;
+}
+function snow_get_sys_id_from_url(table) {
+  const url = window.location.href;
+  const index = url.indexOf(table);
+  const index_sys_id_start = index + table.length + 1;
+  let index_sys_id_end = url.indexOf('/', index_sys_id_start);
+  if (index_sys_id_end == -1) {
+    index_sys_id_end = url.length;
+  }
+  const sys_id = url.substring(index_sys_id_start, index_sys_id_end);
+  return sys_id;
+}
+async function snow_get_record(table, sys_id = null) {
+  if (sys_id == null) {
+    sys_id = snow_get_sys_id_from_url(table);
+  }
+  const response = await fetch(snow_api_url(table, sys_id));
+  const j = await response.json();
+  return j;
+}
+function build_charge_sheet_row(task, user) {
+  const u_variables = JSON.parse(task.u_variables);
+  const row = [new Date().toLocaleDateString(), 'SLC', '', '1', task.dv_number, user.dv_email, user.dv_cost_center, user.dv_name, u_variables.street_address, '', u_variables.city, u_variables.v_state, u_variables.zip, u_variables.contact_number, 'USA'];
+  return row.join('\t');
+}
+function build_bh_sheet_row(task, user) {
+  const u_variables = JSON.parse(task.u_variables);
+  const row = [new Date().toLocaleDateString(), user.dv_name.split(' ')[0], user.dv_name.split(' ')[1], '', '', '', u_variables.street_address, '', u_variables.city, u_variables.v_state, u_variables.zip, '', '1', 'WFH', task.dv_number, 'mhixon', 'Normal'];
+  return row.join('\t');
+}
+/*
+// Example
+let task = await snow_get_record('sc_task');
+let ritm = await snow_get_record('sc_req_item', task.records[0].parent); //or request_item instead of parent
+let user = await snow_get_record('sys_user', ritm.records[0].requested_for);
+let assets = await snow_get_records('alm_hardware', `assigned_to=${user.records[0].sys_id}^install_status=1`);
+
+console.log(build_charge_sheet_row(task.records[0], user.records[0]));
+console.log(build_bh_sheet_row(task.records[0], user.records[0]));
+*/
+
+var _tmpl$ = /*#__PURE__*/web.template(`<div><span> Copy:<button>(1) JSON</button><button>(2) CSV</button><button>(3) TSV</button><button>(4) Dropship</button><button>(5) Exit</button><button>(6) Hide`);
 function Routing(props) {
   solidJs.onMount(() => {
     Object.assign(props.panelRef.wrapper.style, {
       display: 'block',
-      width: '100%',
       position: 'relative',
-      bottom: 'calc(100 - var(20vh))',
-      left: 0,
-      right: 0,
-      transition: 'all 0.1s ease-out',
-      overflowY: 'scroll'
+      bottom: '50%',
+      left: '50%'
     });
     props.panelRef.setMovable(true);
   });
-  solidJs.createSignal(window.location);
-  const [getNT, setNT] = solidJs.createSignal(0);
+  const [getRoute, setRoute] = solidJs.createSignal(window.location);
   return (() => {
     var _el$ = _tmpl$(),
       _el$2 = _el$.firstChild,
-      _el$3 = _el$2.nextSibling;
-      _el$3.firstChild;
-      var _el$5 = _el$3.nextSibling,
-      _el$6 = _el$5.firstChild;
-    _el$.style.setProperty("display", "block");
-    _el$.style.setProperty("width", "100%");
-    _el$.style.setProperty("position", "relative");
-    _el$.style.setProperty("bottom", "calc(100 - var(20vh))");
-    _el$.style.setProperty("left", "0");
-    _el$.style.setProperty("right", "0");
-    _el$.style.setProperty("transition", "all 0.1s ease-out");
-    _el$.style.setProperty("overflow-y", "scroll");
-    _el$3.$$click = () => getCostCenterFromHub;
-    web.insert(_el$3, getNT, null);
-    web.insert(_el$6, getNT);
-    web.effect(_p$ => {
-      var _v$ = styles.plus1,
-        _v$2 = styles.count;
-      _v$ !== _p$.e && web.className(_el$3, _p$.e = _v$);
-      _v$2 !== _p$.t && web.className(_el$6, _p$.t = _v$2);
-      return _p$;
-    }, {
-      e: undefined,
-      t: undefined
-    });
+      _el$3 = _el$2.firstChild,
+      _el$5 = _el$3.nextSibling,
+      _el$6 = _el$5.nextSibling,
+      _el$7 = _el$6.nextSibling,
+      _el$8 = _el$7.nextSibling,
+      _el$9 = _el$8.nextSibling,
+      _el$0 = _el$9.nextSibling;
+    _el$.style.setProperty("width", "10vw");
+    _el$.style.setProperty("height", "10vh");
+    web.addEventListener(_el$5, "click", () => handleCopy('json'));
+    web.addEventListener(_el$6, "click", () => handleCopy('csv'));
+    web.addEventListener(_el$7, "click", () => handleCopy('tsv'));
+    web.addEventListener(_el$8, "click", () => handleCopy('dropship'));
+    web.addEventListener(_el$9, "click", () => handleCopy('exit'));
+    web.addEventListener(_el$0, "click", () => handleCopy('hide', props.panelRef));
     return _el$;
   })();
 }
-web.delegateEvents(["click"]);
+async function handleCopy(type, panel = null) {
+  const task = await snow_get_record('sc_task');
+  const ritm = await snow_get_record('sc_req_item', task.records[0].parent);
+  const user = await snow_get_record('sys_user', ritm.records[0].requested_for);
+  switch (type) {
+    case 'json':
+      {
+        const json = undefined(task, user);
+        copyTextToClipboard(JSON.stringify(json));
+      }
+      break;
+    case 'csv':
+      {
+        // TODO
+        // const csv = snow.build_minimal_csv(task, user);
+        // copyTextToClipboard(csv);
+        console.log('csv TODO');
+      }
+      break;
+    case 'tsv':
+      {
+        const tsv = build_charge_sheet_row(task, user);
+        copyTextToClipboard(tsv);
+      }
+      break;
+    case 'dropship':
+      {
+        const dropship = build_bh_sheet_row(task, user);
+        copyTextToClipboard(dropship);
+      }
+      break;
+    case 'exit':
+      {
+        // TODO
+        // const exit = snow.build_exit_json(task, user);
+        // copyTextToClipboard(JSON.stringify(exit));
+        console.log('exit TODO');
+      }
+      break;
+    case 'hide':
+      panel.hide();
+      break;
+  }
+}
 
-// import { register } from '@violentmonkey/shortcut';
-// import scrapeCollectPC from './collectpc';
+function _extends() {
+  return _extends = Object.assign ? Object.assign.bind() : function (n) {
+    for (var e = 1; e < arguments.length; e++) {
+      var t = arguments[e];
+      for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]);
+    }
+    return n;
+  }, _extends.apply(null, arguments);
+}
+
+/*! @violentmonkey/shortcut v1.4.4 | ISC License */
+
+const isMacintosh = navigator.userAgent.includes('Macintosh');
+const modifierList = ['m', 'c', 's', 'a'];
+const modifiers = {
+  ctrl: 'c',
+  control: 'c',
+  // macOS
+  shift: 's',
+  alt: 'a',
+  meta: 'm',
+  cmd: 'm'
+};
+const modifierAliases = _extends({}, modifiers, {
+  c: 'c',
+  s: 's',
+  a: 'a',
+  m: 'm',
+  cm: isMacintosh ? 'm' : 'c',
+  ctrlcmd: isMacintosh ? 'm' : 'c'
+});
+const aliases = {
+  arrowup: 'up',
+  arrowdown: 'down',
+  arrowleft: 'left',
+  arrowright: 'right',
+  cr: 'enter',
+  escape: 'esc',
+  ' ': 'space'
+};
+
+function createKeyNode() {
+  return {
+    children: new Map(),
+    shortcuts: new Set()
+  };
+}
+function addKeyNode(root, sequence, shortcut) {
+  let node = root;
+  for (const key of sequence) {
+    let child = node.children.get(key);
+    if (!child) {
+      child = createKeyNode();
+      node.children.set(key, child);
+    }
+    node = child;
+  }
+  node.shortcuts.add(shortcut);
+}
+function getKeyNode(root, sequence) {
+  let node = root;
+  for (const key of sequence) {
+    node = node.children.get(key);
+    if (!node) break;
+  }
+  return node;
+}
+function removeKeyNode(root, sequence, shortcut) {
+  let node = root;
+  const ancestors = [node];
+  for (const key of sequence) {
+    node = node.children.get(key);
+    if (!node) return;
+    ancestors.push(node);
+  }
+  if (shortcut) node.shortcuts.delete(shortcut);else node.shortcuts.clear();
+  let i = ancestors.length - 1;
+  while (i > 0) {
+    node = ancestors[i];
+    if (node.shortcuts.size || node.children.size) break;
+    const last = ancestors[i - 1];
+    last.children.delete(sequence[i - 1]);
+    i -= 1;
+  }
+}
+function reprNodeTree(root) {
+  const result = [];
+  const reprChildren = (node, level = 0) => {
+    for (const [key, child] of node.children.entries()) {
+      result.push(['  '.repeat(level), key, child.shortcuts.size ? ` (${child.shortcuts.size})` : ''].join(''));
+      reprChildren(child, level + 1);
+    }
+  };
+  reprChildren(root);
+  return result.join('\n');
+}
+
+class Subject {
+  constructor(value) {
+    this.listeners = [];
+    this.value = value;
+  }
+  get() {
+    return this.value;
+  }
+  set(value) {
+    this.value = value;
+    this.listeners.forEach(listener => listener(value));
+  }
+  subscribe(callback) {
+    this.listeners.push(callback);
+    callback(this.value);
+    return () => this.unsubscribe(callback);
+  }
+  unsubscribe(callback) {
+    const i = this.listeners.indexOf(callback);
+    if (i >= 0) this.listeners.splice(i, 1);
+  }
+}
+
+function buildKey(key) {
+  const {
+    caseSensitive,
+    modifierState
+  } = key;
+  let {
+    base
+  } = key;
+  if (!caseSensitive || base.length > 1) base = base.toLowerCase();
+  base = aliases[base] || base;
+  const keyExp = [...modifierList.filter(m => modifierState[m]), base].filter(Boolean).join('-');
+  return `${caseSensitive ? '' : 'i:'}${keyExp}`;
+}
+function breakKey(shortcut) {
+  const pieces = shortcut.split(/-(.)/);
+  const parts = [pieces[0]];
+  for (let i = 1; i < pieces.length; i += 2) {
+    parts.push(pieces[i] + pieces[i + 1]);
+  }
+  return parts;
+}
+function parseKey(shortcut, caseSensitive) {
+  const parts = breakKey(shortcut);
+  const base = parts.pop();
+  const modifierState = {};
+  for (const part of parts) {
+    const key = modifierAliases[part.toLowerCase()];
+    if (!key) throw new Error(`Unknown modifier key: ${part}`);
+    modifierState[key] = true;
+  }
+  // Alt/Shift modifies the character.
+  // In case sensitive mode, we only need to check the modified character: <c-A> = Ctrl+Shift+KeyA
+  // In case insensitive mode, we check the keyCode as well as modifiers: <c-s-a> = Ctrl+Shift+KeyA
+  // So if Alt/Shift appears in the shortcut, we must switch to case insensitive mode.
+  caseSensitive && (caseSensitive = !(modifierState.a || modifierState.s));
+  return {
+    base,
+    modifierState,
+    caseSensitive
+  };
+}
+function getSequence(input) {
+  return Array.isArray(input) ? input : input.split(/\s+/);
+}
+function normalizeSequence(input, caseSensitive) {
+  return getSequence(input).map(key => parseKey(key, caseSensitive));
+}
+function parseCondition(condition) {
+  return condition.split('&&').map(key => {
+    key = key.trim();
+    if (!key) return;
+    if (key[0] === '!') {
+      return {
+        not: true,
+        field: key.slice(1).trim()
+      };
+    }
+    return {
+      not: false,
+      field: key
+    };
+  }).filter(Boolean);
+}
+class KeyboardService {
+  constructor(options) {
+    this._context = {};
+    this._conditionData = {};
+    this._data = [];
+    this._root = createKeyNode();
+    this.sequence = new Subject([]);
+    this._timer = 0;
+    this._reset = () => {
+      this._cur = undefined;
+      this.sequence.set([]);
+      this._resetTimer();
+    };
+    this.handleKey = e => {
+      // Chrome sends a trusted keydown event with no key when choosing from autofill
+      if (!e.key || modifiers[e.key.toLowerCase()]) return;
+      this._resetTimer();
+      const keyExps = [
+      // case sensitive mode, `e.key` is the character considering Alt/Shift
+      buildKey({
+        base: e.key,
+        modifierState: {
+          c: e.ctrlKey,
+          m: e.metaKey
+        },
+        caseSensitive: true
+      }),
+      // case insensitive mode, using `e.code` with modifiers including Alt/Shift
+      buildKey({
+        base: e.code,
+        modifierState: {
+          c: e.ctrlKey,
+          s: e.shiftKey,
+          a: e.altKey,
+          m: e.metaKey
+        },
+        caseSensitive: false
+      }),
+      // case insensitive mode, using `e.key` with modifiers
+      buildKey({
+        // Note: `e.key` might be different from what you expect because of Alt Graph
+        // ref: https://en.wikipedia.org/wiki/AltGr_key
+        base: e.key,
+        modifierState: {
+          c: e.ctrlKey,
+          s: e.shiftKey,
+          a: e.altKey,
+          m: e.metaKey
+        },
+        caseSensitive: false
+      })];
+      const state = this._handleKeyOnce(keyExps, false);
+      if (state) {
+        e.preventDefault();
+        if (state === 2) this._reset();
+      }
+      this._timer = window.setTimeout(this._reset, this.options.sequenceTimeout);
+    };
+    this.options = _extends({}, KeyboardService.defaultOptions, options);
+  }
+  _resetTimer() {
+    if (this._timer) {
+      window.clearTimeout(this._timer);
+      this._timer = 0;
+    }
+  }
+  _addCondition(condition) {
+    let cache = this._conditionData[condition];
+    if (!cache) {
+      const value = parseCondition(condition);
+      cache = {
+        count: 0,
+        value,
+        result: this._evalCondition(value)
+      };
+      this._conditionData[condition] = cache;
+    }
+    cache.count += 1;
+  }
+  _removeCondition(condition) {
+    const cache = this._conditionData[condition];
+    if (cache) {
+      cache.count -= 1;
+      if (!cache.count) {
+        delete this._conditionData[condition];
+      }
+    }
+  }
+  _evalCondition(conditions) {
+    return conditions.every(cond => {
+      let value = this._context[cond.field];
+      if (cond.not) value = !value;
+      return value;
+    });
+  }
+  _checkShortcut(item) {
+    const cache = item.condition && this._conditionData[item.condition];
+    const enabled = !cache || cache.result;
+    if (item.enabled !== enabled) {
+      item.enabled = enabled;
+      this._enableShortcut(item);
+    }
+  }
+  _enableShortcut(item) {
+    (item.enabled ? addKeyNode : removeKeyNode)(this._root, item.sequence, item);
+  }
+  enable() {
+    this.disable();
+    document.addEventListener('keydown', this.handleKey);
+  }
+  disable() {
+    document.removeEventListener('keydown', this.handleKey);
+  }
+  register(key, callback, options) {
+    const {
+      caseSensitive,
+      condition
+    } = _extends({
+      caseSensitive: false
+    }, options);
+    const sequence = normalizeSequence(key, caseSensitive).map(key => buildKey(key));
+    const item = {
+      sequence,
+      condition,
+      callback,
+      enabled: false,
+      caseSensitive
+    };
+    if (condition) this._addCondition(condition);
+    this._checkShortcut(item);
+    this._data.push(item);
+    return () => {
+      const index = this._data.indexOf(item);
+      if (index >= 0) {
+        this._data.splice(index, 1);
+        if (condition) this._removeCondition(condition);
+        item.enabled = false;
+        this._enableShortcut(item);
+      }
+    };
+  }
+  setContext(key, value) {
+    this._context[key] = value;
+    for (const cache of Object.values(this._conditionData)) {
+      cache.result = this._evalCondition(cache.value);
+    }
+    for (const item of this._data) {
+      this._checkShortcut(item);
+    }
+  }
+  _handleKeyOnce(keyExps, fromRoot) {
+    var _cur, _cur2;
+    let cur = this._cur;
+    if (fromRoot || !cur) {
+      // set fromRoot to true to avoid another retry
+      fromRoot = true;
+      cur = this._root;
+    }
+    if (cur) {
+      let next;
+      for (const key of keyExps) {
+        next = getKeyNode(cur, [key]);
+        if (next) {
+          this.sequence.set([...this.sequence.get(), key]);
+          break;
+        }
+      }
+      cur = next;
+    }
+    this._cur = cur;
+    const [shortcut] = [...(((_cur = cur) == null ? void 0 : _cur.shortcuts) || [])];
+    if (!fromRoot && !shortcut && !((_cur2 = cur) != null && _cur2.children.size)) {
+      // Nothing is matched with the last key, rematch from root
+      this._reset();
+      return this._handleKeyOnce(keyExps, true);
+    }
+    if (shortcut) {
+      try {
+        shortcut.callback();
+      } catch (_unused) {
+        // ignore
+      }
+      return 2;
+    }
+    return this._cur ? 1 : 0;
+  }
+  repr() {
+    return reprNodeTree(this._root);
+  }
+}
+KeyboardService.defaultOptions = {
+  sequenceTimeout: 500
+};
+let service;
+function getService() {
+  if (!service) {
+    service = new KeyboardService();
+    service.enable();
+  }
+  return service;
+}
+const register = (...args) => getService().register(...args);
 
 function initShortcuts(mainPanel) {
-  document.addEventListener('keydown', customHandleKey);
+  // document.addEventListener('keydown', customHandleKey);
   mainPanel.hide();
-  // addEventListener(document.body, 'keydown', handleKeyWithFocusCheck, false);
-  //   mainPanel.hide();
-  // let panelToggle = true;
-  // const shortcuts = [
-  //   {
-  //     key: ['alt-`', 'ctrlcmd-k `'],
-  //     description: 'Toggle main panel',
-  //     action: () => {
-  //       console.debug('a-`');
-  //       if (panelToggle) {
-  //         mainPanel.hide();
-  //         panelToggle = false;
-  //       } else {
-  //         mainPanel.show();
-  //         panelToggle = true;
-  //       }
-  //     },
-  //   },
-  //   {
-  //     key: ['ctrl-alt-f', 'ctrlcmd-k f'],
-  //     description: 'get cost center',
-  //     action: () => {
-  //       console.debug('c-a-f');
-  //       //getCostCenter();
-  //     },
-  //   },
-  //   {
-  //     key: ['ctrl-alt-x', 'ctrlcmd-k x'],
-  //     description: 'scrape collect pc',
-  //     action: async () => {
-  //       console.debug('c-a-x');
-  //       await scrapeCollectPC();
-  //     },
-  //   },
-  //   {
-  //     key: ['ctrl-alt-p', 'ctrlcmd-k p'],
-  //     description: 'debug',
-  //     action: () => {
-  //       console.debug('c-a-p');
-  //       document
-  //         .getElementById('loading-spinner-container')
-  //         .classList.toggle('hidden');
-  //     },
-  //   },
-  // ];
-
-  // shortcuts.forEach((item) => {
-  //   item.key.forEach((k) => {
-  //     register(k, item.action);
-  //   });
-  // });
+  let panelToggle = true;
+  const shortcuts = [{
+    key: ['alt-`', 'ctrlcmd-k `'],
+    description: 'Toggle main panel',
+    action: () => {
+      console.debug('a-`');
+      if (panelToggle) {
+        mainPanel.hide();
+        panelToggle = false;
+      } else {
+        mainPanel.show();
+        panelToggle = true;
+      }
+    }
+  }];
+  shortcuts.forEach(item => {
+    item.key.forEach(k => {
+      register(k, item.action);
+    });
+  });
 }
-function customHandleKey(e) {
-  // if (e.key === 's' && !isEditableElement(e.target)) {
-  //   console.debug('s pressed');
-  //   //focusSearchbar();
-  //   e.preventDefault();
-  // }
-  if (e.ctrlKey && e.altKey && isNumericKey(e)) {
+
+/* function customHandleKey(e) {
+   if (e.ctrlKey && e.altKey && isNumericKey(e)) {
     console.debug('ctrl + alt + numeric key pressed');
     const i = whatNumeralKey(e);
     // const cells = getCells(i);
     copyTextToClipboard(`cells at ${i}`);
-    ui.showToast('Copied cells to clipboard', {
-      theme: 'dark'
-    });
+    showToast('Copied cells to clipboard', { theme: 'dark' });
     e.preventDefault();
   }
-}
-
-// function isEditableElement(element) {
-//   return (
-//     element.tagName === 'INPUT' ||
-//     element.tagName === 'TEXTAREA' ||
-//     element.isContentEditable
-//   );
-// }
 
 function isNumericKey(e) {
   // Get the key value as a string
@@ -241,6 +653,7 @@ function isNumericKey(e) {
   // Check if the key is a numeric character (0-9)
   return key >= '0' && key <= '9';
 }
+
 function whatNumeralKey(e) {
   // Get the key value as a string
   const key = e.key;
@@ -253,160 +666,11 @@ function whatNumeralKey(e) {
     return null;
   }
 }
+*/
 
 var css_248z = "";
 
-async function scrapeCollectPC() {
-  //   const spinner = document.getElementById('loading-spinner-container');
-  //   if (!spinner.classList.contains('hidden')) {
-  //     spinner.classList.add('hidden');
-  //   }
-
-  const fields = {
-    QID: '',
-    Name: '',
-    NT: '',
-    ManagerName: '',
-    ManagerEmail: '',
-    DeployedAssets: [],
-    AssetStatus: [],
-    Status: 'TODO',
-    Date: '',
-    Source: '',
-    CostCenter: '',
-    PersonalEmail: ''
-  };
-
-  //press i to populate user info popover
-  const info_btn = unsafeWindow.frames[0].document.querySelector('#viewr\\.sc_task\\.request_item\\.request\\.requested_for');
-  await info_btn.click(); //TODO make wait for one second to load.
-  //get NT, QID, Date, TODO:costcenter
-  const elem_nt = unsafeWindow.frames[0].document.querySelector('#sys_user\\.u_configuration_item_label');
-  fields.NT = elem_nt.value;
-  const elem_qid = unsafeWindow.frames[0].document.querySelector('#sys_readonly\\.sys_user\\.x_ebay_core_config_sam_qid');
-  fields.QID = elem_qid.value;
-  const elem_date = unsafeWindow.frames[0].document.querySelector('#sys_readonly\\.sys_user\\.u_termination_date');
-  fields.Date = elem_date.value;
-  const PEOPLEX_PROFILE_URL = NT => `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${NT}`;
-  let user_data, manager_data; //, asset_data;
-  try {
-    const userResponse = await makeRequest(PEOPLEX_PROFILE_URL(fields.NT));
-    user_data = JSON.parse(userResponse);
-    const managerResponse = await makeRequest(PEOPLEX_PROFILE_URL(user_data.payload.managerUserId));
-    manager_data = JSON.parse(managerResponse);
-    // const assetResponse = await startSearchAssetByNT(description_nt);
-    // asset_data = assetResponse;
-  } catch (e) {
-    console.error(e);
-    const title = 'Failure!';
-    const body = 'Data was not scraped successfully. Check that the peoplex is still logged in.';
-    ui.showToast(`${title}: ${body}`, {
-      theme: 'dark'
-    });
-  }
-  if (fields.QID != user_data.payload.qID) {
-    ui.showToast("QID's don't match!");
-  }
-  if (fields.CostCenter != user_data.payload.costctrCd) {
-    ui.showToast("Cost Center's don't match!");
-  }
-  fields.Name = `${user_data.payload.prefFirstName} ${user_data.payload.prefLastName}`;
-  fields.ManagerEmail = manager_data.payload.email;
-  fields.ManagerName = `${manager_data.payload.prefFirstName} ${manager_data.payload.prefLastName}`;
-  fields.Source = user_data.payload.userSrcSys;
-  const csvCollectPC = `${fields.QID}\t${fields.Name}\t${fields.NT}\t${fields.ManagerName}\t${fields.ManagerEmail}\t${fields.DeployedAssets}\t${fields.AssetStatus}\t${fields.Status}\t${fields.Date}\t${fields.Source}\t${fields.CostCenter}\t${fields.PersonalEmail}`;
-  const html_csvCollectPC = convertPlainTextToHTMLTable(csvCollectPC);
-  copyTextToClipboard(html_csvCollectPC, 'text/html');
-  //   spinner.classList.add('hidden');
-}
-async function getSources() {
-  const NTS_raw = prompt('Input NTS', '');
-  if (NTS_raw == '') {
-    console.error('please input well formed NTS');
-  }
-  const NTS = NTS_raw.split(/\r?\n/);
-  const sources = [];
-  for (const NT of NTS) {
-    const PEOPLEX_PROFILE_URL = NT => `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${NT}`;
-    let user_data;
-    try {
-      const userResponse = await makeRequest(PEOPLEX_PROFILE_URL(NT));
-      user_data = JSON.parse(userResponse);
-    } catch (e) {
-      console.error(e);
-      const title = 'Failure!';
-      const body = 'Data was not scraped successfully. Check that the peoplex is still logged in.';
-      ui.showToast(`${title}: ${body}`, {
-        theme: 'dark'
-      });
-    }
-    sources.push(user_data.payload.userSrcSys);
-  }
-  copyTextToClipboard(sources.join('\n'));
-  ui.showToast('Sources successfully copied to clipboard', {
-    theme: 'dark'
-  });
-}
-async function getManagers() {
-  const NTS_raw = prompt('Input NTS', '');
-  if (NTS_raw == '') {
-    console.error('please input well formed NTS');
-  }
-  const NTS = NTS_raw.split(/\r?\n/);
-  const managers = [];
-  for (const NT of NTS) {
-    const PEOPLEX_PROFILE_URL = NT => `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${NT}`;
-    let user_data, manager_data;
-    try {
-      const userResponse = await makeRequest(PEOPLEX_PROFILE_URL(NT));
-      user_data = JSON.parse(userResponse);
-      const managerResponse = await makeRequest(PEOPLEX_PROFILE_URL(user_data.payload.managerUserId));
-      manager_data = JSON.parse(managerResponse);
-    } catch (e) {
-      console.error(e);
-      const title = 'Failure!';
-      const body = 'Data was not scraped successfully. Check that the peoplex is still logged in.';
-      ui.showToast(`${title}: ${body}`, {
-        theme: 'dark'
-      });
-    }
-    managers.push(`${manager_data.payload.prefFirstName} ${manager_data.payload.prefLastName}\t${manager_data.payload.email}`);
-  }
-  copyTextToClipboard(managers.join('\n'));
-  ui.showToast('Manager information successfully copied to clipboard', {
-    theme: 'dark'
-  });
-}
-async function getPeopleXProfileData() {
-  const NTS_raw = prompt('Input NTS', '');
-  if (NTS_raw == '') {
-    console.error('please input well formed NTS');
-  }
-  const NTS = NTS_raw.split(/\r?\n/);
-  const data = [];
-  for (const NT of NTS) {
-    const PEOPLEX_PROFILE_URL = NT => `https://peoplex.corp.ebay.com/peoplexservices/myteam/userdetails/${NT}`;
-    let user_data, manager_data;
-    try {
-      const userResponse = await makeRequest(PEOPLEX_PROFILE_URL(NT));
-      user_data = JSON.parse(userResponse);
-      const managerResponse = await makeRequest(PEOPLEX_PROFILE_URL(user_data.payload.managerUserId));
-      manager_data = JSON.parse(managerResponse);
-    } catch (e) {
-      console.error(e);
-      const title = 'Failure!';
-      const body = 'Data was not scraped successfully. Check that the peoplex is still logged in.';
-      ui.showToast(`${title}: ${body}`, {
-        theme: 'dark'
-      });
-    }
-    data.push(`${user_data.payload.userSrcSys}\t${user_data.payload.vendorName}\t${manager_data.payload.prefFirstName} ${manager_data.payload.prefLastName}\t${manager_data.payload.email}`);
-  }
-  copyTextToClipboard(data.join('\n'));
-  ui.showToast('PeopleX information successfully copied to clipboard', {
-    theme: 'dark'
-  });
-}
+var stylesheet="";
 
 console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
 window.addEventListener('load', () => {
@@ -419,10 +683,7 @@ function initializeApp() {
     style: [css_248z, stylesheet].join('\n')
   });
   initShortcuts(panel);
-  GM_registerMenuCommand('scrape collect pc', scrapeCollectPC);
-  GM_registerMenuCommand('get sources', getSources);
-  GM_registerMenuCommand('get managers', getManagers);
-  GM_registerMenuCommand('Get PeopleX Profile Data', getPeopleXProfileData);
+  // GM_registerMenuCommand('Get PeopleX Profile Data', getPeopleXProfileData);
   web.render(() => web.createComponent(Routing, {
     panelRef: panel
   }), panel.body);

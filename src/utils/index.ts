@@ -1,4 +1,4 @@
-import { showToast } from '@violentmonkey/ui';
+// import { showToast } from '@violentmonkey/ui';
 
 export function checkPermission() {
   const perm = Notification.permission;
@@ -25,6 +25,21 @@ export function copyTextToClipboard(text, mime = 'text/plain') {
   const data = [new ClipboardItem({ [type]: blob })];
 
   navigator.clipboard.write(data).then(
+    function () {
+      console.log('Async: Copying to clipboard was successful!');
+    },
+    function (err) {
+      console.error('Async: Could not copy text: ', err);
+    },
+  );
+}
+
+export function copyRichTextToClipboard(clipboardItems) {
+  if (!navigator.clipboard) {
+    fallbackCopyTextToClipboard(clipboardItems);
+    return;
+  }
+  navigator.clipboard.write(clipboardItems).then(
     function () {
       console.log('Async: Copying to clipboard was successful!');
     },
@@ -196,7 +211,8 @@ export function getHTMLTableCell(htmlTable, rowIndex, colIndex) {
   return cell.textContent.trim();
 }
 
-export function getCells(i) {
+// deprecated
+/* export function getCells(i) {
   const data = getDataFromCells();
   let text = '';
   data.forEach((row) => {
@@ -206,6 +222,7 @@ export function getCells(i) {
   return text;
 }
 
+// deprecated
 export function getDataFromCells() {
   const rows = document.querySelectorAll('div[ng-row]');
   const data = [];
@@ -220,6 +237,7 @@ export function getDataFromCells() {
   return data;
 }
 
+// deprecated
 export async function getCostCenterFromHub(profileURL) {
   try {
     const r = await makeRequest(profileURL);
@@ -232,4 +250,4 @@ export async function getCostCenterFromHub(profileURL) {
       'Data was not scraped successfully. Check that the hub is still logged in.';
     showToast(`${title}: ${body}`, { theme: 'dark' });
   }
-}
+} */

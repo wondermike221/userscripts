@@ -5,9 +5,11 @@ import pkg from './package.json' assert { type: 'json' };
 
 export default defineConfig(
   Object.entries({
-    'ticket-scraper': 'src/ticket-scraper/index.ts',
-    'fedex-form-filler': 'src/fedex-form-filler/index.ts',
+    // 'ticket-scraper': 'src/ticket-scraper/index.ts',
+    // 'fedex-form-filler': 'src/fedex-form-filler/index.ts',
     'snow': 'src/snow/index.ts',
+    // 'fulfillment-fedex-filler': 'src/fulfillment-fedex-filler/index.ts',
+    // 'peoplex-scraper': 'src/peoplex-scraper/index.ts',
   }).map(([name, entry]) => ({
     input: entry,
     plugins: [
