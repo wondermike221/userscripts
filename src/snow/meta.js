@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name        Snow Helpers
 // @namespace    https://hixon.dev
-// @description  Various automations on SmartIT
+// @description  Various automations on SerciveNow
+// @match       https://ebayinc.service-now.com/*
 // @match       ebayinc.service-now.com/*
 // @grant       GM_addStyle
 // @version     0.1.6
