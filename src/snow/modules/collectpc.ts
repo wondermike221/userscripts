@@ -1,4 +1,3 @@
-import { showToast } from '@violentmonkey/ui';
 import {
   makeRequest,
   convertPlainTextToHTMLTable,
