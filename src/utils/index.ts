@@ -34,9 +34,11 @@ export function copyTextToClipboard(text, mime = 'text/plain') {
   );
 }
 
-export function copyRichTextToClipboard(clipboardItems) {
+export async function copyRichTextToClipboard(clipboardItems) {
   if (!navigator.clipboard) {
-    fallbackCopyTextToClipboard(clipboardItems);
+    const blb = await clipboardItems[0].getType('text/plain');
+    const text = await blb.text();
+    fallbackCopyTextToClipboard(text);
     return;
   }
   navigator.clipboard.write(clipboardItems).then(

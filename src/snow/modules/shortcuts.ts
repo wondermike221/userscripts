@@ -1,23 +1,39 @@
 import { register } from '@violentmonkey/shortcut';
-import { IPanelResult } from '@violentmonkey/ui';
+import { getPanel, IPanelResult } from '@violentmonkey/ui';
+// global CSS
+import globalCss from './style.css';
+// CSS modules
+import { stylesheet } from './style.module.css';
 
-export default function initShortcuts(mainPanel: IPanelResult) {
+export const mainPanel = getPanel({
+  theme: 'dark',
+  style: [globalCss, stylesheet].join('\n'),
+});
+
+function initToggleMainPanel(mainPanel: IPanelResult) {
+  let panelToggle = false;
+  return () => {
+    if (panelToggle) {
+      mainPanel.hide();
+      panelToggle = false;
+    } else {
+      mainPanel.show();
+      panelToggle = true;
+    }
+  };
+}
+export const toggleMainPanel = initToggleMainPanel(mainPanel);
+
+export default function initShortcuts() {
   // document.addEventListener('keydown', customHandleKey);
   mainPanel.hide();
-  let panelToggle = true;
   const shortcuts = [
     {
       key: ['alt-`', 'ctrlcmd-k `'],
       description: 'Toggle main panel',
       action: () => {
         console.debug('a-`');
-        if (panelToggle) {
-          mainPanel.hide();
-          panelToggle = false;
-        } else {
-          mainPanel.show();
-          panelToggle = true;
-        }
+        toggleMainPanel();
       },
     },
   ];

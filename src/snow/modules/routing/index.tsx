@@ -1,91 +1,179 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+// libraries
+// import { faCopy } from '@fortawesome/free-solid-svg-icons'; // https://fontawesome.com/icons/copy?style=solid
 import { createSignal, onMount } from 'solid-js';
-import styles from '../../style.module.css';
-import { copyRichTextToClipboard, copyTextToClipboard } from '../../../utils';
+import { showToast } from '@violentmonkey/ui';
+// utils
+import {
+  convertPlainTextToHTMLTable,
+  copyRichTextToClipboard,
+  copyTextToClipboard,
+} from '../../../utils';
 import * as snow from '../../../utils/snow_utils';
+// modules
+import { toggleMainPanel } from '../shortcuts';
 
 export default function Routing(props) {
   onMount(() => {
     Object.assign(props.panelRef.wrapper.style, {
-      display: 'block',
-      position: 'relative',
       bottom: '50%',
       left: '50%',
+      width: '250px',
     });
     props.panelRef.setMovable(true);
   });
   const [getRoute, setRoute] = createSignal(window.location);
 
   return (
-    <div
-      style={{
-        width: '10vw',
-        height: '10vh',
-      }}
-    >
-      <span>
-        {' '}
+    <div>
+      <p
+        style={{
+          width: '240px',
+          'background-color': 'gray',
+          margin: 0,
+          padding: '0 0 0 10px',
+        }}
+      >
         Copy:
-        <button on:click={() => handleCopy('json')}>(1) JSON</button>
-        <button on:click={() => handleCopy('csv')}>(2) CSV</button>
-        <button on:click={() => handleCopy('tsv')}>(3) TSV</button>
-        <button on:click={() => handleCopy('dropship')}>(4) Dropship</button>
-        <button on:click={() => handleCopy('exit')}>(5) Exit</button>
-        <button on:click={() => handleCopy('hide', props.panelRef)}>
-          (6) Hide
-        </button>
-      </span>
+      </p>
+      <ol>
+        <li>
+          <button on:click={(e) => handleCopy('crosscharge', e)}>
+            CrossCharge
+          </button>
+        </li>
+        <li>
+          <button on:click={(e) => handleCopy('dropship', e)}>Dropship</button>
+        </li>
+        <li>
+          <button on:click={(e) => handleCopy('exit', e)}>Exit</button>
+        </li>
+        <li>
+          <button on:click={(e) => handleCopy('chargesheet', e)}>
+            Charge Sheet
+          </button>
+        </li>
+        <li>
+          <button on:click={(e) => handleCopy('json', e)}>JSON</button>
+        </li>
+        <li>
+          <button on:click={(e) => handleCopy('hide', e)}>Hide</button>
+        </li>
+      </ol>
     </div>
   );
 }
 
-async function handleCopy(type, panel = null) {
-  const task = await snow.snow_get_record('sc_task');
-  const ritm = await snow.snow_get_record(
-    'sc_req_item',
-    task.records[0].parent,
-  );
-  const user = await snow.snow_get_record(
-    'sys_user',
-    ritm.records[0].requested_for,
-  );
+async function handleCopy(type, event) {
+  const task = (await snow.get_record('sc_task')).records[0];
+  const ritm = (await snow.get_record('sc_req_item', task.parent)).records[0];
+  const user = (await snow.get_record('sys_user', ritm.requested_for))
+    .records[0];
   switch (type) {
     case 'json':
       {
         const json = snow.build_minimal_json(task, user);
         copyTextToClipboard(JSON.stringify(json));
+        showToast('JSON successfully copied to clipboard', { theme: 'dark' });
       }
       break;
-    case 'csv':
+    case 'crosscharge':
       {
-        // TODO
-        // const csv = snow.build_minimal_csv(task, user);
-        // copyTextToClipboard(csv);
-        console.log('csv TODO');
+        const crosscharge_tsv = [
+          new Date().toISOString(),
+          'SLC',
+          '',
+          '1',
+          task.dv_number,
+          user.dv_email,
+          user.dv_cost_center,
+        ].join('\t');
+        const crosscharge_html = convertPlainTextToHTMLTable(crosscharge_tsv);
+        const crosscharge_json = {
+          date: new Date().toISOString(),
+          location: task.dv_location,
+          number: task.dv_number,
+          costCenter: user.dv_cost_center,
+          email: user.dv_email,
+        };
+        const crosscharge = [
+          new ClipboardItem({
+            'text/html': new Blob([crosscharge_html], { type: 'text/html' }),
+            'text/plain': new Blob([JSON.stringify(crosscharge_json)], {
+              type: 'text/plain',
+            }),
+          }),
+        ];
+        if (event.ctrlKey) {
+          copyTextToClipboard(crosscharge_tsv);
+        } else if (event.shiftKey) {
+          copyTextToClipboard(JSON.stringify(crosscharge_json));
+        } else {
+          copyRichTextToClipboard(crosscharge);
+        }
+        showToast('CrossCharge row successfully copied to clipboard', {
+          theme: 'dark',
+        });
       }
       break;
-    case 'tsv':
+    case 'chargesheet':
       {
-        const tsv = snow.build_charge_sheet_row(task, user);
-        copyTextToClipboard(tsv);
+        const [
+          chargesheet_cis,
+          chargesheet_tsv,
+          chargesheet_html,
+          chargesheet_json,
+        ] = snow.build_charge_sheet_row_cis(task, user);
+        if (event.ctrlKey) {
+          copyTextToClipboard(chargesheet_tsv);
+        } else if (event.shiftKey) {
+          copyTextToClipboard(JSON.stringify(chargesheet_json));
+        } else {
+          copyRichTextToClipboard(chargesheet_cis);
+        }
+        showToast('Chargesheet row successfully copied to clipboard', {
+          theme: 'dark',
+        });
       }
       break;
     case 'dropship':
       {
-        const dropship = snow.build_bh_sheet_row(task, user);
-        copyTextToClipboard(dropship);
+        const dropship = snow.build_bh_sheet_row_cis(task, user);
+        copyRichTextToClipboard(dropship);
+        showToast('Dropship row successfully copied to clipboard', {
+          theme: 'dark',
+        });
       }
       break;
     case 'exit':
       {
         // TODO
-        // const exit = snow.build_exit_json(task, user);
-        // copyTextToClipboard(JSON.stringify(exit));
+        const manager = (await snow.get_record('sys_user', user.manager))
+          .records[0];
+        const assets = await snow.get_records(
+          'alm_hardware',
+          `assigned_to=${user.sys_id}^install_status=1`,
+        );
+        const task_u_vars = JSON.parse(task.dv_u_variables);
+        const asset = assets.records.filter((a) =>
+          task_u_vars.v_assets_to_return.includes(a.asset_tag),
+        );
+        console.log(assets);
+        const exit = snow.build_exit_sheet_row_cis(
+          task,
+          user,
+          manager,
+          asset[0],
+        );
+        copyRichTextToClipboard(exit);
         console.log('exit TODO');
+        showToast('Exit row successfully copied to clipboard', {
+          theme: 'dark',
+        });
       }
       break;
     case 'hide':
-      panel.hide();
+      toggleMainPanel();
       break;
   }
 }
