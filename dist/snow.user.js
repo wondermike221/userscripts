@@ -4,7 +4,7 @@
 // @description Various automations on SerciveNow
 // @match       https://ebayinc.service-now.com/*
 // @match       ebayinc.service-now.com/*
-// @version     0.1.6
+// @version     0.2.0
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
@@ -18,252 +18,6 @@
 
 (function (web, solidJs, ui) {
 'use strict';
-
-// import { showToast } from '@violentmonkey/ui';
-
-function copyTextToClipboard(text, mime = 'text/plain') {
-  if (!navigator.clipboard) {
-    fallbackCopyTextToClipboard(text);
-    return;
-  }
-  const type = mime;
-  const blob = new Blob([text], {
-    type
-  });
-  const data = [new ClipboardItem({
-    [type]: blob
-  })];
-  navigator.clipboard.write(data).then(function () {
-    console.log('Async: Copying to clipboard was successful!');
-  }, function (err) {
-    console.error('Async: Could not copy text: ', err);
-  });
-}
-async function copyRichTextToClipboard(clipboardItems) {
-  if (!navigator.clipboard) {
-    const blb = await clipboardItems[0].getType('text/plain');
-    const text = await blb.text();
-    fallbackCopyTextToClipboard(text);
-    return;
-  }
-  navigator.clipboard.write(clipboardItems).then(function () {
-    console.log('Async: Copying to clipboard was successful!');
-  }, function (err) {
-    console.error('Async: Could not copy text: ', err);
-  });
-}
-function fallbackCopyTextToClipboard(text) {
-  const textArea = document.createElement('textarea');
-  textArea.value = text;
-
-  // Avoid scrolling to bottom
-  textArea.style.top = '0';
-  textArea.style.left = '0';
-  textArea.style.position = 'fixed';
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  try {
-    const successful = document.execCommand('copy');
-    const msg = successful ? 'successful' : 'unsuccessful';
-    console.log('Fallback: Copying text command was ' + msg);
-  } catch (err) {
-    console.error('Fallback: Oops, unable to copy', err);
-  }
-  document.body.removeChild(textArea);
-}
-
-// Converts a plain text table to an HTML table
-function convertPlainTextToHTMLTable(plainText) {
-  const rows = plainText.trim().split('\n');
-  const htmlRows = rows.map(row => {
-    const cells = row.split('\t').map(cell => `<td>${cell.trim()}</td>`).join('');
-    return `<tr>${cells}</tr>`;
-  });
-  return `<table>${htmlRows.join('')}</table>`;
-}
-
-// deprecated
-/* export function getCells(i) {
-  const data = getDataFromCells();
-  let text = '';
-  data.forEach((row) => {
-    const cell = row[i];
-    text = text.concat(`${cell}\n`);
-  });
-  return text;
-}
-
-// deprecated
-export function getDataFromCells() {
-  const rows = document.querySelectorAll('div[ng-row]');
-  const data = [];
-
-  rows.forEach((row, rIdx) => {
-    data.push([]);
-    const cells = row.querySelectorAll(
-      'div[ng-cell] span[ng-cell-text]',
-    ) as NodeListOf<HTMLElement>;
-    cells.forEach((cell) => data[rIdx].push(cell.outerText));
-  });
-  return data;
-}
-
-// deprecated
-export async function getCostCenterFromHub(profileURL) {
-  try {
-    const r = await makeRequest(profileURL);
-    const data = JSON.parse(r).data;
-    return data.costCenterCode;
-  } catch (e) {
-    console.error(e);
-    const title = 'Failure!';
-    const body =
-      'Data was not scraped successfully. Check that the hub is still logged in.';
-    showToast(`${title}: ${body}`, { theme: 'dark' });
-  }
-} */
-
-function api_url(table, id) {
-  const BASE_URL = 'https://ebayinc.service-now.com';
-  const base = new URL(`/${table}.do`, BASE_URL);
-  base.searchParams.append('JSONv2', '');
-  base.searchParams.append('sysparm_sys_id', id);
-  base.searchParams.append('displayvalue', 'all');
-  base.searchParams.append('displayvariables', 'true');
-  return base.href;
-}
-function api_url_query(table, query, limit = 20) {
-  const BASE_URL = 'https://ebayinc.service-now.com';
-  const base = new URL(`/${table}.do`, BASE_URL);
-  base.searchParams.append('JSONv2', '');
-  base.searchParams.append('sysparm_action', 'getRecords');
-  base.searchParams.append('sysparm_query', query);
-  base.searchParams.append('displayvalue', 'all');
-  base.searchParams.append('sysparm_record_count', limit.toString());
-  return base.href;
-}
-function get_sys_id_from_url(table) {
-  const url = window.location.href;
-  const index = url.indexOf(table);
-  const index_sys_id_start = index + table.length + 1;
-  let index_sys_id_end = url.indexOf('/', index_sys_id_start);
-  if (index_sys_id_end == -1) {
-    index_sys_id_end = url.length;
-  }
-  const sys_id = url.substring(index_sys_id_start, index_sys_id_end);
-  return sys_id;
-}
-async function get_record(table, sys_id = null) {
-  if (sys_id == null) {
-    sys_id = get_sys_id_from_url(table);
-  }
-  const response = await fetch(api_url(table, sys_id));
-  const j = await response.json();
-  return j;
-}
-async function get_records(table, query, limit = 20) {
-  const response = await fetch(api_url_query(table, query, limit));
-  const j = await response.json();
-  return j;
-}
-function build_charge_sheet_row_cis(task, user) {
-  const u_variables = JSON.parse(task.dv_u_variables);
-  const row = [new Date().toLocaleDateString(), 'SLC', '', '1', task.dv_number, user.dv_email, user.dv_cost_center, user.dv_name, u_variables.street_address, '', u_variables.city, u_variables.v_state, u_variables.zip, u_variables.contact_number, 'USA'];
-  const tsv = row.join('\t');
-  const html = convertPlainTextToHTMLTable(tsv);
-  const json = build_minimal_json(task, user);
-  const cis = [new ClipboardItem({
-    'text/html': new Blob([html], {
-      type: 'text/html'
-    }),
-    'text/plain': new Blob([JSON.stringify(json)], {
-      type: 'text/plain'
-    })
-  })];
-  return [cis, tsv, html, json];
-}
-function build_bh_sheet_row_cis(task, user) {
-  const u_variables = JSON.parse(task.dv_u_variables);
-  const row = [new Date().toLocaleDateString(), user.dv_name.split(' ')[0], user.dv_name.split(' ')[1], '', '', '', u_variables.street_address, '', u_variables.city, u_variables.v_state, u_variables.zip, '', '1', 'WFH', task.dv_number, 'mhixon', 'Normal'];
-  const tsv = row.join('\t');
-  const html = convertPlainTextToHTMLTable(tsv);
-  const json = build_minimal_json(task, user);
-  return [new ClipboardItem({
-    'text/html': new Blob([html], {
-      type: 'text/html'
-    }),
-    'text/plain': new Blob([JSON.stringify(json)], {
-      type: 'text/plain'
-    })
-  })];
-}
-function build_minimal_json(task, user) {
-  const u_variables = JSON.parse(task.dv_u_variables);
-  const json = {
-    streetAddress: u_variables.street_address,
-    city: u_variables.city,
-    state: u_variables.v_state,
-    postalCode: u_variables.zip,
-    name: user.dv_name,
-    phone: u_variables.contact_number,
-    email: user.dv_email,
-    number: task.dv_number,
-    costCenter: user.dv_cost_center,
-    date: new Date().toLocaleDateString(),
-    location: task.dv_location
-  };
-  return json;
-}
-function build_exit_sheet_row_cis(task, user, manager, asset) {
-  const u_variables = JSON.parse(task.dv_u_variables);
-  const row = [task.dv_number, task.dv_location, user.dv_name, user.dv_user_name, user.dv_u_worker_source, user.dv_u_vendor, manager.dv_name, manager.dv_email, u_variables.v_assets_to_return, asset.dv_serial_number, asset.dv_install_status, asset.dv_substatus, asset.dv_model, user.dv_u_termination_date, user.dv_cost_center, user.dv_x_ebay_core_config_sam_qid, user.dv_title];
-  const tsv = row.join('\t');
-  const html = convertPlainTextToHTMLTable(tsv);
-  const json = build_exit_json(task, user, manager, asset);
-  return [new ClipboardItem({
-    'text/html': new Blob([html], {
-      type: 'text/html'
-    }),
-    'text/plain': new Blob([JSON.stringify(json)], {
-      type: 'text/plain'
-    })
-  })];
-}
-function build_exit_json(task, user, manager, asset) {
-  const u_variables = JSON.parse(task.dv_u_variables);
-  const json = {
-    taskNumber: task.dv_number,
-    location: task.dv_location,
-    name: user.dv_name,
-    userName: user.dv_user_name,
-    workerSource: user.dv_u_worker_source,
-    vendor: user.dv_u_vendor,
-    managerName: manager.dv_name,
-    managerEmail: manager.dv_email,
-    assetsToReturn: u_variables.v_assets_to_return,
-    serialNumber: asset.dv_serial_number,
-    installStatus: asset.dv_install_status,
-    substatus: asset.dv_substatus,
-    model: asset.dv_model,
-    terminationDate: user.dv_u_termination_date,
-    costCenter: user.dv_cost_center,
-    qid: user.dv_x_ebay_core_config_sam_qid,
-    title: user.dv_title
-  };
-  return json;
-}
-
-/*
-// Example
-let task = await snow_get_record('sc_task');
-let ritm = await snow_get_record('sc_req_item', task.records[0].parent); //or request_item instead of parent
-let user = await snow_get_record('sys_user', ritm.records[0].requested_for);
-let assets = await snow_get_records('alm_hardware', `assigned_to=${user.records[0].sys_id}^install_status=1`);
-
-console.log(build_charge_sheet_row(task.records[0], user.records[0]));
-console.log(build_bh_sheet_row(task.records[0], user.records[0]));
-*/
 
 function _extends() {
   return _extends = Object.assign ? Object.assign.bind() : function (n) {
@@ -650,6 +404,254 @@ function getService() {
   return service;
 }
 const register = (...args) => getService().register(...args);
+const enable = () => getService().enable();
+const disable = () => getService().disable();
+
+// import { showToast } from '@violentmonkey/ui';
+
+function copyTextToClipboard(text, mime = 'text/plain') {
+  if (!navigator.clipboard) {
+    fallbackCopyTextToClipboard(text);
+    return;
+  }
+  const type = mime;
+  const blob = new Blob([text], {
+    type
+  });
+  const data = [new ClipboardItem({
+    [type]: blob
+  })];
+  navigator.clipboard.write(data).then(function () {
+    console.log('Async: Copying to clipboard was successful!');
+  }, function (err) {
+    console.error('Async: Could not copy text: ', err);
+  });
+}
+async function copyRichTextToClipboard(clipboardItems) {
+  if (!navigator.clipboard) {
+    const blb = await clipboardItems[0].getType('text/plain');
+    const text = await blb.text();
+    fallbackCopyTextToClipboard(text);
+    return;
+  }
+  navigator.clipboard.write(clipboardItems).then(function () {
+    console.log('Async: Copying to clipboard was successful!');
+  }, function (err) {
+    console.error('Async: Could not copy text: ', err);
+  });
+}
+function fallbackCopyTextToClipboard(text) {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+
+  // Avoid scrolling to bottom
+  textArea.style.top = '0';
+  textArea.style.left = '0';
+  textArea.style.position = 'fixed';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    const successful = document.execCommand('copy');
+    const msg = successful ? 'successful' : 'unsuccessful';
+    console.log('Fallback: Copying text command was ' + msg);
+  } catch (err) {
+    console.error('Fallback: Oops, unable to copy', err);
+  }
+  document.body.removeChild(textArea);
+}
+
+// Converts a plain text table to an HTML table
+function convertPlainTextToHTMLTable(plainText) {
+  const rows = plainText.trim().split('\n');
+  const htmlRows = rows.map(row => {
+    const cells = row.split('\t').map(cell => `<td>${cell.trim()}</td>`).join('');
+    return `<tr>${cells}</tr>`;
+  });
+  return `<table>${htmlRows.join('')}</table>`;
+}
+
+// deprecated
+/* export function getCells(i) {
+  const data = getDataFromCells();
+  let text = '';
+  data.forEach((row) => {
+    const cell = row[i];
+    text = text.concat(`${cell}\n`);
+  });
+  return text;
+}
+
+// deprecated
+export function getDataFromCells() {
+  const rows = document.querySelectorAll('div[ng-row]');
+  const data = [];
+
+  rows.forEach((row, rIdx) => {
+    data.push([]);
+    const cells = row.querySelectorAll(
+      'div[ng-cell] span[ng-cell-text]',
+    ) as NodeListOf<HTMLElement>;
+    cells.forEach((cell) => data[rIdx].push(cell.outerText));
+  });
+  return data;
+}
+
+// deprecated
+export async function getCostCenterFromHub(profileURL) {
+  try {
+    const r = await makeRequest(profileURL);
+    const data = JSON.parse(r).data;
+    return data.costCenterCode;
+  } catch (e) {
+    console.error(e);
+    const title = 'Failure!';
+    const body =
+      'Data was not scraped successfully. Check that the hub is still logged in.';
+    showToast(`${title}: ${body}`, { theme: 'dark' });
+  }
+} */
+
+function api_url(table, id) {
+  const BASE_URL = 'https://ebayinc.service-now.com';
+  const base = new URL(`/${table}.do`, BASE_URL);
+  base.searchParams.append('JSONv2', '');
+  base.searchParams.append('sysparm_sys_id', id);
+  base.searchParams.append('displayvalue', 'all');
+  base.searchParams.append('displayvariables', 'true');
+  return base.href;
+}
+function api_url_query(table, query, limit = 20) {
+  const BASE_URL = 'https://ebayinc.service-now.com';
+  const base = new URL(`/${table}.do`, BASE_URL);
+  base.searchParams.append('JSONv2', '');
+  base.searchParams.append('sysparm_action', 'getRecords');
+  base.searchParams.append('sysparm_query', query);
+  base.searchParams.append('displayvalue', 'all');
+  base.searchParams.append('sysparm_record_count', limit.toString());
+  return base.href;
+}
+function get_sys_id_from_url(table) {
+  const url = window.location.href;
+  const index = url.indexOf(table);
+  const index_sys_id_start = index + table.length + 1;
+  let index_sys_id_end = url.indexOf('/', index_sys_id_start);
+  if (index_sys_id_end == -1) {
+    index_sys_id_end = url.length;
+  }
+  const sys_id = url.substring(index_sys_id_start, index_sys_id_end);
+  return sys_id;
+}
+async function get_record(table, sys_id = null) {
+  if (sys_id == null) {
+    sys_id = get_sys_id_from_url(table);
+  }
+  const response = await fetch(api_url(table, sys_id));
+  const j = await response.json();
+  return j;
+}
+async function get_records(table, query, limit = 20) {
+  const response = await fetch(api_url_query(table, query, limit));
+  const j = await response.json();
+  return j;
+}
+function build_charge_sheet_row_cis(task, user) {
+  const u_variables = JSON.parse(task.dv_u_variables);
+  const row = [new Date().toLocaleDateString(), 'SLC', '', '1', task.dv_number, user.dv_email, user.dv_cost_center, user.dv_name, u_variables.street_address, '', u_variables.city, u_variables.v_state, u_variables.zip, u_variables.contact_number, 'USA'];
+  const tsv = row.join('\t');
+  const html = convertPlainTextToHTMLTable(tsv);
+  const json = build_minimal_json(task, user);
+  const cis = [new ClipboardItem({
+    'text/html': new Blob([html], {
+      type: 'text/html'
+    }),
+    'text/plain': new Blob([JSON.stringify(json)], {
+      type: 'text/plain'
+    })
+  })];
+  return [cis, tsv, html, json];
+}
+function build_bh_sheet_row_cis(task, user) {
+  const u_variables = JSON.parse(task.dv_u_variables);
+  const row = [new Date().toLocaleDateString(), user.dv_name.split(' ')[0], user.dv_name.split(' ')[1], '', '', '', u_variables.street_address, '', u_variables.city, u_variables.v_state, u_variables.zip, '', '1', 'WFH', task.dv_number, 'mhixon', 'Normal'];
+  const tsv = row.join('\t');
+  const html = convertPlainTextToHTMLTable(tsv);
+  const json = build_minimal_json(task, user);
+  return [new ClipboardItem({
+    'text/html': new Blob([html], {
+      type: 'text/html'
+    }),
+    'text/plain': new Blob([JSON.stringify(json)], {
+      type: 'text/plain'
+    })
+  })];
+}
+function build_minimal_json(task, user) {
+  const u_variables = JSON.parse(task.dv_u_variables);
+  const json = {
+    streetAddress: u_variables.street_address,
+    city: u_variables.city,
+    state: u_variables.v_state,
+    postalCode: u_variables.zip,
+    name: user.dv_name,
+    phone: u_variables.contact_number,
+    email: user.dv_email,
+    number: task.dv_number,
+    costCenter: user.dv_cost_center,
+    date: new Date().toLocaleDateString(),
+    location: task.dv_location
+  };
+  return json;
+}
+function build_exit_sheet_row_cis(task, user, manager, asset) {
+  const u_variables = JSON.parse(task.dv_u_variables);
+  const row = [task.dv_number, task.dv_location, user.dv_name, user.dv_user_name, user.dv_u_worker_source, user.dv_u_vendor, manager.dv_name, manager.dv_email, u_variables.v_assets_to_return, asset.dv_serial_number, asset.dv_install_status, asset.dv_substatus, asset.dv_model, user.dv_u_termination_date, user.dv_cost_center, user.dv_x_ebay_core_config_sam_qid, user.dv_title];
+  const tsv = row.join('\t');
+  const html = convertPlainTextToHTMLTable(tsv);
+  const json = build_exit_json(task, user, manager, asset);
+  return [new ClipboardItem({
+    'text/html': new Blob([html], {
+      type: 'text/html'
+    }),
+    'text/plain': new Blob([JSON.stringify(json)], {
+      type: 'text/plain'
+    })
+  })];
+}
+function build_exit_json(task, user, manager, asset) {
+  const u_variables = JSON.parse(task.dv_u_variables);
+  const json = {
+    taskNumber: task.dv_number,
+    location: task.dv_location,
+    name: user.dv_name,
+    userName: user.dv_user_name,
+    workerSource: user.dv_u_worker_source,
+    vendor: user.dv_u_vendor,
+    managerName: manager.dv_name,
+    managerEmail: manager.dv_email,
+    assetsToReturn: u_variables.v_assets_to_return,
+    serialNumber: asset.dv_serial_number,
+    installStatus: asset.dv_install_status,
+    substatus: asset.dv_substatus,
+    model: asset.dv_model,
+    terminationDate: user.dv_u_termination_date,
+    costCenter: user.dv_cost_center,
+    qid: user.dv_x_ebay_core_config_sam_qid,
+    title: user.dv_title
+  };
+  return json;
+}
+
+/*
+// Example
+let task = await snow_get_record('sc_task');
+let ritm = await snow_get_record('sc_req_item', task.records[0].parent); //or request_item instead of parent
+let user = await snow_get_record('sys_user', ritm.records[0].requested_for);
+let assets = await snow_get_records('alm_hardware', `assigned_to=${user.records[0].sys_id}^install_status=1`);
+
+console.log(build_charge_sheet_row(task.records[0], user.records[0]));
+console.log(build_bh_sheet_row(task.records[0], user.records[0]));
+*/
 
 var css_248z = "";
 
@@ -659,8 +661,8 @@ const mainPanel = ui.getPanel({
   theme: 'dark',
   style: [css_248z, stylesheet].join('\n')
 });
+let panelToggle = false;
 function initToggleMainPanel(mainPanel) {
-  let panelToggle = false;
   return () => {
     if (panelToggle) {
       mainPanel.hide();
@@ -676,11 +678,88 @@ function initShortcuts() {
   // document.addEventListener('keydown', customHandleKey);
   mainPanel.hide();
   const shortcuts = [{
-    key: ['alt-`', 'ctrlcmd-k `', 'opt-`'],
+    key: ['c-`'],
     description: 'Toggle main panel',
     action: () => {
       console.debug('a-`');
       toggleMainPanel();
+    }
+  }, {
+    key: ['1'],
+    description: 'select option 1',
+    action: () => {
+      if (panelToggle) {
+        console.debug('1 pressed');
+        // handleScrape('crosscharge', null);
+        const button = document.querySelector('div#routing ol#routing-list #crosscharge');
+        button == null || button.click();
+      }
+    }
+  }, {
+    key: ['2'],
+    description: 'select option 2',
+    action: () => {
+      if (panelToggle) {
+        console.debug('2 pressed');
+        // handleScrape('crosscharge', null);
+        const button = document.querySelector('div#routing ol#routing-list #dropship');
+        button == null || button.click();
+      }
+    }
+  }, {
+    key: ['3'],
+    description: 'select option 3',
+    action: () => {
+      if (panelToggle) {
+        console.debug('3 pressed');
+        // handleScrape('crosscharge', null);
+        const button = document.querySelector('div#routing ol#routing-list #exit');
+        button == null || button.click();
+      }
+    }
+  }, {
+    key: ['4'],
+    description: 'select option 4',
+    action: () => {
+      if (panelToggle) {
+        console.debug('4 pressed');
+        // handleScrape('crosscharge', null);
+        const button = document.querySelector('div#routing ol#routing-list #chargesheet');
+        button == null || button.click();
+      }
+    }
+  }, {
+    key: ['5'],
+    description: 'select option 5',
+    action: () => {
+      if (panelToggle) {
+        console.debug('5 pressed');
+        // handleScrape('crosscharge', null);
+        const button = document.querySelector('div#routing ol#routing-list #fdx-bulk');
+        button == null || button.click();
+      }
+    }
+  }, {
+    key: ['6'],
+    description: 'select option 6',
+    action: () => {
+      if (panelToggle) {
+        console.debug('6 pressed');
+        // handleScrape('crosscharge', null);
+        const button = document.querySelector('div#routing ol#routing-list #json');
+        button == null || button.click();
+      }
+    }
+  }, {
+    key: ['7'],
+    description: 'select option 7',
+    action: () => {
+      if (panelToggle) {
+        console.debug('7 pressed');
+        // handleScrape('crosscharge', null);
+        const button = document.querySelector('div#routing ol#routing-list #hide');
+        button == null || button.click();
+      }
     }
   }];
   shortcuts.forEach(item => {
@@ -721,7 +800,7 @@ function whatNumeralKey(e) {
 }
 */
 
-var _tmpl$ = /*#__PURE__*/web.template(`<div><p>Copy:</p><ol><li><button>CrossCharge</button></li><li><button>Dropship</button></li><li><button>Exit</button></li><li><button>Charge Sheet</button></li><li><button>JSON</button></li><li><button>Hide`);
+var _tmpl$ = /*#__PURE__*/web.template(`<div id=routing><p>Copy:</p><ol id=routing-list><li><button id=crosscharge>CrossCharge</button></li><li><button id=dropship>Dropship</button></li><li><button id=exit>Exit</button></li><li><button id=chargesheet>Charge Sheet</button></li><li><button id=fdx-bulk>FDX Bulk</button></li><li><button id=json>JSON</button></li><li><button id=hide>Hide`);
 function Routing(props) {
   solidJs.onMount(() => {
     Object.assign(props.panelRef.wrapper.style, {
@@ -731,7 +810,8 @@ function Routing(props) {
     });
     props.panelRef.setMovable(true);
   });
-  const [getRoute, setRoute] = solidJs.createSignal(window.location);
+  // const [getRoute, setRoute] = createSignal(window.location);
+
   return (() => {
     var _el$ = _tmpl$(),
       _el$2 = _el$.firstChild,
@@ -747,21 +827,25 @@ function Routing(props) {
       _el$10 = _el$0.nextSibling,
       _el$11 = _el$10.firstChild,
       _el$12 = _el$10.nextSibling,
-      _el$13 = _el$12.firstChild;
+      _el$13 = _el$12.firstChild,
+      _el$14 = _el$12.nextSibling,
+      _el$15 = _el$14.firstChild;
     _el$2.style.setProperty("width", "240px");
     _el$2.style.setProperty("background-color", "gray");
     _el$2.style.setProperty("margin", "0");
     _el$2.style.setProperty("padding", "0 0 0 10px");
-    web.addEventListener(_el$5, "click", e => handleCopy('crosscharge', e));
-    web.addEventListener(_el$7, "click", e => handleCopy('dropship', e));
-    web.addEventListener(_el$9, "click", e => handleCopy('exit', e));
-    web.addEventListener(_el$1, "click", e => handleCopy('chargesheet', e));
-    web.addEventListener(_el$11, "click", e => handleCopy('json', e));
-    web.addEventListener(_el$13, "click", e => handleCopy('hide', e));
+    web.addEventListener(_el$5, "click", e => handleScrape('crosscharge', e));
+    web.addEventListener(_el$7, "click", e => handleScrape('dropship', e));
+    web.addEventListener(_el$9, "click", e => handleScrape('exit', e));
+    web.addEventListener(_el$1, "click", e => handleScrape('chargesheet', e));
+    web.addEventListener(_el$11, "click", e => handleScrape('fdx-bulk', e));
+    web.addEventListener(_el$13, "click", e => handleScrape('json', e));
+    web.addEventListener(_el$15, "click", e => handleScrape('hide', e));
     return _el$;
   })();
 }
-async function handleCopy(type, event) {
+async function handleScrape(type, event) {
+  disable();
   const task = (await get_record('sc_task')).records[0];
   const ritm = (await get_record('sc_req_item', task.parent)).records[0];
   const user = (await get_record('sys_user', ritm.requested_for)).records[0];
@@ -846,10 +930,20 @@ async function handleCopy(type, event) {
         });
       }
       break;
+    case 'fdx-bulk':
+      {
+        // const fdx = snow.build_fdx_row_cis(task, user);
+        // copyRichTextToClipboard(fdx);
+        ui.showToast('TODO:Fdx row successfully copied to clipboard', {
+          theme: 'dark'
+        });
+      }
+      break;
     case 'hide':
       toggleMainPanel();
       break;
   }
+  enable();
 }
 
 window.addEventListener('load', () => {
