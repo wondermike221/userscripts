@@ -4,7 +4,7 @@
 // @description Various automations on SerciveNow
 // @match       https://ebayinc.service-now.com/*
 // @match       ebayinc.service-now.com/*
-// @version     0.2.0
+// @version     0.2.1
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
@@ -684,83 +684,6 @@ function initShortcuts() {
       console.debug('a-`');
       toggleMainPanel();
     }
-  }, {
-    key: ['1'],
-    description: 'select option 1',
-    action: () => {
-      if (panelToggle) {
-        console.debug('1 pressed');
-        // handleScrape('crosscharge', null);
-        const button = document.querySelector('div#routing ol#routing-list #crosscharge');
-        button == null || button.click();
-      }
-    }
-  }, {
-    key: ['2'],
-    description: 'select option 2',
-    action: () => {
-      if (panelToggle) {
-        console.debug('2 pressed');
-        // handleScrape('crosscharge', null);
-        const button = document.querySelector('div#routing ol#routing-list #dropship');
-        button == null || button.click();
-      }
-    }
-  }, {
-    key: ['3'],
-    description: 'select option 3',
-    action: () => {
-      if (panelToggle) {
-        console.debug('3 pressed');
-        // handleScrape('crosscharge', null);
-        const button = document.querySelector('div#routing ol#routing-list #exit');
-        button == null || button.click();
-      }
-    }
-  }, {
-    key: ['4'],
-    description: 'select option 4',
-    action: () => {
-      if (panelToggle) {
-        console.debug('4 pressed');
-        // handleScrape('crosscharge', null);
-        const button = document.querySelector('div#routing ol#routing-list #chargesheet');
-        button == null || button.click();
-      }
-    }
-  }, {
-    key: ['5'],
-    description: 'select option 5',
-    action: () => {
-      if (panelToggle) {
-        console.debug('5 pressed');
-        // handleScrape('crosscharge', null);
-        const button = document.querySelector('div#routing ol#routing-list #fdx-bulk');
-        button == null || button.click();
-      }
-    }
-  }, {
-    key: ['6'],
-    description: 'select option 6',
-    action: () => {
-      if (panelToggle) {
-        console.debug('6 pressed');
-        // handleScrape('crosscharge', null);
-        const button = document.querySelector('div#routing ol#routing-list #json');
-        button == null || button.click();
-      }
-    }
-  }, {
-    key: ['7'],
-    description: 'select option 7',
-    action: () => {
-      if (panelToggle) {
-        console.debug('7 pressed');
-        // handleScrape('crosscharge', null);
-        const button = document.querySelector('div#routing ol#routing-list #hide');
-        button == null || button.click();
-      }
-    }
   }];
   shortcuts.forEach(item => {
     item.key.forEach(k => {
@@ -810,8 +733,6 @@ function Routing(props) {
     });
     props.panelRef.setMovable(true);
   });
-  // const [getRoute, setRoute] = createSignal(window.location);
-
   return (() => {
     var _el$ = _tmpl$(),
       _el$2 = _el$.firstChild,

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // libraries
-// import { faCopy } from '@fortawesome/free-solid-svg-icons'; // https://fontawesome.com/icons/copy?style=solid
 import { createSignal, onMount } from 'solid-js';
 import { showToast } from '@violentmonkey/ui';
 import { enable, disable } from '@violentmonkey/shortcut';
@@ -23,7 +22,6 @@ export default function Routing(props) {
     });
     props.panelRef.setMovable(true);
   });
-  // const [getRoute, setRoute] = createSignal(window.location);
 
   return (
     <div id="routing">
