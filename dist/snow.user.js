@@ -16,7 +16,7 @@
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
-(function (web, ui, solidJs) {
+(function (web, solidJs, ui) {
 'use strict';
 
 // import { showToast } from '@violentmonkey/ui';
@@ -39,9 +39,11 @@ function copyTextToClipboard(text, mime = 'text/plain') {
     console.error('Async: Could not copy text: ', err);
   });
 }
-function copyRichTextToClipboard(clipboardItems) {
+async function copyRichTextToClipboard(clipboardItems) {
   if (!navigator.clipboard) {
-    fallbackCopyTextToClipboard(clipboardItems);
+    const blb = await clipboardItems[0].getType('text/plain');
+    const text = await blb.text();
+    fallbackCopyTextToClipboard(text);
     return;
   }
   navigator.clipboard.write(clipboardItems).then(function () {
@@ -171,7 +173,7 @@ function build_charge_sheet_row_cis(task, user) {
   const tsv = row.join('\t');
   const html = convertPlainTextToHTMLTable(tsv);
   const json = build_minimal_json(task, user);
-  return [new ClipboardItem({
+  const cis = [new ClipboardItem({
     'text/html': new Blob([html], {
       type: 'text/html'
     }),
@@ -179,6 +181,7 @@ function build_charge_sheet_row_cis(task, user) {
       type: 'text/plain'
     })
   })];
+  return [cis, tsv, html, json];
 }
 function build_bh_sheet_row_cis(task, user) {
   const u_variables = JSON.parse(task.dv_u_variables);
@@ -261,119 +264,6 @@ let assets = await snow_get_records('alm_hardware', `assigned_to=${user.records[
 console.log(build_charge_sheet_row(task.records[0], user.records[0]));
 console.log(build_bh_sheet_row(task.records[0], user.records[0]));
 */
-
-var _tmpl$ = /*#__PURE__*/web.template(`<div><span>Copy:</span><ol><li><button>CrossCharge</button></li><li><button>Dropship</button></li><li><button>Exit</button></li><li><button>Charge Sheet</button></li><li><button>JSON</button></li><li><button>Hide`);
-function Routing(props) {
-  solidJs.onMount(() => {
-    Object.assign(props.panelRef.wrapper.style, {
-      bottom: '50%',
-      left: '50%'
-    });
-    props.panelRef.setMovable(true);
-  });
-  const [getRoute, setRoute] = solidJs.createSignal(window.location);
-  return (() => {
-    var _el$ = _tmpl$(),
-      _el$2 = _el$.firstChild,
-      _el$3 = _el$2.nextSibling,
-      _el$4 = _el$3.firstChild,
-      _el$5 = _el$4.firstChild,
-      _el$6 = _el$4.nextSibling,
-      _el$7 = _el$6.firstChild,
-      _el$8 = _el$6.nextSibling,
-      _el$9 = _el$8.firstChild,
-      _el$0 = _el$8.nextSibling,
-      _el$1 = _el$0.firstChild,
-      _el$10 = _el$0.nextSibling,
-      _el$11 = _el$10.firstChild,
-      _el$12 = _el$10.nextSibling,
-      _el$13 = _el$12.firstChild;
-    web.addEventListener(_el$5, "click", () => handleCopy('crosscharge'));
-    web.addEventListener(_el$7, "click", () => handleCopy('dropship'));
-    web.addEventListener(_el$9, "click", () => handleCopy('exit'));
-    web.addEventListener(_el$1, "click", () => handleCopy('chargesheet'));
-    web.addEventListener(_el$11, "click", () => handleCopy('json'));
-    web.addEventListener(_el$13, "click", () => handleCopy('hide'));
-    return _el$;
-  })();
-}
-async function handleCopy(type, panel = null) {
-  const task = (await get_record('sc_task')).records[0];
-  const ritm = (await get_record('sc_req_item', task.parent)).records[0];
-  const user = (await get_record('sys_user', ritm.requested_for)).records[0];
-  switch (type) {
-    case 'json':
-      {
-        const json = build_minimal_json(task, user);
-        copyTextToClipboard(JSON.stringify(json));
-        ui.showToast('JSON successfully copied to clipboard', {
-          theme: 'dark'
-        });
-      }
-      break;
-    case 'crosscharge':
-      {
-        const crosscharge_html = convertPlainTextToHTMLTable([new Date().toISOString(), 'SLC', '', '1', task.dv_number, user.dv_email, user.dv_cost_center].join('\t'));
-        const crosscharge_json = {
-          date: new Date().toISOString(),
-          location: task.dv_location,
-          number: task.dv_number,
-          costCenter: user.dv_cost_center,
-          email: user.dv_email
-        };
-        const crosscharge = [new ClipboardItem({
-          'text/html': new Blob([crosscharge_html], {
-            type: 'text/html'
-          }),
-          'text/plain': new Blob([JSON.stringify(crosscharge_json)], {
-            type: 'text/plain'
-          })
-        })];
-        copyRichTextToClipboard(crosscharge);
-        ui.showToast('CrossCharge row successfully copied to clipboard', {
-          theme: 'dark'
-        });
-      }
-      break;
-    case 'chargesheet':
-      {
-        const tsv = build_charge_sheet_row_cis(task, user);
-        copyRichTextToClipboard(tsv);
-        ui.showToast('Chargesheet row successfully copied to clipboard', {
-          theme: 'dark'
-        });
-      }
-      break;
-    case 'dropship':
-      {
-        const dropship = build_bh_sheet_row_cis(task, user);
-        copyRichTextToClipboard(dropship);
-        ui.showToast('Dropship row successfully copied to clipboard', {
-          theme: 'dark'
-        });
-      }
-      break;
-    case 'exit':
-      {
-        // TODO
-        const manager = (await get_record('sys_user', user.manager)).records[0];
-        const assets = await get_records('alm_hardware', `assigned_to=${user.sys_id}^install_status=1`);
-        const task_u_vars = JSON.parse(task.dv_u_variables);
-        const asset = assets.records.filter(a => task_u_vars.v_assets_to_return.includes(a.asset_tag));
-        console.log(assets);
-        const exit = build_exit_sheet_row_cis(task, user, manager, asset[0]);
-        copyRichTextToClipboard(exit);
-        console.log('exit TODO');
-        ui.showToast('Exit row successfully copied to clipboard', {
-          theme: 'dark'
-        });
-      }
-      break;
-    case 'hide':
-      toggleMainPanel();
-      break;
-  }
-}
 
 function _extends() {
   return _extends = Object.assign ? Object.assign.bind() : function (n) {
@@ -761,11 +651,32 @@ function getService() {
 }
 const register = (...args) => getService().register(...args);
 
-function initShortcuts(mainPanel) {
+var css_248z = "";
+
+var stylesheet="";
+
+const mainPanel = ui.getPanel({
+  theme: 'dark',
+  style: [css_248z, stylesheet].join('\n')
+});
+function initToggleMainPanel(mainPanel) {
+  let panelToggle = false;
+  return () => {
+    if (panelToggle) {
+      mainPanel.hide();
+      panelToggle = false;
+    } else {
+      mainPanel.show();
+      panelToggle = true;
+    }
+  };
+}
+const toggleMainPanel = initToggleMainPanel(mainPanel);
+function initShortcuts() {
   // document.addEventListener('keydown', customHandleKey);
   mainPanel.hide();
   const shortcuts = [{
-    key: ['alt-`', 'ctrlcmd-k `'],
+    key: ['alt-`', 'ctrlcmd-k `', 'opt-`'],
     description: 'Toggle main panel',
     action: () => {
       console.debug('a-`');
@@ -810,37 +721,144 @@ function whatNumeralKey(e) {
 }
 */
 
-var css_248z = "";
-
-var stylesheet="";
-
-console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
-window.addEventListener('load', () => {
-  initializeApp();
-});
-const mainPanel = ui.getPanel({
-  theme: 'dark',
-  style: [css_248z, stylesheet].join('\n')
-});
-function initToggleMainPanel(mainPanel) {
-  let panelToggle = false;
-  return () => {
-    if (panelToggle) {
-      mainPanel.hide();
-      panelToggle = false;
-    } else {
-      mainPanel.show();
-      panelToggle = true;
-    }
-  };
+var _tmpl$ = /*#__PURE__*/web.template(`<div><p>Copy:</p><ol><li><button>CrossCharge</button></li><li><button>Dropship</button></li><li><button>Exit</button></li><li><button>Charge Sheet</button></li><li><button>JSON</button></li><li><button>Hide`);
+function Routing(props) {
+  solidJs.onMount(() => {
+    Object.assign(props.panelRef.wrapper.style, {
+      bottom: '50%',
+      left: '50%',
+      width: '250px'
+    });
+    props.panelRef.setMovable(true);
+  });
+  const [getRoute, setRoute] = solidJs.createSignal(window.location);
+  return (() => {
+    var _el$ = _tmpl$(),
+      _el$2 = _el$.firstChild,
+      _el$3 = _el$2.nextSibling,
+      _el$4 = _el$3.firstChild,
+      _el$5 = _el$4.firstChild,
+      _el$6 = _el$4.nextSibling,
+      _el$7 = _el$6.firstChild,
+      _el$8 = _el$6.nextSibling,
+      _el$9 = _el$8.firstChild,
+      _el$0 = _el$8.nextSibling,
+      _el$1 = _el$0.firstChild,
+      _el$10 = _el$0.nextSibling,
+      _el$11 = _el$10.firstChild,
+      _el$12 = _el$10.nextSibling,
+      _el$13 = _el$12.firstChild;
+    _el$2.style.setProperty("width", "240px");
+    _el$2.style.setProperty("background-color", "gray");
+    _el$2.style.setProperty("margin", "0");
+    _el$2.style.setProperty("padding", "0 0 0 10px");
+    web.addEventListener(_el$5, "click", e => handleCopy('crosscharge', e));
+    web.addEventListener(_el$7, "click", e => handleCopy('dropship', e));
+    web.addEventListener(_el$9, "click", e => handleCopy('exit', e));
+    web.addEventListener(_el$1, "click", e => handleCopy('chargesheet', e));
+    web.addEventListener(_el$11, "click", e => handleCopy('json', e));
+    web.addEventListener(_el$13, "click", e => handleCopy('hide', e));
+    return _el$;
+  })();
 }
-const toggleMainPanel = initToggleMainPanel(mainPanel);
-function initializeApp() {
-  initShortcuts(mainPanel);
+async function handleCopy(type, event) {
+  const task = (await get_record('sc_task')).records[0];
+  const ritm = (await get_record('sc_req_item', task.parent)).records[0];
+  const user = (await get_record('sys_user', ritm.requested_for)).records[0];
+  switch (type) {
+    case 'json':
+      {
+        const json = build_minimal_json(task, user);
+        copyTextToClipboard(JSON.stringify(json));
+        ui.showToast('JSON successfully copied to clipboard', {
+          theme: 'dark'
+        });
+      }
+      break;
+    case 'crosscharge':
+      {
+        const crosscharge_tsv = [new Date().toISOString(), 'SLC', '', '1', task.dv_number, user.dv_email, user.dv_cost_center].join('\t');
+        const crosscharge_html = convertPlainTextToHTMLTable(crosscharge_tsv);
+        const crosscharge_json = {
+          date: new Date().toISOString(),
+          location: task.dv_location,
+          number: task.dv_number,
+          costCenter: user.dv_cost_center,
+          email: user.dv_email
+        };
+        const crosscharge = [new ClipboardItem({
+          'text/html': new Blob([crosscharge_html], {
+            type: 'text/html'
+          }),
+          'text/plain': new Blob([JSON.stringify(crosscharge_json)], {
+            type: 'text/plain'
+          })
+        })];
+        if (event.ctrlKey) {
+          copyTextToClipboard(crosscharge_tsv);
+        } else if (event.shiftKey) {
+          copyTextToClipboard(JSON.stringify(crosscharge_json));
+        } else {
+          copyRichTextToClipboard(crosscharge);
+        }
+        ui.showToast('CrossCharge row successfully copied to clipboard', {
+          theme: 'dark'
+        });
+      }
+      break;
+    case 'chargesheet':
+      {
+        const [chargesheet_cis, chargesheet_tsv, chargesheet_html, chargesheet_json] = build_charge_sheet_row_cis(task, user);
+        if (event.ctrlKey) {
+          copyTextToClipboard(chargesheet_tsv);
+        } else if (event.shiftKey) {
+          copyTextToClipboard(JSON.stringify(chargesheet_json));
+        } else {
+          copyRichTextToClipboard(chargesheet_cis);
+        }
+        ui.showToast('Chargesheet row successfully copied to clipboard', {
+          theme: 'dark'
+        });
+      }
+      break;
+    case 'dropship':
+      {
+        const dropship = build_bh_sheet_row_cis(task, user);
+        copyRichTextToClipboard(dropship);
+        ui.showToast('Dropship row successfully copied to clipboard', {
+          theme: 'dark'
+        });
+      }
+      break;
+    case 'exit':
+      {
+        // TODO
+        const manager = (await get_record('sys_user', user.manager)).records[0];
+        const assets = await get_records('alm_hardware', `assigned_to=${user.sys_id}^install_status=1`);
+        const task_u_vars = JSON.parse(task.dv_u_variables);
+        const asset = assets.records.filter(a => task_u_vars.v_assets_to_return.includes(a.asset_tag));
+        console.log(assets);
+        const exit = build_exit_sheet_row_cis(task, user, manager, asset[0]);
+        copyRichTextToClipboard(exit);
+        console.log('exit TODO');
+        ui.showToast('Exit row successfully copied to clipboard', {
+          theme: 'dark'
+        });
+      }
+      break;
+    case 'hide':
+      toggleMainPanel();
+      break;
+  }
+}
+
+window.addEventListener('load', () => {
+  console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
+  initShortcuts();
   GM_registerMenuCommand('Toggle main panel', toggleMainPanel);
   web.render(() => web.createComponent(Routing, {
     panelRef: mainPanel
   }), mainPanel.body);
-}
+});
 
-})(VM.solid.web, VM, VM.solid);
+})(VM.solid.web, VM.solid, VM);

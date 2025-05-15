@@ -3,6 +3,7 @@
 // import { faCopy } from '@fortawesome/free-solid-svg-icons'; // https://fontawesome.com/icons/copy?style=solid
 import { createSignal, onMount } from 'solid-js';
 import { showToast } from '@violentmonkey/ui';
+import { enable, disable } from '@violentmonkey/shortcut';
 // utils
 import {
   convertPlainTextToHTMLTable,
@@ -22,10 +23,10 @@ export default function Routing(props) {
     });
     props.panelRef.setMovable(true);
   });
-  const [getRoute, setRoute] = createSignal(window.location);
+  // const [getRoute, setRoute] = createSignal(window.location);
 
   return (
-    <div>
+    <div id="routing">
       <p
         style={{
           width: '240px',
@@ -36,35 +37,55 @@ export default function Routing(props) {
       >
         Copy:
       </p>
-      <ol>
+      <ol id="routing-list">
         <li>
-          <button on:click={(e) => handleCopy('crosscharge', e)}>
+          <button
+            id="crosscharge"
+            on:click={(e) => handleScrape('crosscharge', e)}
+          >
             CrossCharge
           </button>
         </li>
         <li>
-          <button on:click={(e) => handleCopy('dropship', e)}>Dropship</button>
+          <button id="dropship" on:click={(e) => handleScrape('dropship', e)}>
+            Dropship
+          </button>
         </li>
         <li>
-          <button on:click={(e) => handleCopy('exit', e)}>Exit</button>
+          <button id="exit" on:click={(e) => handleScrape('exit', e)}>
+            Exit
+          </button>
         </li>
         <li>
-          <button on:click={(e) => handleCopy('chargesheet', e)}>
+          <button
+            id="chargesheet"
+            on:click={(e) => handleScrape('chargesheet', e)}
+          >
             Charge Sheet
           </button>
         </li>
         <li>
-          <button on:click={(e) => handleCopy('json', e)}>JSON</button>
+          <button id="fdx-bulk" on:click={(e) => handleScrape('fdx-bulk', e)}>
+            FDX Bulk
+          </button>
         </li>
         <li>
-          <button on:click={(e) => handleCopy('hide', e)}>Hide</button>
+          <button id="json" on:click={(e) => handleScrape('json', e)}>
+            JSON
+          </button>
+        </li>
+        <li>
+          <button id="hide" on:click={(e) => handleScrape('hide', e)}>
+            Hide
+          </button>
         </li>
       </ol>
     </div>
   );
 }
 
-async function handleCopy(type, event) {
+export async function handleScrape(type, event) {
+  disable();
   const task = (await snow.get_record('sc_task')).records[0];
   const ritm = (await snow.get_record('sc_req_item', task.parent)).records[0];
   const user = (await snow.get_record('sys_user', ritm.requested_for))
@@ -172,8 +193,18 @@ async function handleCopy(type, event) {
         });
       }
       break;
+    case 'fdx-bulk':
+      {
+        // const fdx = snow.build_fdx_row_cis(task, user);
+        // copyRichTextToClipboard(fdx);
+        showToast('TODO:Fdx row successfully copied to clipboard', {
+          theme: 'dark',
+        });
+      }
+      break;
     case 'hide':
       toggleMainPanel();
       break;
   }
+  enable();
 }
