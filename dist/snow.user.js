@@ -4,7 +4,7 @@
 // @description Various automations on SerciveNow
 // @match       https://ebayinc.service-now.com/*
 // @match       ebayinc.service-now.com/*
-// @version     0.2.1
+// @version     0.2.2
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
@@ -573,7 +573,7 @@ function build_charge_sheet_row_cis(task, user) {
 }
 function build_bh_sheet_row_cis(task, user) {
   const u_variables = JSON.parse(task.dv_u_variables);
-  const row = [new Date().toLocaleDateString(), user.dv_name.split(' ')[0], user.dv_name.split(' ')[1], '', '', '', u_variables.street_address, '', u_variables.city, u_variables.v_state, u_variables.zip, '', '1', 'WFH', task.dv_number, 'mhixon', 'Normal'];
+  const row = [new Date().toLocaleDateString(), user.dv_name.split(' ')[0], user.dv_name.split(' ')[1], u_variables.street_address, '', u_variables.city, u_variables.v_state, u_variables.zip, '', '1', 'WFH', task.dv_number, 'mhixon', 'Normal'];
   const tsv = row.join('\t');
   const html = convertPlainTextToHTMLTable(tsv);
   const json = build_minimal_json(task, user);
