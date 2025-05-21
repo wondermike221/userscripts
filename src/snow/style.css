@@ -1,0 +1,166 @@
+/* styles.css */
+.directory-nav-container {
+  width: 300px;
+  min-height: 300px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+  overflow: hidden; /* Crucial for animations */
+  position: relative; /* Establishes positioning context for children */
+  background-color: #f9f9f9;
+  display: flex;
+  flex-direction: column; /* Allows header and list to stack vertically */
+  box-sizing: border-box;
+}
+
+.directory-nav-container:focus {
+  outline: 2px solid dodgerblue;
+  border-color: dodgerblue;
+}
+
+.directory-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0; /* Prevents header from shrinking */
+}
+
+.back-button {
+  background: none;
+  border: none;
+  font-size: 1.6em; /* Larger arrow */
+  font-weight: bold;
+  cursor: pointer;
+  margin-right: 10px;
+  padding: 0 8px;
+  color: #333;
+  line-height: 1; /* Better vertical alignment */
+}
+
+.back-button:hover {
+  color: #000;
+}
+
+.current-path {
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Show ... for long path names */
+  flex-grow: 1; /* Takes available space */
+}
+
+.options-list-wrapper {
+  position: relative; /* Necessary for absolute positioning of .options-view */
+  flex-grow: 1; /* Allows the list to take available vertical space */
+  overflow: hidden; /* Clips the transitioning content */
+}
+
+.options-view {
+  width: 100%;
+  height: 100%;
+  position: absolute; /* Key for <Transition mode="out-in"> */
+  top: 0;
+  left: 0;
+  background-color: #f9f9f9; /* Ensures content below is not visible during transition */
+  box-sizing: border-box;
+  padding: 5px 0; /* Some internal padding for the list */
+}
+
+.options-view ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.options-list-item {
+  padding: 10px 8px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.options-list-item:last-child {
+  border-bottom: none;
+}
+
+.options-list-item:hover {
+  background-color: #e9e9e9;
+}
+
+.option-number {
+  margin-right: 12px;
+  font-weight: bold;
+  color: #555;
+  min-width: 20px; /* Ensures consistent alignment */
+  text-align: right;
+}
+
+.option-name {
+  flex-grow: 1;
+  color: #333;
+}
+
+.option-type-indicator {
+  margin-left: 8px;
+  font-size: 0.9em;
+  color: #777;
+}
+
+/* Transitions for SolidJS <Transition name="slide-forward" mode="out-in"> */
+/* Enter: New content slides in from the right */
+.slide-forward-enter-from {
+  transform: translateX(100%);
+}
+.slide-forward-enter-to {
+  transform: translateX(0);
+}
+.slide-forward-enter-active {
+  transition: transform 0.3s ease-out;
+}
+
+/* Exit: Old content slides out to the left */
+.slide-forward-exit-from {
+  transform: translateX(0);
+}
+.slide-forward-exit-to {
+  transform: translateX(-100%);
+}
+.slide-forward-exit-active {
+  transition: transform 0.3s ease-in;
+}
+
+/* Transitions for SolidJS <Transition name="slide-backward" mode="out-in"> */
+/* Enter: New content slides in from the left */
+.slide-backward-enter-from {
+  transform: translateX(-100%);
+}
+.slide-backward-enter-to {
+  transform: translateX(0);
+}
+.slide-backward-enter-active {
+  transition: transform 0.3s ease-out;
+}
+
+/* Exit: Old content slides out to the right */
+.slide-backward-exit-from {
+  transform: translateX(0);
+}
+.slide-backward-exit-to {
+  transform: translateX(100%);
+}
+.slide-backward-exit-active {
+  transition: transform 0.3s ease-in;
+}
+
+/* Initial load (no transition) - can be empty or define specific appearance */
+.initial-load-enter-active,
+.initial-load-exit-active {
+  transition: none;
+}

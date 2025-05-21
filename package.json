@@ -23,7 +23,8 @@
     "@violentmonkey/dom": "^2.1.6",
     "@violentmonkey/shortcut": "^1.4.4",
     "@violentmonkey/ui": "^0.7.8",
-    "solid-js": "^1.8.16"
+    "solid-js": "^1.8.16",
+    "solid-transition-group": "^0.3.0"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.23.4",
