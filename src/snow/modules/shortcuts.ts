@@ -18,6 +18,7 @@ function initToggleMainPanel(mainPanel: IPanelResult) {
       panelToggle = false;
     } else {
       mainPanel.show();
+      mainPanel.wrapper.focus();
       panelToggle = true;
     }
   };
