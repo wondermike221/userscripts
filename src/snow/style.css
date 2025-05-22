@@ -1,8 +1,9 @@
 /* styles.css */
 .directory-nav-container {
   width: 100%;
-  max-width: 400px;
-  min-height: 400px;
+  max-width: 25vw;
+  min-height: 30vh;
+  max-height: 40vh;
   border: 1px solid #4a4a4a;
   border-radius: 8px;
   padding: 6px;

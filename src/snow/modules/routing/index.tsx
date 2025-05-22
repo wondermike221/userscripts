@@ -70,13 +70,13 @@ export default function Routing({ panelRef }: RoutingProps) {
     Object.assign(panelRef.wrapper.style, {
       bottom: '50%',
       left: '50%',
-      minWidth: '25vw',
+      minWidth: '20vw',
     });
     Object.assign(panelRef.body.style, {
       fontFamily: 'sans-serif',
       backgroundColor: '#1e1e1e',
       color: '#f0f0f0',
-      maxWidth: '400px',
+      maxWidth: '25vw',
       borderRadius: '8px',
     });
     // Initialize ServiceNow URL tracking when the app mounts
