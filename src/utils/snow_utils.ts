@@ -1,5 +1,11 @@
 import { convertPlainTextToHTMLTable } from '.';
 
+// Get technician NT from local storage
+let technicianNT = localStorage.getItem('techNT');
+if (technicianNT === null) {
+  technicianNT = '';
+}
+
 export function api_url(table, id) {
   const BASE_URL = 'https://ebayinc.service-now.com';
   const base = new URL(`/${table}.do`, BASE_URL);
@@ -98,7 +104,7 @@ export function build_bh_sheet_row_cis(task, user) {
     '1',
     'WFH',
     task.dv_number,
-    'mhixon',
+    technicianNT,
     'Normal',
   ];
   const tsv = row.join('\t');
