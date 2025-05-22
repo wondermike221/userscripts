@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // libraries
-import { createSignal, onMount } from 'solid-js';
-import { showToast } from '@violentmonkey/ui';
+// import { faCopy } from '@fortawesome/free-solid-svg-icons'; // https://fontawesome.com/icons/copy?style=solid
+import { createSignal, onMount, Show, For, createMemo } from 'solid-js';
+import { IPanelResult, showToast } from '@violentmonkey/ui';
 import { enable, disable } from '@violentmonkey/shortcut';
 // utils
 import {
@@ -13,76 +14,176 @@ import * as snow from '../../../utils/snow_utils';
 // modules
 import { toggleMainPanel } from '../shortcuts';
 
-export default function Routing(props) {
+import { DirectoryNav } from '../../components/DirectoryNav';
+import { DirectoryTree, Node, NodeType } from '../DirectoryTree';
+import {
+  initializeUrlTracking,
+  getCurrentRecord,
+  ServiceNowRecordInfo,
+} from '../snowURLParser'; // Import ServiceNow URL parser
+import { m } from '@violentmonkey/dom';
+// import '../../styles.css';
+
+interface RoutingProps {
+  panelRef: IPanelResult;
+}
+
+export default function Routing({ panelRef }: RoutingProps) {
+  const [treeInstance] = createSignal(new DirectoryTree('Main Options'));
+  const [actionLog, setActionLog] = createSignal<string[]>([]);
+  const [statusMessage, setStatusMessage] = createSignal<string>(
+    'Click component to focus. Use 1-9 or Backspace.',
+  );
+  const [treeReady, setTreeReady] = createSignal(false);
+  const [isPanelVisible, setIsPanelVisible] = createSignal(true);
+
+  // Get the reactive signal for the current ServiceNow record
+  const currentSNRecord = getCurrentRecord;
+
+  // Create a memoized display string for the DirectoryNav header
+  const recordDisplayString = createMemo(() => {
+    const record = currentSNRecord();
+    if (record && record.table && record.sysId) {
+      return `Table: ${record.table}, ID: ${record.sysId.substring(0, 8)}...`; // Shorten sysId for display
+    }
+    return null; // Don't display if no record info
+  });
+
+  // Simulated toggleMainPanel function (replace with your actual import)
+  const togglePanel = () => {
+    setIsPanelVisible((prev) => !prev);
+    const message = `Panel visibility toggled to: ${!isPanelVisible() ? 'Visible' : 'Hidden'}`;
+    console.log(message); // For demonstration
+    setStatusMessage(message);
+    // Call your actual toggle function here if it's imported
+    toggleMainPanel();
+  };
+
+  const logUserAction = (message: string, node?: Node) => {
+    const logEntry = node ? `${message} (Node: ${node.name})` : message;
+    console.log(logEntry);
+    setActionLog((prev) => [logEntry, ...prev].slice(0, 7));
+    setStatusMessage(message);
+  };
+
   onMount(() => {
-    Object.assign(props.panelRef.wrapper.style, {
+    Object.assign(panelRef.wrapper.style, {
       bottom: '50%',
       left: '50%',
-      width: '250px',
+      minWidth: '25vw',
     });
-    props.panelRef.setMovable(true);
+    Object.assign(panelRef.body.style, {
+      fontFamily: 'sans-serif',
+      backgroundColor: '#1e1e1e',
+      color: '#f0f0f0',
+      maxWidth: '400px',
+      borderRadius: '8px',
+    });
+    // Initialize ServiceNow URL tracking when the app mounts
+    initializeUrlTracking();
+    const tree = treeInstance();
+
+    const Accessory = tree.addNode(
+      tree.root.id,
+      'Accessory',
+      NodeType.DIRECTORY,
+    );
+    const Exit = tree.addNode(tree.root.id, 'Exit', NodeType.DIRECTORY);
+    const Laptop = tree.addNode(tree.root.id, 'Laptop', NodeType.DIRECTORY);
+    const Settings = tree.addNode(tree.root.id, 'Settings', NodeType.DIRECTORY);
+
+    if (Accessory) {
+      tree.addNode(Accessory.id, 'Dropship', NodeType.LEAF, () => {
+        logUserAction('Copying...');
+        handleScrape('dropship');
+      });
+      tree.addNode(Accessory.id, 'Chargesheet', NodeType.LEAF, () => {
+        logUserAction('Copying...');
+        handleScrape('chargesheet');
+      });
+      // tree.addNode(Accessory.id, 'FDX Bulk', NodeType.LEAF, () => {
+      //   logUserAction('Copying...');
+      //   showToast('TODO', { theme: 'dark' });
+      // });
+      tree.addNode(Accessory.id, 'CrossCharge', NodeType.LEAF, () => {
+        logUserAction('Copying...');
+        handleScrape('crosscharge');
+      });
+      tree.addNode(Accessory.id, 'JSON', NodeType.LEAF, () => {
+        logUserAction('Copying...');
+        handleScrape('json');
+      });
+    }
+
+    if (Exit) {
+      // tree.addNode(Exit.id, 'Exit', NodeType.LEAF, () => {
+      //   logUserAction('Copying...');
+      //   showToast('TODO', { theme: 'dark' });
+      // });
+      // tree.addNode(Exit.id, 'Exit - Asset', NodeType.LEAF, () => {
+      //   logUserAction('Copying...');
+      //   showToast('TODO', { theme: 'dark' });
+      // });
+      tree.addNode(Exit.id, 'Sheet', NodeType.LEAF, () => {
+        logUserAction('Copying...');
+        handleScrape('exit');
+      });
+      // tree.addNode(Exit.id, 'Sheet - Receiving', NodeType.LEAF, () => logUserAction('Copying...'));
+      tree.addNode(Exit.id, 'JSON', NodeType.LEAF, () => {
+        logUserAction('Copying...');
+        handleScrape('json');
+      });
+    }
+
+    if (Laptop) {
+      tree.addNode(Laptop.id, 'TODO', NodeType.LEAF, () => {
+        logUserAction('Copying...');
+        showToast('TODO', { theme: 'dark' });
+      });
+      // tree.addNode(Laptop.id, 'Dropship', NodeType.LEAF, () => logUserAction('Copying...'));
+      // tree.addNode(Laptop.id, 'Chargesheet', NodeType.LEAF, () => logUserAction('Copying...'));
+      // tree.addNode(Laptop.id, 'FDX Bulk', NodeType.LEAF, () => logUserAction('Copying...'));
+      // tree.addNode(Laptop.id, 'CrossCharge', NodeType.LEAF, () => logUserAction('Copying...'));
+      // tree.addNode(Laptop.id, 'JSON', NodeType.LEAF, () => logUserAction('Copying...'));
+    }
+
+    if (Settings) {
+      tree.addNode(Settings.id, 'Technician NT', NodeType.LEAF, () => {
+        logUserAction('Change Tech NT...');
+        const newTech = prompt('Enter new Tech NT:');
+        // store the new tech in local storage
+        if (newTech) {
+          localStorage.setItem('techNT', newTech);
+          showToast(`New Tech NT set to: ${newTech}`, { theme: 'dark' });
+        }
+      });
+    }
+
+    setTreeReady(true);
   });
 
   return (
-    <div id="routing">
-      <p
-        style={{
-          width: '240px',
-          'background-color': 'gray',
-          margin: 0,
-          padding: '0 0 0 10px',
-        }}
+    <>
+      <Show
+        when={treeReady()}
+        fallback={
+          <p style={{ 'text-align': 'center', padding: '20px', color: '#888' }}>
+            Loading directory structure...
+          </p>
+        }
       >
-        Copy:
-      </p>
-      <ol id="routing-list">
-        <li>
-          <button
-            id="crosscharge"
-            on:click={(e) => handleScrape('crosscharge', e)}
-          >
-            CrossCharge
-          </button>
-        </li>
-        <li>
-          <button id="dropship" on:click={(e) => handleScrape('dropship', e)}>
-            Dropship
-          </button>
-        </li>
-        <li>
-          <button id="exit" on:click={(e) => handleScrape('exit', e)}>
-            Exit
-          </button>
-        </li>
-        <li>
-          <button
-            id="chargesheet"
-            on:click={(e) => handleScrape('chargesheet', e)}
-          >
-            Charge Sheet
-          </button>
-        </li>
-        <li>
-          <button id="fdx-bulk" on:click={(e) => handleScrape('fdx-bulk', e)}>
-            FDX Bulk
-          </button>
-        </li>
-        <li>
-          <button id="json" on:click={(e) => handleScrape('json', e)}>
-            JSON
-          </button>
-        </li>
-        <li>
-          <button id="hide" on:click={(e) => handleScrape('hide', e)}>
-            Hide
-          </button>
-        </li>
-      </ol>
-    </div>
+        <DirectoryNav
+          tree={treeInstance()}
+          onLeafAction={logUserAction}
+          onClose={togglePanel}
+          currentRecordDisplay={recordDisplayString()}
+        />
+      </Show>
+    </>
   );
 }
 
-export async function handleScrape(type, event) {
+export async function handleScrape(type) {
   disable();
   const task = (await snow.get_record('sc_task')).records[0];
   const ritm = (await snow.get_record('sc_req_item', task.parent)).records[0];
@@ -123,13 +224,7 @@ export async function handleScrape(type, event) {
             }),
           }),
         ];
-        if (event.ctrlKey) {
-          copyTextToClipboard(crosscharge_tsv);
-        } else if (event.shiftKey) {
-          copyTextToClipboard(JSON.stringify(crosscharge_json));
-        } else {
-          copyRichTextToClipboard(crosscharge);
-        }
+        copyRichTextToClipboard(crosscharge);
         showToast('CrossCharge row successfully copied to clipboard', {
           theme: 'dark',
         });
@@ -143,13 +238,7 @@ export async function handleScrape(type, event) {
           chargesheet_html,
           chargesheet_json,
         ] = snow.build_charge_sheet_row_cis(task, user);
-        if (event.ctrlKey) {
-          copyTextToClipboard(chargesheet_tsv);
-        } else if (event.shiftKey) {
-          copyTextToClipboard(JSON.stringify(chargesheet_json));
-        } else {
-          copyRichTextToClipboard(chargesheet_cis);
-        }
+        copyRichTextToClipboard(chargesheet_cis);
         showToast('Chargesheet row successfully copied to clipboard', {
           theme: 'dark',
         });
@@ -200,9 +289,76 @@ export async function handleScrape(type, event) {
         });
       }
       break;
-    case 'hide':
-      toggleMainPanel();
-      break;
   }
   enable();
 }
+
+// export default function Routing(props) {
+//   onMount(() => {
+//     Object.assign(props.panelRef.wrapper.style, {
+//       bottom: '50%',
+//       left: '50%',
+//       width: '250px',
+//     });
+//     props.panelRef.setMovable(true);
+//   });
+//   // const [getRoute, setRoute] = createSignal(window.location);
+
+//   return (
+//     <div id="routing">
+//       <p
+//         style={{
+//           width: '240px',
+//           'background-color': 'gray',
+//           margin: 0,
+//           padding: '0 0 0 10px',
+//         }}
+//       >
+//         Copy:
+//       </p>
+//       <ol id="routing-list">
+//         <li>
+//           <button
+//             id="crosscharge"
+//             on:click={(e) => handleScrape('crosscharge', e)}
+//           >
+//             CrossCharge
+//           </button>
+//         </li>
+//         <li>
+//           <button id="dropship" on:click={(e) => handleScrape('dropship', e)}>
+//             Dropship
+//           </button>
+//         </li>
+//         <li>
+//           <button id="exit" on:click={(e) => handleScrape('exit', e)}>
+//             Exit
+//           </button>
+//         </li>
+//         <li>
+//           <button
+//             id="chargesheet"
+//             on:click={(e) => handleScrape('chargesheet', e)}
+//           >
+//             Charge Sheet
+//           </button>
+//         </li>
+//         <li>
+//           <button id="fdx-bulk" on:click={(e) => handleScrape('fdx-bulk', e)}>
+//             FDX Bulk
+//           </button>
+//         </li>
+//         <li>
+//           <button id="json" on:click={(e) => handleScrape('json', e)}>
+//             JSON
+//           </button>
+//         </li>
+//         <li>
+//           <button id="hide" on:click={(e) => handleScrape('hide', e)}>
+//             Hide
+//           </button>
+//         </li>
+//       </ol>
+//     </div>
+//   );
+// }

@@ -1,41 +1,58 @@
-// DirectoryNav.tsx
+// components/DirectoryNav.tsx
 import {
   createSignal,
   createEffect,
   For,
   Show,
-  onCleanup,
   createMemo,
+  on,
 } from 'solid-js';
-import { Transition } from 'solid-transition-group'; // Make sure to import Transition
-import { DirectoryTree, Node, NodeType } from '../modules/DirectoryTree';
-import './styles.css';
+import { Transition } from 'solid-transition-group';
+import { DirectoryTree, Node, NodeType } from '../modules/DirectoryTree'; // Adjusted import path
 
 interface DirectoryNavProps {
   tree: DirectoryTree;
-  onLeafAction?: (actionDescription: string, node: Node) => void; // Callback when a leaf node is triggered
+  onLeafAction?: (actionDescription: string, node: Node) => void;
+  initialNodeId?: string;
+  onClose?: () => void;
+  currentRecordDisplay?: string | null; // Optional prop to display current record info
 }
 
 export function DirectoryNav(props: DirectoryNavProps) {
-  const [currentNode, setCurrentNode] = createSignal<Node>(props.tree.root);
+  const initialNode = () =>
+    props.initialNodeId
+      ? props.tree.findNode(props.initialNodeId)
+      : props.tree.root;
+  const [currentNode, setCurrentNode] = createSignal<Node>(
+    initialNode() || props.tree.root,
+  );
   const [isFocused, setIsFocused] = createSignal(false);
-  // Determines the animation classes: 'slide-forward', 'slide-backward', or 'initial-load' for no animation on first render
   const [transitionName, setTransitionName] = createSignal<
     'slide-forward' | 'slide-backward' | 'initial-load'
   >('initial-load');
-
   let containerRef: HTMLDivElement | undefined;
 
-  // Display name for the current directory, could be truncated if path is too long
-  const currentDisplayName = createMemo(() => {
-    const node = currentNode();
-    if (!node) return '';
-    // For root or top-level items, just show the name.
-    // For deeper items, you might want a breadcrumb, but for simplicity, just the current name.
-    return node.name;
-  });
+  createEffect(
+    on(
+      () => props.initialNodeId,
+      (newInitialId) => {
+        if (newInitialId) {
+          const node = props.tree.findNode(newInitialId);
+          if (node && node.id !== currentNode()?.id) {
+            setTransitionName('initial-load');
+            setCurrentNode(node);
+          }
+        } else if (currentNode()?.id !== props.tree.root.id) {
+          setTransitionName('initial-load');
+          setCurrentNode(props.tree.root);
+        }
+      },
+    ),
+  );
 
-  // Options to display in the current view
+  const currentDisplayName = createMemo(() =>
+    currentNode() ? currentNode()!.name : 'Loading...',
+  );
   const options = createMemo((): (Node & { displayIndex: number })[] => {
     const node = currentNode();
     if (node && node.type === NodeType.DIRECTORY && node.children) {
@@ -47,23 +64,24 @@ export function DirectoryNav(props: DirectoryNavProps) {
     return [];
   });
 
-  // Navigate to a child node or execute action
   const navigateTo = (node: Node) => {
     if (!node) return;
-
     if (node.type === NodeType.DIRECTORY) {
-      // Before changing currentNode, set the transition direction
       setTransitionName('slide-forward');
       setCurrentNode(node);
     } else if (node.type === NodeType.LEAF && node.action) {
-      node.action();
-      if (props.onLeafAction) {
-        props.onLeafAction(`Executed: ${node.name}`, node);
+      try {
+        node.action();
+        if (props.onLeafAction)
+          props.onLeafAction(`Executed: ${node.name}`, node);
+      } catch (error) {
+        console.error(`Error executing action for "${node.name}":`, error);
+        if (props.onLeafAction)
+          props.onLeafAction(`Error executing: ${node.name}`, node);
       }
     }
   };
 
-  // Navigate to the parent directory
   const goBack = () => {
     const parent = currentNode()?.parent;
     if (parent) {
@@ -72,114 +90,130 @@ export function DirectoryNav(props: DirectoryNavProps) {
     }
   };
 
-  // Keyboard event handler
   const handleKeyDown = (event: KeyboardEvent) => {
     if (!isFocused()) return;
 
     if (event.key === 'Backspace') {
-      event.preventDefault();
       if (currentNode()?.parent) {
-        // Only go back if there's a parent
+        event.preventDefault();
+        event.stopPropagation();
         goBack();
       }
-    } else if (event.key >= '1' && event.key <= '9') {
-      event.preventDefault();
-      const index = parseInt(event.key) - 1; // 0-based index
-      const currentOpts = options();
-      if (index >= 0 && index < currentOpts.length) {
-        navigateTo(currentOpts[index]);
+    } else {
+      let num = -1;
+      if (event.key >= '1' && event.key <= '9') {
+        num = parseInt(event.key);
+      } else if (event.code.startsWith('Numpad') && event.code.length === 7) {
+        const numpadNum = parseInt(event.code.substring(6));
+        if (numpadNum >= 1 && numpadNum <= 9) {
+          num = numpadNum;
+        }
+      }
+
+      if (num !== -1) {
+        event.preventDefault();
+        event.stopPropagation();
+        const index = num - 1;
+        const currentOpts = options();
+        if (index >= 0 && index < currentOpts.length) {
+          navigateTo(currentOpts[index]);
+        }
       }
     }
   };
 
-  // Effect to add/remove global keyboard listener based on focus
-  createEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => handleKeyDown(e);
-    if (isFocused()) {
-      document.addEventListener('keydown', onKeyDown);
-    } else {
-      document.removeEventListener('keydown', onKeyDown);
-    }
-    onCleanup(() => {
-      document.removeEventListener('keydown', onKeyDown);
-    });
-  });
-
-  // Set initial load to false after first render so transitions apply subsequently
-  createEffect(() => {
-    if (transitionName() === 'initial-load') {
-      // After a tick, allow transitions.
-      queueMicrotask(() => setTransitionName('slide-forward')); // Or any default if preferred
-    }
-  });
+  createEffect(
+    on(
+      currentNode,
+      () => {
+        if (transitionName() === 'initial-load') {
+          queueMicrotask(() => {});
+        }
+      },
+      { defer: true },
+    ),
+  );
 
   return (
     <div
       ref={containerRef}
       class="directory-nav-container"
-      tabindex="0" // Make it focusable
+      tabindex="0"
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
+      onKeyDown={handleKeyDown}
     >
       <div class="directory-header">
-        <Show when={currentNode()?.parent !== null}>
-          <button onClick={goBack} class="back-button" aria-label="Go back">
-            &larr; {/* Left arrow HTML entity */}
+        <div class="header-left-controls">
+          <button
+            onClick={goBack}
+            class="back-button"
+            aria-label="Go back"
+            disabled={currentNode()?.parent === null}
+          >
+            &larr;
+          </button>
+          <div
+            class="current-path"
+            title={props.tree
+              .getNodePathNames(currentNode()?.id || props.tree.root.id)
+              .join(' / ')}
+          >
+            {currentDisplayName()}
+          </div>
+        </div>
+        <Show when={props.onClose}>
+          <button
+            onClick={() => props.onClose && props.onClose()}
+            class="close-button"
+            aria-label="Close panel"
+          >
+            &times; {/* HTML entity for X / multiplication sign */}
           </button>
         </Show>
-        <div class="current-path" title={currentDisplayName()}>
-          {currentDisplayName()}
-        </div>
       </div>
-
+      <Show when={props.currentRecordDisplay}>
+        <div class="current-record-info">{props.currentRecordDisplay}</div>
+      </Show>
       <div class="options-list-wrapper">
-        <Transition
-          name={transitionName()}
-          mode="outin" // Ensures old content transitions out before new content transitions in
-        >
-          {/* The key={currentNode().id} is crucial for <Transition> to detect content change */}
+        <Transition name={transitionName()} mode="outin">
           <div
             class="options-view"
             style={{ display: currentNode() ? 'block' : 'none' }}
-            key={currentNode()?.id || 'empty'}
           >
             <Show
-              when={
-                currentNode() &&
-                options().length === 0 &&
-                currentNode().type === NodeType.DIRECTORY
-              }
+              when={options().length > 0}
               fallback={
-                <ul>
-                  <For each={options()}>
-                    {(item) => (
-                      <li
-                        class="options-list-item"
-                        onClick={() => navigateTo(item)}
-                        role="button"
-                        aria-label={`Option ${item.displayIndex}: ${item.name}${item.type === NodeType.DIRECTORY ? ', directory' : ''}`}
-                      >
-                        <span class="option-number">{item.displayIndex}.</span>
-                        <span class="option-name">{item.name}</span>
-                        <Show when={item.type === NodeType.DIRECTORY}>
-                          <span class="option-type-indicator">&rarr;</span>{' '}
-                          {/* Right arrow for directory */}
-                        </Show>
-                      </li>
-                    )}
-                  </For>
-                </ul>
+                <p class="empty-directory-message">
+                  {currentNode()?.type === NodeType.DIRECTORY
+                    ? 'This directory is empty.'
+                    : 'No options.'}
+                </p>
               }
             >
-              <p
-                style={{
-                  padding: '20px 10px',
-                  color: '#777',
-                  'text-align': 'center',
-                }}
-              >
-                This directory is empty.
-              </p>
+              <ul>
+                <For each={options()}>
+                  {(item) => (
+                    <li
+                      class="options-list-item"
+                      onClick={() => navigateTo(item)}
+                      role="button"
+                      tabindex="0"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ')
+                          navigateTo(item);
+                      }}
+                      aria-label={`Option ${item.displayIndex}: ${item.name}`}
+                    >
+                      <span class="option-number">{item.displayIndex}.</span>
+                      <span class="option-name">{item.name}</span>
+                      <Show when={item.type === NodeType.DIRECTORY}>
+                        <span class="option-type-indicator">&rarr;</span>
+                      </Show>
+                    </li>
+                  )}
+                </For>
+              </ul>
             </Show>
           </div>
         </Transition>
