@@ -9,6 +9,7 @@ export const mainPanel = getPanel({
   theme: 'dark',
   style: [globalCss, stylesheet].join('\n'),
 });
+mainPanel.setMovable(true);
 
 export let panelToggle = false;
 function initToggleMainPanel(mainPanel: IPanelResult) {
@@ -18,7 +19,7 @@ function initToggleMainPanel(mainPanel: IPanelResult) {
       panelToggle = false;
     } else {
       mainPanel.show();
-      mainPanel.wrapper.focus();
+      // mainPanel.body.focus();
       panelToggle = true;
     }
   };
