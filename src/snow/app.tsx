@@ -1,6 +1,7 @@
 import { render } from 'solid-js/web';
 import Routing from './modules/routing/index';
 import initShortcuts, { mainPanel, toggleMainPanel } from './modules/shortcuts';
+import './style.css';
 
 window.addEventListener('load', () => {
   console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
