@@ -186,7 +186,8 @@ export default function Routing({ panelRef }: RoutingProps) {
 export async function handleScrape(type) {
   disable();
   const task = (await snow.get_record('sc_task')).records[0];
-  const ritm = (await snow.get_record('sc_req_item', task.parent)).records[0];
+  const ritm = (await snow.get_record('sc_req_item', task.request_item))
+    .records[0];
   const user = (await snow.get_record('sys_user', ritm.requested_for))
     .records[0];
   switch (type) {
