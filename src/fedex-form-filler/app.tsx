@@ -95,13 +95,44 @@ function initializeApp() {
 }
 
 function initializeAutofill() {
-  const signature_selector = `ui-checkbox[data-test-id="signature-options-checkbox"]`;
-  (document.querySelector(signature_selector) as HTMLElement).click();
+  const signature_selector = `ui-checkbox[data-test-id="signature-options-checkbox"] input[type="checkbox"]`;
+  waitForElm(signature_selector).then(() => {
+    const signature_checkbox = document.querySelector(
+      signature_selector,
+    ) as HTMLElement;
+    signature_checkbox?.click();
+    const changeEvent = new Event('change');
+    signature_checkbox.dispatchEvent(changeEvent);
+  });
+  const signature_option_selector = `signature-options[data-test-id="signature-options"] select`;
+  waitForElm(signature_option_selector).then(() => {
+    const signature_option = document.querySelector(
+      signature_option_selector,
+    ) as HTMLSelectElement;
+    signature_option.value = '4: DIRECT';
+    const changeEvent = new Event('change');
+    signature_option.dispatchEvent(changeEvent);
+  });
+  const shipping_account_selector = `account-switcher [data-test-id="account-switcher"] select`;
+  waitForElm(shipping_account_selector).then(() => {
+    const shipping_account = document.querySelector(
+      shipping_account_selector,
+    ) as HTMLSelectElement;
+    shipping_account.value = '2: Object';
+    const changeEvent = new Event('change');
+    shipping_account.dispatchEvent(changeEvent);
+  });
 
   const FORM_FIELDS = {
+    // shipping_account: {
+    // selector: 'account-switcher',
+    // value: '2: Object',
+    // type: 'dropdown',
+    // elementType: 'select',
+    // },
     country: {
       selector: 'receiver-country-code',
-      value: '193: US',
+      value: '190: US',
       type: 'dropdown',
       elementType: 'select',
     },
@@ -123,12 +154,12 @@ function initializeAutofill() {
       type: 'text',
       elementType: 'input',
     },
-    email: {
-      selector: 'receiver-email',
-      value: null,
-      type: 'text',
-      elementType: 'input',
-    },
+    //email: {
+    //  selector: 'receiver-email',
+    //  value: null,
+    //  type: 'text',
+    //  elementType: 'input',
+    //},
     address1: {
       selector: 'receiver-address-line1',
       value: null,
@@ -202,11 +233,11 @@ function initializeAutofill() {
   }
 
   function autoFillHelper() {
-    let input = prompt("paste sheet row in");
-    let res = {
-      target:{
-        value:input
-      }
+    const input = prompt('paste sheet row in');
+    const res = {
+      target: {
+        value: input,
+      },
     };
     autoFillAction(res);
   }
