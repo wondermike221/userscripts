@@ -201,6 +201,16 @@ function initializeAutofill() {
     }
   }
 
+  function autoFillHelper() {
+    let input = prompt("paste sheet row in");
+    let res = {
+      target:{
+        value:input
+      }
+    };
+    autoFillAction(res);
+  }
+
   const panel = getPanel({
     theme: 'dark',
     style: [globalCss, stylesheet].join('\n'),
@@ -215,6 +225,6 @@ function initializeAutofill() {
     transition: 'all 0.1s ease-out',
     overflowY: 'scroll',
   });
-
+  GM_registerMenuCommand('AutoFill', autoFillHelper);
   render(() => <GUI update={autoFillAction} panelRef={panel} />, panel.body);
 }
