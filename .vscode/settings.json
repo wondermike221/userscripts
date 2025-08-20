@@ -1,5 +1,6 @@
 {
     "workbench.editor.customLabels.patterns": {
         "*/src/**/index.*": "/${dirname}"
-    }
+    },
+    "kiroAgent.configureMCP": "Disabled"
 }
