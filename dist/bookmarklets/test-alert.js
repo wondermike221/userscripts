@@ -1,0 +1,1 @@
+javascript:(function(){!function(){"use strict";alert("test")}();})();

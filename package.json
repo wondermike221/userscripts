@@ -11,11 +11,15 @@
   "scripts": {
     "prepare": "husky",
     "dev": "rollup -wc",
+    "dev:userscripts": "rollup -wc --environment BUILD_TYPE:userscripts",
+    "dev:bookmarklets": "rollup -wc --environment BUILD_TYPE:bookmarklets",
     "clean": "del-cli dist",
     "lint": "eslint --ext .ts,.tsx . && prettier --ignore-path .eslintignore --check .",
     "lint:fix": "eslint --ext .ts,.tsx --fix . && prettier --ignore-path .eslintignore --write .",
     "ci": "run-s lint",
     "build:js": "rollup -c",
+    "build:userscripts": "rollup -c --environment BUILD_TYPE:userscripts",
+    "build:bookmarklets": "rollup -c --environment BUILD_TYPE:bookmarklets",
     "build": "cross-env NODE_ENV=production run-s ci clean build:js"
   },
   "dependencies": {
@@ -23,6 +27,7 @@
     "@violentmonkey/dom": "^2.1.6",
     "@violentmonkey/shortcut": "^1.4.4",
     "@violentmonkey/ui": "^0.7.8",
+    "dirnav": "git+https://github.com/wondermike221/DirNav.git#main",
     "solid-js": "^1.8.16",
     "solid-transition-group": "^0.3.0"
   },

@@ -4,7 +4,7 @@
 // @description Various automations on SmartIT
 // @match       https://www.fedex.com/shipping/*
 // @match       https://www.fedex.com/shippingplus/*
-// @version     0.2.2
+// @version     0.2.3
 // @author      Michael Hixon
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
