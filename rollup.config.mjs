@@ -15,6 +15,7 @@ const userscripts = {
 // Bookmarklet entry points
 const bookmarklets = {
   'test-alert': 'src/bookmarklets/test-alert/index.ts',
+  'exit': 'src/bookmarklets/exit/strike_one.ts',
 };
 
 // Custom plugin to wrap output as bookmarklet
@@ -25,9 +26,16 @@ function bookmarkletWrapper() {
       Object.keys(bundle).forEach(fileName => {
         const chunk = bundle[fileName];
         if (chunk.type === 'chunk') {
-          // Wrap in bookmarklet format and URL encode
-          const code = chunk.code.replace(/\n/g, '').replace(/\s+/g, ' ').trim();
-          chunk.code = `javascript:(function(){${code}})();`;
+          // Convert ES module to bookmarklet format
+          let code = chunk.code;
+          
+          // Remove any import/export statements since everything should be bundled
+          code = code.replace(/^import\s+.*?;?\s*$/gm, '');
+          code = code.replace(/^export\s+.*?;?\s*$/gm, '');
+          
+          // Clean up whitespace and wrap in async IIFE for bookmarklet
+          code = code.replace(/\n/g, '').replace(/\s+/g, ' ').trim();
+          chunk.code = `javascript:(async function(){${code}})();`;
         }
       });
     }
@@ -95,7 +103,7 @@ export default defineConfig(() => {
       ],
       external: [], // Bundle everything inline for bookmarklets
       output: {
-        format: 'iife',
+        format: 'es',
         file: `dist/bookmarklets/${name}.js`,
         compact: true,
       },
