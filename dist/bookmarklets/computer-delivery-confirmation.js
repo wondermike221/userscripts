@@ -1,0 +1,1 @@
+javascript:(async function(){console.log("Computer delivery bookmarklet starting..."),alert("Computer delivery confirmation bookmarklet loaded!");})();
