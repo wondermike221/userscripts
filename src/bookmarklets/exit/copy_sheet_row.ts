@@ -21,4 +21,4 @@ const asset = assets.records.filter((a: any) =>
 console.log(assets);
 const exit = build_exit_sheet_row_cis(task, user, manager, asset[0]);
 copyRichTextToClipboard(exit);
-console.log('exit TODO');
+alert('Exit row copied.');

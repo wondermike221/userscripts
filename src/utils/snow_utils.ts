@@ -176,8 +176,18 @@ export function build_exit_sheet_row_cis(task, user, manager, asset) {
   ];
 }
 
-export function build_exit_json(task, user, manager, asset) {
+export function build_exit_json(task, user, manager, assets) {
   const u_variables = JSON.parse(task.dv_u_variables);
+  // const assets_json: Array<Object> = [];
+  // for(let asset of assets) {
+  //   assets_json.push({
+  //     serialNumber: asset.dv_serial_number,
+  //     assetTag: asset.dv_asset_tag,
+  //     installStatus: asset.dv_install_status,
+  //     substatus: asset.dv_substatus,
+  //     model: asset.dv_model
+  //   });
+  // }
   const json = {
     taskNumber: task.dv_number,
     location: task.dv_location,
@@ -187,15 +197,20 @@ export function build_exit_json(task, user, manager, asset) {
     vendor: user.dv_u_vendor,
     managerName: manager.dv_name,
     managerEmail: manager.dv_email,
-    assetsToReturn: u_variables.v_assets_to_return,
-    serialNumber: asset.dv_serial_number,
-    installStatus: asset.dv_install_status,
-    substatus: asset.dv_substatus,
-    model: asset.dv_model,
+    assetsToReturn: assets.map((asset) => {
+      return {
+        serialNumber: asset.dv_serial_number,
+        assetTag: asset.dv_asset_tag,
+        installStatus: asset.dv_install_status,
+        substatus: asset.dv_substatus,
+        model: asset.dv_model,
+      };
+    }),
     terminationDate: user.dv_u_termination_date,
     costCenter: user.dv_cost_center,
     qid: user.dv_x_ebay_core_config_sam_qid,
     title: user.dv_title,
+    u_variables: u_variables,
   };
   return json;
 }
