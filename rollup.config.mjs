@@ -15,7 +15,11 @@ const userscripts = {
 // Bookmarklet entry points
 const bookmarklets = {
   'test-alert': 'src/bookmarklets/test-alert/index.ts',
-  'exit': 'src/bookmarklets/exit/strike_one.ts',
+  'exit copy row': 'src/bookmarklets/exit/copy_sheet_row.ts',
+  'exit-strike-one': 'src/bookmarklets/exit/strike_one.ts',
+  'accessory-delivery-confirmation': 'src/bookmarklets/accessory/delivery_confirmation.ts',
+  'computer-delivery-confirmation': 'src/bookmarklets/computer/computer_delivery.ts',
+  'computer-return-inquiry': 'src/bookmarklets/computer/return_inquiry.ts'
 };
 
 // Custom plugin to wrap output as bookmarklet
@@ -28,11 +32,11 @@ function bookmarkletWrapper() {
         if (chunk.type === 'chunk') {
           // Convert ES module to bookmarklet format
           let code = chunk.code;
-          
+
           // Remove any import/export statements since everything should be bundled
           code = code.replace(/^import\s+.*?;?\s*$/gm, '');
           code = code.replace(/^export\s+.*?;?\s*$/gm, '');
-          
+
           // Clean up whitespace and wrap in async IIFE for bookmarklet
           code = code.replace(/\n/g, '').replace(/\s+/g, ' ').trim();
           chunk.code = `javascript:(async function(){${code}})();`;
