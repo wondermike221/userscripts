@@ -55,14 +55,13 @@ const PEOPLEX_TEMPLATE = (input: any): EmailTemplate => {
 const FIELDGLASS_TEMPLATE = (input: any): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
-    to: input.managerEmail,
+    to: 'awf-advisors@ebay.com',
     cc: '',
     subject: `Exited Employee Information Request`,
     body: `Hi Team,
         I have the following exited employees who have not returned their IT equipment and we need their vendor contacts.
         
-        Name	Username	Vendor
-        - ${input.name} (${input.userName})
+        -${input.name} (${input.userName})
         ${formattedAssets.replaceAll('\n', '\n\t')}
         Thanks!
         `,
