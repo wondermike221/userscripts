@@ -95,7 +95,7 @@ export function sendEmailFromTemplate(template: EmailTemplate) {
 }
 
 // Helper function to show a temporary notification
-function showNotification(message: string) {
+export function showNotification(message: string) {
   const notification = document.createElement('div');
   notification.style.cssText = `
         position: fixed;
