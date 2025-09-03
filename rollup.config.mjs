@@ -19,7 +19,8 @@ const bookmarklets = {
   'exit-strike-one': 'src/bookmarklets/exit/strike_one.ts',
   'accessory-delivery-confirmation': 'src/bookmarklets/accessory/delivery_confirmation.ts',
   'computer-delivery-confirmation': 'src/bookmarklets/computer/computer_delivery.ts',
-  'computer-return-inquiry': 'src/bookmarklets/computer/return_inquiry.ts'
+  'computer-return-inquiry': 'src/bookmarklets/computer/return_inquiry.ts',
+  'copy-selected-cells': 'src/bookmarklets/list/copySelectedCells.ts'
 };
 
 // Custom plugin to wrap output as bookmarklet
