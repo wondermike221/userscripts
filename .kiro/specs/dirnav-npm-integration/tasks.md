@@ -22,6 +22,10 @@
   - _Requirements: 1.3, 2.4_
 
 - [ ] 3. Create TypeScript type declarations for DirNav
+
+
+
+
   - Examine the DirNav module structure and exports
   - Create type declaration file in src/types/dirnav.d.ts if needed
   - Ensure proper module declaration for "dirnav" import path
