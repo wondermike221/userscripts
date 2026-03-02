@@ -8,6 +8,7 @@ const userscripts = {
   // 'ticket-scraper': 'src/ticket-scraper/index.ts',
   'fedex-form-filler': 'src/fedex-form-filler/index.ts',
   'snow': 'src/snow/index.ts',
+  'shadow-query-console': 'src/shadow-query-console/index.ts',
   // 'fulfillment-fedex-filler': 'src/fulfillment-fedex-filler/index.ts',
   // 'peoplex-scraper': 'src/peoplex-scraper/index.ts',
 };
@@ -20,7 +21,9 @@ const bookmarklets = {
   'accessory-delivery-confirmation': 'src/bookmarklets/accessory/delivery_confirmation.ts',
   'computer-delivery-confirmation': 'src/bookmarklets/computer/computer_delivery.ts',
   'computer-return-inquiry': 'src/bookmarklets/computer/return_inquiry.ts',
-  'copy-selected-cells': 'src/bookmarklets/list/copySelectedCells.ts'
+  'copy-selected-cells': 'src/bookmarklets/list/copySelectedCells.ts',
+  'delivered_close': 'src/bookmarklets/accessory/delivered_close.ts',
+  'copy_general_json': 'src/bookmarklets/copy_general_json.ts'
 };
 
 // Custom plugin to wrap output as bookmarklet
