@@ -4,11 +4,11 @@
 // @description A userscript to provide a console for running queries in a shadow DOM environment.
 // @match       https://ebayinc.service-now.com/*
 // @match       *://*/*
-// @version     0.0.1
+// @version     0.0.2
 // @author      Michael Hixon
 // @downloadURL https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/shadow-query-console.user.js
 // @homepageURL https://github.com/wondermike221/userscripts
-// @grant       none
+// @grant       unsafeWindow
 // ==/UserScript==
 
 (function () {
