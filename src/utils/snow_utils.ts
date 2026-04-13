@@ -178,16 +178,6 @@ export function build_exit_sheet_row_cis(task, user, manager, asset) {
 
 export function build_exit_json(task, user, manager, assets) {
   const u_variables = JSON.parse(task.dv_u_variables);
-  // const assets_json: Array<Object> = [];
-  // for(let asset of assets) {
-  //   assets_json.push({
-  //     serialNumber: asset.dv_serial_number,
-  //     assetTag: asset.dv_asset_tag,
-  //     installStatus: asset.dv_install_status,
-  //     substatus: asset.dv_substatus,
-  //     model: asset.dv_model
-  //   });
-  // }
   const json = {
     taskNumber: task.dv_number,
     location: task.dv_location,

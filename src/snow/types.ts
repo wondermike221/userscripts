@@ -399,7 +399,7 @@ export interface ScReqItem {
   x_ebay_message_bus_msb_transaction_id: string;
   dv_sys_created_by: string;
   dv_x_ebay_message_bus_msb_transaction_id: string;
-  u_variables: string; // This will be parsed into ExitRITM_UVariables
+  u_variables?: string; // This will be parsed into ExitRITM_UVariables
   u_variables_parsed?: ExitRITM_UVariables;
   sn_ai_sentiment: string;
   dv_u_archived_at: string;
@@ -661,7 +661,7 @@ export interface ScTask {
   x_ebay_message_bus_msb_transaction_id: string;
   dv_sys_created_by: string;
   dv_x_ebay_message_bus_msb_transaction_id: string;
-  u_variables: string; // This will be parsed into ExitSCTask_UVariables
+  u_variables?: string; // This will be parsed into ExitSCTask_UVariables
   u_variables_parsed?: ExitSCTask_UVariables;
   sn_ai_sentiment: string;
   dv_u_archived_at: string;
@@ -1184,7 +1184,7 @@ export interface Incident {
   dv_u_blocked_item: string;
   u_tcb: string;
   opened_by: string;
-u_detection: string;
+  u_detection: string;
   dv_assigned_to: string;
   sys_domain: string;
   dv_u_over_under_forecast_needed: string | null;
