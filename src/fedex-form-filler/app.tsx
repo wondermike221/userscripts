@@ -5,7 +5,7 @@ import globalCss from './style.css';
 // CSS modules
 import { stylesheet } from './style.module.css';
 import { Shipment, addFedExAutofillTextArea } from './legacy';
-import { simulateUserInteraction } from './simulate';
+import { simulateUserInteraction, selectByText } from './simulate';
 import { register } from '@violentmonkey/shortcut';
 import { onMount } from 'solid-js';
 import { waitForElm } from '../utils';
@@ -118,9 +118,7 @@ function initializeAutofill() {
     const shipping_account = document.querySelector(
       shipping_account_selector,
     ) as HTMLSelectElement;
-    shipping_account.value = '2: Object';
-    const changeEvent = new Event('change');
-    shipping_account.dispatchEvent(changeEvent);
+    selectByText(shipping_account, 'Draper Mailroom');
   });
 
   const FORM_FIELDS = {
@@ -198,8 +196,8 @@ function initializeAutofill() {
     },
     billing: {
       selector: 'bill-to',
-      value: '2: Object',
-      type: 'dropdown',
+      value: 'Draper Mailroom',
+      type: 'dropdown-text',
       elementType: 'select',
     },
     weight: {
@@ -226,9 +224,18 @@ function initializeAutofill() {
     const ship = new Shipment(e.target.value);
     for (const field in FORM_FIELDS) {
       const selector = `[data-test-id="${FORM_FIELDS[field].selector}"] ${FORM_FIELDS[field].elementType}`;
-      const input: HTMLInputElement | HTMLTextAreaElement =
+      const input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement =
         document.querySelector(selector);
-      simulateUserInteraction(input, FORM_FIELDS[field].value || ship[field]);
+
+      if (FORM_FIELDS[field].type === 'dropdown-text') {
+        // Use text-based selection for dropdowns marked as 'dropdown-text'
+        selectByText(
+          input as HTMLSelectElement,
+          FORM_FIELDS[field].value || ship[field],
+        );
+      } else {
+        simulateUserInteraction(input, FORM_FIELDS[field].value || ship[field]);
+      }
     }
   }
 

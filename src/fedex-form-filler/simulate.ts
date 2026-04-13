@@ -51,6 +51,37 @@ export function simulateUserInteraction(
   triggerChange(inputElement);
 }
 
+/**
+ * Selects a dropdown option by matching text content instead of value attribute.
+ * This is more robust than selecting by Angular's internal value (e.g., "2: Object").
+ * @param selectElement - The select element to update
+ * @param textToMatch - The text content to search for (e.g., "Draper Mailroom")
+ */
+export function selectByText(
+  selectElement: HTMLSelectElement,
+  textToMatch: string,
+): void {
+  if (!(selectElement instanceof HTMLSelectElement)) {
+    throw new Error('The element must be an instance of HTMLSelectElement.');
+  }
+
+  // Find the option that contains the text
+  const options = Array.from(selectElement.options);
+  const matchingOption = options.find((option) =>
+    option.textContent?.trim().includes(textToMatch),
+  );
+
+  if (matchingOption) {
+    selectElement.value = matchingOption.value;
+    const changeEvent = new Event('change', { bubbles: true });
+    selectElement.dispatchEvent(changeEvent);
+  } else {
+    console.warn(
+      `Could not find option containing "${textToMatch}" in dropdown`,
+    );
+  }
+}
+
 export function autofillAction(e, FORM_FIELDS) {
   const ship = new Shipment(e.target.value);
 
