@@ -8,6 +8,7 @@
 // @run-at      document-idle
 // @downloadURL https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/wordle-solver.user.js
 // @homepageURL https://github.com/wondermike221/userscripts
+// @grant       unsafeWindow
 // ==/UserScript==
 
 (function () {
@@ -72,6 +73,7 @@ function filterWords(words, regex, excluded, included) {
 }
 async function main() {
   const words = await loadWords();
+  unsafeWindow.wordleSolver = (regex = /.*/, excludedLetters = '', includedLetters = '') => filterWords(words, regex, excludedLetters, includedLetters);
   let lastGuessCount = 0;
   let debounceTimer = null;
   function check() {

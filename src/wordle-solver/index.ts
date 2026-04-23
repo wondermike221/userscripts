@@ -1,5 +1,15 @@
 import './meta.js?userscript-metadata';
 
+declare global {
+  interface Window {
+    wordleSolver: (
+      regex?: RegExp,
+      excludedLetters?: string,
+      includedLetters?: string,
+    ) => string[];
+  }
+}
+
 const WORDS_URL =
   'https://raw.githubusercontent.com/chidiwilliams/wordle/main/src/data/words.json';
 
@@ -79,6 +89,13 @@ function filterWords(
 
 async function main() {
   const words = await loadWords();
+
+  unsafeWindow.wordleSolver = (
+    regex = /.*/,
+    excludedLetters = '',
+    includedLetters = '',
+  ) => filterWords(words, regex, excludedLetters, includedLetters);
+
   let lastGuessCount = 0;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 

@@ -5,6 +5,7 @@
 // @match       https://www.nytimes.com/games/wordle/index.html
 // @version     0.1.0
 // @author      process.env.AUTHOR
+// @grant       unsafeWindow
 // @run-at      document-idle
 // @downloadURL https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/wordle-solver.user.js
 // @homepageURL https://github.com/wondermike221/userscripts
