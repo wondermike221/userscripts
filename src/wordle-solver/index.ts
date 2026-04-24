@@ -26,9 +26,10 @@ async function loadWords(): Promise<string[]> {
 }
 
 function getRevealedTiles(): Tile[] {
+  // Exclude <button> elements so keyboard keys (same data-state values) aren't mixed in
   return Array.from(
     document.querySelectorAll<HTMLElement>(
-      '[data-state="correct"], [data-state="present"], [data-state="absent"]',
+      ':not(button)[data-state="correct"], :not(button)[data-state="present"], :not(button)[data-state="absent"]',
     ),
   )
     .map((el) => ({
@@ -44,6 +45,10 @@ function buildConstraints(guesses: Tile[][]): {
   included: string;
 } {
   const correct: (string | null)[] = Array(5).fill(null);
+  const presentAt: Set<string>[] = Array.from(
+    { length: 5 },
+    () => new Set<string>(),
+  );
   const mustInclude = new Set<string>();
   const neverInWord = new Set<string>();
 
@@ -54,6 +59,7 @@ function buildConstraints(guesses: Tile[][]): {
         correct[i] = letter;
         mustInclude.add(letter);
       } else if (state === 'present') {
+        presentAt[i].add(letter);
         mustInclude.add(letter);
       } else {
         neverInWord.add(letter);
@@ -64,7 +70,13 @@ function buildConstraints(guesses: Tile[][]): {
   // Only truly exclude letters that never appeared as correct/present
   const excluded = [...neverInWord].filter((l) => !mustInclude.has(l)).join('');
   const included = [...mustInclude].join('');
-  const pattern = correct.map((l) => l ?? '.').join('');
+  const pattern = correct
+    .map((l, i) => {
+      if (l) return l;
+      const notHere = [...presentAt[i]].join('');
+      return notHere ? `[^${notHere}]` : '.';
+    })
+    .join('');
 
   return { regex: new RegExp(`^${pattern}$`), excluded, included };
 }
@@ -113,7 +125,7 @@ async function main() {
     const possible = filterWords(words, regex, excluded, included);
 
     console.log(
-      `[Wordle Solver] Guess ${completeRows}: ${possible.length} possible words remaining`,
+      `[Wordle Solver] Guess ${completeRows}: regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`,
     );
     console.log(possible);
   }
