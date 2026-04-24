@@ -17,7 +17,8 @@ interface DeliveryInput {
 const ACCESSORY_DELIVERY_TEMPLATE = (input: DeliveryInput): EmailTemplate => {
   //expects a fedex or UPS tracking number
   const trackingLink = makeTrackingLink(input.tracking);
-  const plainTextBody = `Great news ${input.name}! Your accessories are on their way.
+  const firstName = input.name.split(' ')[0];
+  const plainTextBody = `Great news ${firstName}! Your accessories are on their way.
 
 Shipping Details:
 ${input.tracking}

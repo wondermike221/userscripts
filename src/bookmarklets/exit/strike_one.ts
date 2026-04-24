@@ -13,12 +13,13 @@ import {
 const WORKDAY_TEMPLATE = (input: any): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
-    to: input.contact_email,
+    to: input.u_variables.contact_email,
     cc: `${input.managerEmail};itreturns@ebay.com;servicenow@ebay.com`,
     subject: `Request for Returned Equipment - ${input.name} | ${input.taskNumber}`,
     body: `Dear ${input.name},
         
         I hope this message finds you well. I am writing to request the return of company equipment that was assigned to you. Per our records, the following items were issued and have not been returned:
+
         ${formattedAssets}
         We kindly ask these items to be returned promptly after leaving the company. A FedEx QR code has bleenl sent to your personal email address on file . This code will allow FedEx to package and ship these items to us and makes returning items seamless and quickly and free of charge for you. This email will come directly from FedEx – not ebay. If you do not see this, please check your junk\\spam folder.
         
@@ -55,16 +56,25 @@ const PEOPLEX_TEMPLATE = (input: any): EmailTemplate => {
 const FIELDGLASS_TEMPLATE = (input: any): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
-    to: 'awf-advisors@ebay.com',
-    cc: '',
-    subject: `Exited Employee Information Request`,
-    body: `Hi Team,
-        I have the following exited employees who have not returned their IT equipment and we need their vendor contacts.
-        
-        -${input.name} (${input.userName})
-        ${formattedAssets.replaceAll('\n', '\n\t')}
-        Thanks!
-        `,
+    to: input.u_variables.contact_email,
+    cc: 'servicenow@ebay.com',
+    subject: `eBay Asset Return for ${input.name} | ${input.taskNumber}`,
+    body: `Hi <point of contact>,
+
+We are looking for the return information for the device/s listed below from an exited member of your team ${input.name}. Please provide the following information so we can ensure proper processing for this asset return.
+
+Carrier:
+
+Tracking Number:
+
+Ebay office being shipped to:
+
+As a reminder we ask for all eBay items to be returned, laptop, badge, company phone and related. We do ask for items to be returned within 10 days. 
+
+Thank you for your cooperation,
+
+Unreturned Devices:
+${formattedAssets.replaceAll('\n', '\n\t')}`,
   };
 };
 
