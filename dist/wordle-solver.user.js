@@ -3,24 +3,46 @@
 // @namespace   https://hixon.dev
 // @description Logs possible Wordle answers to the console after each guess
 // @match       https://www.nytimes.com/games/wordle/index.html
-// @version     0.1.0
+// @version     0.2.0
 // @author      Michael Hixon
 // @run-at      document-idle
 // @downloadURL https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/wordle-solver.user.js
 // @homepageURL https://github.com/wondermike221/userscripts
+// @grant       GM_getValue
+// @grant       GM_setValue
 // @grant       unsafeWindow
 // ==/UserScript==
 
 (function () {
 'use strict';
 
-const WORDS_URL = 'https://raw.githubusercontent.com/chidiwilliams/wordle/main/src/data/words.json';
-async function loadWords() {
-  const response = await fetch(WORDS_URL);
-  return response.json();
+const REPO_RAW = 'https://raw.githubusercontent.com/wondermike221/userscripts/main/data';
+const LISTS = {
+  guesses: {
+    url: `${REPO_RAW}/wordle-guesses.json`,
+    cacheKey: 'wordleGuesses'
+  },
+  // Swap in an answers URL once sourced; infrastructure is ready.
+  answers: {
+    url: `${REPO_RAW}/wordle-answers.json`,
+    cacheKey: 'wordleAnswers'
+  }
+};
+async function loadList(name) {
+  const {
+    url,
+    cacheKey
+  } = LISTS[name];
+  const cached = GM_getValue(cacheKey);
+  if (cached) return JSON.parse(cached);
+  const response = await fetch(url);
+  const words = await response.json();
+  GM_setValue(cacheKey, JSON.stringify(words));
+  return words;
 }
 function getRevealedTiles() {
-  return Array.from(document.querySelectorAll('[data-state="correct"], [data-state="present"], [data-state="absent"]')).map(el => {
+  // Exclude <button> elements so keyboard keys (same data-state values) aren't mixed in
+  return Array.from(document.querySelectorAll(':not(button)[data-state="correct"], :not(button)[data-state="present"], :not(button)[data-state="absent"]')).map(el => {
     var _el$textContent$trim$, _el$textContent;
     return {
       letter: (_el$textContent$trim$ = (_el$textContent = el.textContent) == null ? void 0 : _el$textContent.trim().toLowerCase()) != null ? _el$textContent$trim$ : '',
@@ -30,6 +52,9 @@ function getRevealedTiles() {
 }
 function buildConstraints(guesses) {
   const correct = Array(5).fill(null);
+  const presentAt = Array.from({
+    length: 5
+  }, () => new Set());
   const mustInclude = new Set();
   const neverInWord = new Set();
   for (const row of guesses) {
@@ -42,17 +67,20 @@ function buildConstraints(guesses) {
         correct[i] = letter;
         mustInclude.add(letter);
       } else if (state === 'present') {
+        presentAt[i].add(letter);
         mustInclude.add(letter);
       } else {
         neverInWord.add(letter);
       }
     }
   }
-
-  // Only truly exclude letters that never appeared as correct/present
   const excluded = [...neverInWord].filter(l => !mustInclude.has(l)).join('');
   const included = [...mustInclude].join('');
-  const pattern = correct.map(l => l != null ? l : '.').join('');
+  const pattern = correct.map((l, i) => {
+    if (l) return l;
+    const notHere = [...presentAt[i]].join('');
+    return notHere ? `[^${notHere}]` : '.';
+  }).join('');
   return {
     regex: new RegExp(`^${pattern}$`),
     excluded,
@@ -72,8 +100,20 @@ function filterWords(words, regex, excluded, included) {
   });
 }
 async function main() {
-  const words = await loadWords();
-  unsafeWindow.wordleSolver = (regex = /.*/, excludedLetters = '', includedLetters = '') => filterWords(words, regex, excludedLetters, includedLetters);
+  const [guesses, answers] = await Promise.allSettled([loadList('guesses'), loadList('answers')]);
+  const guessesList = guesses.status === 'fulfilled' ? guesses.value : [];
+  const answersList = answers.status === 'fulfilled' ? answers.value : [];
+  const allWords = [...new Set([...guessesList, ...answersList])];
+  if (guesses.status === 'rejected') {
+    console.warn('[Wordle Solver] Failed to load guesses list:', guesses.reason);
+  }
+  if (answers.status === 'rejected') {
+    console.warn('[Wordle Solver] Failed to load answers list:', answers.reason);
+  }
+  unsafeWindow.wordleSolver = (regex = /.*/, excludedLetters = '', includedLetters = '', list = 'guesses') => {
+    const words = list === 'answers' ? answersList : list === 'all' ? allWords : guessesList;
+    return filterWords(words, regex, excludedLetters, includedLetters);
+  };
   let lastGuessCount = 0;
   let debounceTimer = null;
   function check() {
@@ -89,8 +129,8 @@ async function main() {
       excluded,
       included
     } = buildConstraints(guesses);
-    const possible = filterWords(words, regex, excluded, included);
-    console.log(`[Wordle Solver] Guess ${completeRows}: ${possible.length} possible words remaining`);
+    const possible = filterWords(guessesList, regex, excluded, included);
+    console.log(`[Wordle Solver] Guess ${completeRows}: regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`);
     console.log(possible);
   }
 
