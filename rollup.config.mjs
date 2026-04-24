@@ -9,6 +9,7 @@ const userscripts = {
   'fedex-form-filler': 'src/fedex-form-filler/index.ts',
   'snow': 'src/snow/index.ts',
   'shadow-query-console': 'src/shadow-query-console/index.ts',
+  'wordle-solver': 'src/wordle-solver/index.ts',
   // 'fulfillment-fedex-filler': 'src/fulfillment-fedex-filler/index.ts',
   // 'peoplex-scraper': 'src/peoplex-scraper/index.ts',
 };
