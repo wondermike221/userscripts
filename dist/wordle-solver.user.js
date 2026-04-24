@@ -20,7 +20,8 @@ async function loadWords() {
   return response.json();
 }
 function getRevealedTiles() {
-  return Array.from(document.querySelectorAll('[data-state="correct"], [data-state="present"], [data-state="absent"]')).map(el => {
+  // Exclude <button> elements so keyboard keys (same data-state values) aren't mixed in
+  return Array.from(document.querySelectorAll(':not(button)[data-state="correct"], :not(button)[data-state="present"], :not(button)[data-state="absent"]')).map(el => {
     var _el$textContent$trim$, _el$textContent;
     return {
       letter: (_el$textContent$trim$ = (_el$textContent = el.textContent) == null ? void 0 : _el$textContent.trim().toLowerCase()) != null ? _el$textContent$trim$ : '',
@@ -30,6 +31,9 @@ function getRevealedTiles() {
 }
 function buildConstraints(guesses) {
   const correct = Array(5).fill(null);
+  const presentAt = Array.from({
+    length: 5
+  }, () => new Set());
   const mustInclude = new Set();
   const neverInWord = new Set();
   for (const row of guesses) {
@@ -42,6 +46,7 @@ function buildConstraints(guesses) {
         correct[i] = letter;
         mustInclude.add(letter);
       } else if (state === 'present') {
+        presentAt[i].add(letter);
         mustInclude.add(letter);
       } else {
         neverInWord.add(letter);
@@ -52,7 +57,11 @@ function buildConstraints(guesses) {
   // Only truly exclude letters that never appeared as correct/present
   const excluded = [...neverInWord].filter(l => !mustInclude.has(l)).join('');
   const included = [...mustInclude].join('');
-  const pattern = correct.map(l => l != null ? l : '.').join('');
+  const pattern = correct.map((l, i) => {
+    if (l) return l;
+    const notHere = [...presentAt[i]].join('');
+    return notHere ? `[^${notHere}]` : '.';
+  }).join('');
   return {
     regex: new RegExp(`^${pattern}$`),
     excluded,
@@ -90,7 +99,7 @@ async function main() {
       included
     } = buildConstraints(guesses);
     const possible = filterWords(words, regex, excluded, included);
-    console.log(`[Wordle Solver] Guess ${completeRows}: ${possible.length} possible words remaining`);
+    console.log(`[Wordle Solver] Guess ${completeRows}: regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`);
     console.log(possible);
   }
 
