@@ -6,13 +6,27 @@ declare global {
       regex?: RegExp,
       excludedLetters?: string,
       includedLetters?: string,
+      list?: 'guesses' | 'answers' | 'all',
     ) => string[];
   }
 }
 
-const WORDS_URL =
-  'https://raw.githubusercontent.com/chidiwilliams/wordle/main/src/data/words.json';
+const REPO_RAW =
+  'https://raw.githubusercontent.com/wondermike221/userscripts/main/data';
 
+const LISTS = {
+  guesses: {
+    url: `${REPO_RAW}/wordle-guesses.json`,
+    cacheKey: 'wordleGuesses',
+  },
+  // Swap in an answers URL once sourced; infrastructure is ready.
+  answers: {
+    url: `${REPO_RAW}/wordle-answers.json`,
+    cacheKey: 'wordleAnswers',
+  },
+} as const;
+
+type ListName = keyof typeof LISTS;
 type TileState = 'correct' | 'present' | 'absent';
 
 interface Tile {
@@ -20,9 +34,14 @@ interface Tile {
   state: TileState;
 }
 
-async function loadWords(): Promise<string[]> {
-  const response = await fetch(WORDS_URL);
-  return response.json();
+async function loadList(name: ListName): Promise<string[]> {
+  const { url, cacheKey } = LISTS[name];
+  const cached = GM_getValue<string | undefined>(cacheKey);
+  if (cached) return JSON.parse(cached) as string[];
+  const response = await fetch(url);
+  const words = (await response.json()) as string[];
+  GM_setValue(cacheKey, JSON.stringify(words));
+  return words;
 }
 
 function getRevealedTiles(): Tile[] {
@@ -67,7 +86,6 @@ function buildConstraints(guesses: Tile[][]): {
     }
   }
 
-  // Only truly exclude letters that never appeared as correct/present
   const excluded = [...neverInWord].filter((l) => !mustInclude.has(l)).join('');
   const included = [...mustInclude].join('');
   const pattern = correct
@@ -100,13 +118,43 @@ function filterWords(
 }
 
 async function main() {
-  const words = await loadWords();
+  const [guesses, answers] = await Promise.allSettled([
+    loadList('guesses'),
+    loadList('answers'),
+  ]);
+
+  const guessesList = guesses.status === 'fulfilled' ? guesses.value : [];
+  const answersList = answers.status === 'fulfilled' ? answers.value : [];
+
+  const allWords = [...new Set([...guessesList, ...answersList])];
+
+  if (guesses.status === 'rejected') {
+    console.warn(
+      '[Wordle Solver] Failed to load guesses list:',
+      guesses.reason,
+    );
+  }
+  if (answers.status === 'rejected') {
+    console.warn(
+      '[Wordle Solver] Failed to load answers list:',
+      answers.reason,
+    );
+  }
 
   unsafeWindow.wordleSolver = (
     regex = /.*/,
     excludedLetters = '',
     includedLetters = '',
-  ) => filterWords(words, regex, excludedLetters, includedLetters);
+    list = 'guesses',
+  ) => {
+    const words =
+      list === 'answers'
+        ? answersList
+        : list === 'all'
+          ? allWords
+          : guessesList;
+    return filterWords(words, regex, excludedLetters, includedLetters);
+  };
 
   let lastGuessCount = 0;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -122,7 +170,7 @@ async function main() {
       tiles.slice(i * 5, i * 5 + 5),
     );
     const { regex, excluded, included } = buildConstraints(guesses);
-    const possible = filterWords(words, regex, excluded, included);
+    const possible = filterWords(guessesList, regex, excluded, included);
 
     console.log(
       `[Wordle Solver] Guess ${completeRows}: regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`,
