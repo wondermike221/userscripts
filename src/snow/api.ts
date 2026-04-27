@@ -5,7 +5,7 @@ import {
   Incident,
   SysUser,
   ExitRITM_UVariables,
-  ExitSCTask_UVariables
+  ExitSCTask_UVariables,
 } from './types';
 
 // Utility to construct the ServiceNow JSONv2 API URL
@@ -22,7 +22,11 @@ function buildApiUrl(table: string, sysId: string): string {
 }
 
 // Utility to construct the ServiceNow JSONv2 API URL for queries
-function buildApiUrlQuery(table: string, query: string, limit: number = 20): string {
+function buildApiUrlQuery(
+  table: string,
+  query: string,
+  limit: number = 20,
+): string {
   const BASE_URL = 'https://ebayinc.service-now.com';
   const url = new URL(`/${table}.do`, BASE_URL);
   url.searchParams.append('JSONv2', '');
@@ -34,12 +38,17 @@ function buildApiUrlQuery(table: string, query: string, limit: number = 20): str
 }
 
 // Generic function to fetch a single record by its sys_id
-export async function getSnowRecord<T>(table: string, sysId: string): Promise<T | null> {
+export async function getSnowRecord<T>(
+  table: string,
+  sysId: string,
+): Promise<T | null> {
   const apiUrl = buildApiUrl(table, sysId);
   try {
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error(`Failed to fetch ${table} with sys_id ${sysId}: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch ${table} with sys_id ${sysId}: ${response.statusText}`,
+      );
     }
     const data = await response.json();
     if (data.records && data.records.length > 0) {
@@ -53,12 +62,18 @@ export async function getSnowRecord<T>(table: string, sysId: string): Promise<T 
 }
 
 // Generic function to fetch multiple records by query
-export async function getSnowRecords<T>(table: string, query: string, limit?: number): Promise<T[]> {
+export async function getSnowRecords<T>(
+  table: string,
+  query: string,
+  limit?: number,
+): Promise<T[]> {
   const apiUrl = buildApiUrlQuery(table, query, limit);
   try {
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error(`Failed to fetch records from ${table} with query "${query}": ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch records from ${table} with query "${query}": ${response.statusText}`,
+      );
     }
     const data = await response.json();
     if (data.records) {
@@ -66,13 +81,18 @@ export async function getSnowRecords<T>(table: string, query: string, limit?: nu
     }
     return [];
   } catch (error) {
-    console.error(`Error fetching records from ${table} with query "${query}":`, error);
+    console.error(
+      `Error fetching records from ${table} with query "${query}":`,
+      error,
+    );
     return [];
   }
 }
 
 // Specific API functions for each table
-export async function getAlmHardware(sysId: string): Promise<AlmHardware | null> {
+export async function getAlmHardware(
+  sysId: string,
+): Promise<AlmHardware | null> {
   return getSnowRecord<AlmHardware>('alm_hardware', sysId);
 }
 
@@ -80,8 +100,10 @@ export async function getScReqItem(sysId: string): Promise<ScReqItem | null> {
   const record = await getSnowRecord<ScReqItem>('sc_req_item', sysId);
   if (record && record.u_variables) {
     try {
-      // Parse u_variables JSON string into a typed object
-      (record as any).u_variables_parsed = JSON.parse(record.u_variables) as ExitRITM_UVariables;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (record as any).u_variables_parsed = JSON.parse(
+        record.u_variables,
+      ) as ExitRITM_UVariables;
     } catch (e) {
       console.error(`Error parsing u_variables for sc_req_item ${sysId}:`, e);
     }
@@ -93,8 +115,10 @@ export async function getScTask(sysId: string): Promise<ScTask | null> {
   const record = await getSnowRecord<ScTask>('sc_task', sysId);
   if (record && record.u_variables) {
     try {
-      // Parse u_variables JSON string into a typed object
-      (record as any).u_variables_parsed = JSON.parse(record.u_variables) as ExitSCTask_UVariables;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (record as any).u_variables_parsed = JSON.parse(
+        record.u_variables,
+      ) as ExitSCTask_UVariables;
     } catch (e) {
       console.error(`Error parsing u_variables for sc_task ${sysId}:`, e);
     }
