@@ -6,6 +6,7 @@ import {
   SysUser,
   ExitRITM_UVariables,
   ExitSCTask_UVariables,
+  WithParsedVars,
 } from './types';
 
 // Utility to construct the ServiceNow JSONv2 API URL
@@ -96,34 +97,38 @@ export async function getAlmHardware(
   return getSnowRecord<AlmHardware>('alm_hardware', sysId);
 }
 
-export async function getScReqItem(sysId: string): Promise<ScReqItem | null> {
+export async function getScReqItem(
+  sysId: string,
+): Promise<WithParsedVars<ScReqItem, ExitRITM_UVariables> | null> {
   const record = await getSnowRecord<ScReqItem>('sc_req_item', sysId);
-  if (record && record.u_variables) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (record as any).u_variables_parsed = JSON.parse(
-        record.u_variables,
-      ) as ExitRITM_UVariables;
-    } catch (e) {
-      console.error(`Error parsing u_variables for sc_req_item ${sysId}:`, e);
-    }
+  if (!record) return null;
+  try {
+    return {
+      ...record,
+      u_variables_parsed: JSON.parse(record.u_variables) as ExitRITM_UVariables,
+    };
+  } catch (e) {
+    console.error(`Error parsing u_variables for sc_req_item ${sysId}:`, e);
+    return { ...record, u_variables_parsed: {} as ExitRITM_UVariables };
   }
-  return record;
 }
 
-export async function getScTask(sysId: string): Promise<ScTask | null> {
+export async function getScTask(
+  sysId: string,
+): Promise<WithParsedVars<ScTask, ExitSCTask_UVariables> | null> {
   const record = await getSnowRecord<ScTask>('sc_task', sysId);
-  if (record && record.u_variables) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (record as any).u_variables_parsed = JSON.parse(
+  if (!record) return null;
+  try {
+    return {
+      ...record,
+      u_variables_parsed: JSON.parse(
         record.u_variables,
-      ) as ExitSCTask_UVariables;
-    } catch (e) {
-      console.error(`Error parsing u_variables for sc_task ${sysId}:`, e);
-    }
+      ) as ExitSCTask_UVariables,
+    };
+  } catch (e) {
+    console.error(`Error parsing u_variables for sc_task ${sysId}:`, e);
+    return { ...record, u_variables_parsed: {} as ExitSCTask_UVariables };
   }
-  return record;
 }
 
 export async function getIncident(sysId: string): Promise<Incident | null> {
