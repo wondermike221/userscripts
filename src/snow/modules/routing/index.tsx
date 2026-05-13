@@ -16,8 +16,7 @@ import type { AlmHardware } from '../../types';
 // modules
 import { toggleMainPanel } from '../shortcuts';
 
-import { DirectoryNav } from '../../components/DirectoryNav';
-import { DirectoryTree, Node, NodeType } from '../DirectoryTree';
+import { DirectoryNav, DirectoryTree, Node, NodeType } from 'dirnav';
 import {
   initializeUrlTracking,
   getCurrentRecord,

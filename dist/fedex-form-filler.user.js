@@ -682,7 +682,7 @@ export async function getCostCenterFromHub(profileURL) {
   }
 } */
 
-var _tmpl$ = /*#__PURE__*/web.template(`<div><textarea placeholder="Paste excel row here to autofill">`);
+var _tmpl$ = /*#__PURE__*/web.template(`<div style="height:10vh;width:100%;background-color:rgba(0, 0, 0, 0.8);color:rgba(51, 51, 51)"><textarea placeholder="Paste excel row here to autofill"style=width:100%>`);
 var ToggleState = /*#__PURE__*/function (ToggleState) {
   ToggleState[ToggleState["Hidden"] = 0] = "Hidden";
   ToggleState[ToggleState["Focused"] = 1] = "Focused";
@@ -726,14 +726,9 @@ function GUI(props) {
   return (() => {
     var _el$ = _tmpl$(),
       _el$2 = _el$.firstChild;
-    _el$.style.setProperty("height", "10vh");
-    _el$.style.setProperty("width", "100%");
-    _el$.style.setProperty("background-color", "rgba(0, 0, 0, 0.8)");
-    _el$.style.setProperty("color", "rgba(51, 51, 51)");
     web.addEventListener(_el$2, "input", props.update, true);
     var _ref$ = ref;
     typeof _ref$ === "function" ? web.use(_ref$, _el$2) : ref = _el$2;
-    _el$2.style.setProperty("width", "100%");
     return _el$;
   })();
 }

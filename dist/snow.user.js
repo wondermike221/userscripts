@@ -1037,28 +1037,11 @@ const Transition = props => {
     });
 };
 
-// modules/DirectoryTree.ts
-
-/**
- * Enum to define the type of a node in the directory.
- */
-let NodeType = /*#__PURE__*/function (NodeType) {
-  NodeType["DIRECTORY"] = "DIRECTORY";
-  NodeType["LEAF"] = "LEAF";
-  return NodeType;
-}({});
-
-/**
- * Interface defining the structure of a node's data.
- */
-
-/**
- * Represents a node in the directory tree.
- * It can be either a directory (containing other nodes) or a leaf (an action).
- */
-class Node {
-  // Properties specific to type
-
+var q = Object.defineProperty;
+var z = (r, t, n) => t in r ? q(r, t, { enumerable: true, configurable: true, writable: true, value: n }) : r[t] = n;
+var $ = (r, t, n) => z(r, typeof t != "symbol" ? t + "" : t, n);
+var b = /* @__PURE__ */ ((r) => (r.DIRECTORY = "DIRECTORY", r.LEAF = "LEAF", r))(b || {});
+class Y {
   /**
    * Creates an instance of Node.
    * @param id A unique identifier for the node.
@@ -1067,41 +1050,31 @@ class Node {
    * @param parent The parent node (null if root).
    * @param action The callback function if the node is a LEAF.
    */
-  constructor(id, name, type, parent = null, action) {
-    this.id = id;
-    this.name = name;
-    this.type = type;
-    this.parent = parent;
-    if (type === NodeType.DIRECTORY) {
-      this.children = [];
-    } else if (type === NodeType.LEAF) {
-      if (typeof action !== 'function') {
-        console.warn(`Action for LEAF node "${name}" (ID: ${id}) is not a function.`);
-        this.action = () => console.warn(`No action defined for "${name}" (ID: ${id})`);
-      } else {
-        this.action = action;
-      }
-    }
+  constructor(t, n, i, y = null, c) {
+    $(this, "id");
+    $(this, "name");
+    $(this, "type");
+    $(this, "parent");
+    // Properties specific to type
+    $(this, "children");
+    $(this, "action");
+    this.id = t, this.name = n, this.type = i, this.parent = y, i === "DIRECTORY" ? this.children = [] : i === "LEAF" && (typeof c != "function" ? (console.warn(
+      `Action for LEAF node "${n}" (ID: ${t}) is not a function.`
+    ), this.action = () => console.warn(`No action defined for "${n}" (ID: ${t})`)) : this.action = c);
   }
 }
-
-/**
- * Manages the directory tree structure.
- */
-class DirectoryTree {
+class ae {
   // For quick node lookup by ID
-
   /**
    * Creates an instance of DirectoryTree.
    * @param rootName The name for the root directory.
    */
-  constructor(rootName = 'Root') {
-    const rootId = 'root-' + this.generateId();
-    this.root = new Node(rootId, rootName, NodeType.DIRECTORY, null);
-    this.nodeMap = new Map();
-    this.nodeMap.set(rootId, this.root);
+  constructor(t = "Root") {
+    $(this, "root");
+    $(this, "nodeMap");
+    const n = "root-" + this.generateId();
+    this.root = new Y(n, t, "DIRECTORY", null), this.nodeMap = /* @__PURE__ */ new Map(), this.nodeMap.set(n, this.root);
   }
-
   /**
    * Generates a simple unique ID.
    * @returns A random string ID.
@@ -1109,7 +1082,6 @@ class DirectoryTree {
   generateId() {
     return Math.random().toString(36).substring(2, 9);
   }
-
   /**
    * Adds a new node (directory or leaf) to a specified parent node.
    * @param parentNode The parent Node object.
@@ -1118,31 +1090,24 @@ class DirectoryTree {
    * @param action Optional callback function if the node is a LEAF.
    * @returns The created Node, or null if creation failed.
    */
-  addNodeToParent(parentNode, name, type, action) {
-    if (!parentNode) {
-      console.error(`Cannot add node "${name}": Parent node is null or undefined.`);
-      return null;
-    }
-    if (parentNode.type !== NodeType.DIRECTORY) {
-      console.error(`Parent node "${parentNode.name}" (ID: ${parentNode.id}) is not a directory.`);
-      return null;
-    }
-    // Ensure children array exists (should be initialized in constructor for DIRECTORY)
-    if (!parentNode.children) {
-      parentNode.children = []; // Should not happen if constructor is correct
-      console.warn(`Children array was missing for directory node "${parentNode.name}". Initialized.`);
-    }
-    if (parentNode.children.length >= 9) {
-      console.warn(`Directory "${parentNode.name}" (ID: ${parentNode.id}) already has 9 items. Cannot add "${name}".`);
-      return null;
-    }
-    const newNodeId = type.toLowerCase() + '-' + this.generateId();
-    const newNode = new Node(newNodeId, name, type, parentNode, action);
-    parentNode.children.push(newNode);
-    this.nodeMap.set(newNodeId, newNode);
-    return newNode;
+  addNodeToParent(t, n, i, y) {
+    if (!t)
+      return console.error(
+        `Cannot add node "${n}": Parent node is null or undefined.`
+      ), null;
+    if (t.type !== "DIRECTORY")
+      return console.error(
+        `Parent node "${t.name}" (ID: ${t.id}) is not a directory.`
+      ), null;
+    if (t.children || (t.children = [], console.warn(
+      `Children array was missing for directory node "${t.name}". Initialized.`
+    )), t.children.length >= 9)
+      return console.warn(
+        `Directory "${t.name}" (ID: ${t.id}) already has 9 items. Cannot add "${n}".`
+      ), null;
+    const c = i.toLowerCase() + "-" + this.generateId(), g = new Y(c, n, i, t, y);
+    return t.children.push(g), this.nodeMap.set(c, g), g;
   }
-
   /**
    * Convenience method to add a node using the parent's ID.
    * @param parentId The ID of the parent node.
@@ -1151,243 +1116,160 @@ class DirectoryTree {
    * @param action Optional callback for LEAF nodes.
    * @returns The created Node, or null if parent not found or creation failed.
    */
-  addNode(parentId, name, type, action) {
-    const parentNode = this.findNode(parentId);
-    if (!parentNode) {
-      console.error(`Parent node with id "${parentId}" not found.`);
-      return null;
-    }
-    return this.addNodeToParent(parentNode, name, type, action);
+  addNode(t, n, i, y) {
+    const c = this.findNode(t);
+    return c ? this.addNodeToParent(c, n, i, y) : (console.error(`Parent node with id "${t}" not found.`), null);
   }
-
   /**
    * Finds a node in the tree by its ID.
    * @param id The ID of the node to find.
    * @returns The Node if found, otherwise null.
    */
-  findNode(id) {
-    return this.nodeMap.get(id) || null;
+  findNode(t) {
+    return this.nodeMap.get(t) || null;
   }
-
   /**
    * Retrieves the path from the root to the specified node as an array of node names.
    * Useful for breadcrumbs or displaying the current location.
    * @param nodeId The ID of the target node.
    * @returns An array of strings (node names) representing the path, or an empty array if node not found.
    */
-  getNodePathNames(nodeId) {
-    const pathNames = [];
-    let currentNode = this.findNode(nodeId);
-    while (currentNode) {
-      pathNames.unshift(currentNode.name); // Add to the beginning to get path from root to node
-      currentNode = currentNode.parent;
-    }
-    return pathNames;
+  getNodePathNames(t) {
+    const n = [];
+    let i = this.findNode(t);
+    for (; i; )
+      n.unshift(i.name), i = i.parent;
+    return n;
   }
 }
-
-var _tmpl$$1 = /*#__PURE__*/web.template(`<button class=close-button aria-label="Close panel">&times; `),
-  _tmpl$2 = /*#__PURE__*/web.template(`<div class=current-record-info>`),
-  _tmpl$3 = /*#__PURE__*/web.template(`<ul>`),
-  _tmpl$4 = /*#__PURE__*/web.template(`<div class=options-view>`),
-  _tmpl$5 = /*#__PURE__*/web.template(`<div class=directory-nav-container tabindex=0><div class=directory-header><div class=header-left-controls><button class=back-button aria-label="Go back">&larr;</button><div class=current-path></div></div></div><div class=options-list-wrapper>`),
-  _tmpl$6 = /*#__PURE__*/web.template(`<p class=empty-directory-message>`),
-  _tmpl$7 = /*#__PURE__*/web.template(`<span class=option-type-indicator>&rarr;`),
-  _tmpl$8 = /*#__PURE__*/web.template(`<li class=options-list-item role=button tabindex=0><span class=option-number>.</span><span class=option-name>`);
-
-function DirectoryNav(props) {
-  const initialNode = () => props.initialNodeId ? props.tree.findNode(props.initialNodeId) : props.tree.root;
-  const [currentNode, setCurrentNode] = solidJs.createSignal(initialNode() || props.tree.root);
-  const [isFocused, setIsFocused] = solidJs.createSignal(false);
-  const [transitionName, setTransitionName] = solidJs.createSignal('initial-load');
-  let containerRef;
-  solidJs.createEffect(solidJs.on(() => props.initialNodeId, newInitialId => {
-    var _currentNode2;
-    if (newInitialId) {
-      var _currentNode;
-      const node = props.tree.findNode(newInitialId);
-      if (node && node.id !== ((_currentNode = currentNode()) == null ? void 0 : _currentNode.id)) {
-        setTransitionName('initial-load');
-        setCurrentNode(node);
-      }
-    } else if (((_currentNode2 = currentNode()) == null ? void 0 : _currentNode2.id) !== props.tree.root.id) {
-      setTransitionName('initial-load');
-      setCurrentNode(props.tree.root);
-    }
+var J = /* @__PURE__ */ web.template('<button class=close-button aria-label="Close panel">&times; '), Q = /* @__PURE__ */ web.template("<div class=current-record-info>"), U = /* @__PURE__ */ web.template("<ul>"), V = /* @__PURE__ */ web.template("<div class=options-view>"), X = /* @__PURE__ */ web.template('<div class=directory-nav-container tabindex=0><div class=directory-header><div class=header-left-controls><button class=back-button aria-label="Go back">&larr;</button><div class=current-path></div></div></div><div class=options-list-wrapper>'), Z = /* @__PURE__ */ web.template("<p class=empty-directory-message>"), ee = /* @__PURE__ */ web.template("<span class=option-type-indicator>&rarr;"), te = /* @__PURE__ */ web.template("<li class=options-list-item role=button tabindex=0><span class=option-number>.</span><span class=option-name>");
+function le(r) {
+  const t = () => r.initialNodeId ? r.tree.findNode(r.initialNodeId) : r.tree.root, [n, i] = solidJs.createSignal(t() || r.tree.root), [y, c] = solidJs.createSignal(false), [g, w] = solidJs.createSignal("initial-load");
+  let _;
+  solidJs.createEffect(solidJs.on(() => r.initialNodeId, (e) => {
+    var o, d;
+    if (e) {
+      const l = r.tree.findNode(e);
+      l && l.id !== ((o = n()) == null ? void 0 : o.id) && (w("initial-load"), i(l));
+    } else ((d = n()) == null ? void 0 : d.id) !== r.tree.root.id && (w("initial-load"), i(r.tree.root));
   }));
-  const currentDisplayName = solidJs.createMemo(() => currentNode() ? currentNode().name : 'Loading...');
-  const options = solidJs.createMemo(() => {
-    const node = currentNode();
-    if (node && node.type === NodeType.DIRECTORY && node.children) {
-      return node.children.map((child, index) => _extends({}, child, {
-        displayIndex: index + 1
-      }));
+  const F = solidJs.createMemo(() => n() ? n().name : "Loading..."), E = solidJs.createMemo(() => {
+    const e = n();
+    return e && e.type === b.DIRECTORY && e.children ? e.children.map((o, d) => ({
+      ...o,
+      displayIndex: d + 1
+    })) : [];
+  }), D = (e) => {
+    if (e) {
+      if (e.type === b.DIRECTORY)
+        w("slide-forward"), i(e);
+      else if (e.type === b.LEAF && e.action)
+        try {
+          e.action(), r.onLeafAction && r.onLeafAction(`Executed: ${e.name}`, e);
+        } catch (o) {
+          console.error(`Error executing action for "${e.name}":`, o), r.onLeafAction && r.onLeafAction(`Error executing: ${e.name}`, e);
+        }
     }
-    return [];
-  });
-  const navigateTo = node => {
-    if (!node) return;
-    if (node.type === NodeType.DIRECTORY) {
-      setTransitionName('slide-forward');
-      setCurrentNode(node);
-    } else if (node.type === NodeType.LEAF && node.action) {
-      try {
-        node.action();
-        if (props.onLeafAction) props.onLeafAction(`Executed: ${node.name}`, node);
-      } catch (error) {
-        console.error(`Error executing action for "${node.name}":`, error);
-        if (props.onLeafAction) props.onLeafAction(`Error executing: ${node.name}`, node);
-      }
-    }
-  };
-  const goBack = () => {
-    var _currentNode3;
-    const parent = (_currentNode3 = currentNode()) == null ? void 0 : _currentNode3.parent;
-    if (parent) {
-      setTransitionName('slide-backward');
-      setCurrentNode(parent);
-    }
-  };
-  const handleKeyDown = event => {
-    if (!isFocused()) return;
-    if (event.key === 'Backspace') {
-      var _currentNode4;
-      if ((_currentNode4 = currentNode()) != null && _currentNode4.parent) {
-        event.preventDefault();
-        event.stopPropagation();
-        goBack();
-      }
-    } else {
-      let num = -1;
-      if (event.key >= '1' && event.key <= '9') {
-        num = parseInt(event.key);
-      } else if (event.code.startsWith('Numpad') && event.code.length === 7) {
-        const numpadNum = parseInt(event.code.substring(6));
-        if (numpadNum >= 1 && numpadNum <= 9) {
-          num = numpadNum;
+  }, N = () => {
+    var o;
+    const e = (o = n()) == null ? void 0 : o.parent;
+    e && (w("slide-backward"), i(e));
+  }, S = (e) => {
+    var o;
+    if (y())
+      if (e.key === "Backspace")
+        (o = n()) != null && o.parent && (e.preventDefault(), e.stopPropagation(), N());
+      else {
+        let d = -1;
+        if (e.key >= "1" && e.key <= "9")
+          d = parseInt(e.key);
+        else if (e.code.startsWith("Numpad") && e.code.length === 7) {
+          const l = parseInt(e.code.substring(6));
+          l >= 1 && l <= 9 && (d = l);
+        }
+        if (d !== -1) {
+          e.preventDefault(), e.stopPropagation();
+          const l = d - 1, I = E();
+          l >= 0 && l < I.length && D(I[l]);
         }
       }
-      if (num !== -1) {
-        event.preventDefault();
-        event.stopPropagation();
-        const index = num - 1;
-        const currentOpts = options();
-        if (index >= 0 && index < currentOpts.length) {
-          navigateTo(currentOpts[index]);
-        }
-      }
-    }
   };
-  solidJs.createEffect(solidJs.on(currentNode, () => {
-    if (transitionName() === 'initial-load') {
-      queueMicrotask(() => {});
-    }
+  return solidJs.createEffect(solidJs.on(n, () => {
+    g() === "initial-load" && queueMicrotask(() => {
+    });
   }, {
     defer: true
-  }));
-  return (() => {
-    var _el$ = _tmpl$5(),
-      _el$2 = _el$.firstChild,
-      _el$3 = _el$2.firstChild,
-      _el$4 = _el$3.firstChild,
-      _el$5 = _el$4.nextSibling,
-      _el$8 = _el$2.nextSibling;
-    _el$.$$keydown = handleKeyDown;
-    _el$.addEventListener("blur", () => setIsFocused(false));
-    _el$.addEventListener("focus", () => setIsFocused(true));
-    var _ref$ = containerRef;
-    typeof _ref$ === "function" ? web.use(_ref$, _el$) : containerRef = _el$;
-    _el$4.$$click = goBack;
-    web.insert(_el$5, currentDisplayName);
-    web.insert(_el$2, web.createComponent(solidJs.Show, {
+  })), (() => {
+    var e = X(), o = e.firstChild, d = o.firstChild, l = d.firstChild, I = l.nextSibling, T = o.nextSibling;
+    e.$$keydown = S, e.addEventListener("blur", () => c(false)), e.addEventListener("focus", () => c(true));
+    var L = _;
+    return typeof L == "function" ? web.use(L, e) : _ = e, l.$$click = N, web.insert(I, F), web.insert(o, web.createComponent(solidJs.Show, {
       get when() {
-        return props.onClose;
+        return r.onClose;
       },
       get children() {
-        var _el$6 = _tmpl$$1();
-        _el$6.$$click = () => props.onClose && props.onClose();
-        return _el$6;
+        var a = J();
+        return a.$$click = () => r.onClose && r.onClose(), a;
       }
-    }), null);
-    web.insert(_el$, web.createComponent(solidJs.Show, {
+    }), null), web.insert(e, web.createComponent(solidJs.Show, {
       get when() {
-        return props.currentRecordDisplay;
+        return r.currentRecordDisplay;
       },
       get children() {
-        var _el$7 = _tmpl$2();
-        web.insert(_el$7, () => props.currentRecordDisplay);
-        return _el$7;
+        var a = Q();
+        return web.insert(a, () => r.currentRecordDisplay), a;
       }
-    }), _el$8);
-    web.insert(_el$8, web.createComponent(Transition, {
+    }), T), web.insert(T, web.createComponent(Transition, {
       get name() {
-        return transitionName();
+        return g();
       },
       mode: "outin",
       get children() {
-        var _el$9 = _tmpl$4();
-        web.insert(_el$9, web.createComponent(solidJs.Show, {
+        var a = V();
+        return web.insert(a, web.createComponent(solidJs.Show, {
           get when() {
-            return options().length > 0;
+            return E().length > 0;
           },
           get fallback() {
             return (() => {
-              var _el$1 = _tmpl$6();
-              web.insert(_el$1, () => {
-                var _currentNode5;
-                return ((_currentNode5 = currentNode()) == null ? void 0 : _currentNode5.type) === NodeType.DIRECTORY ? 'This directory is empty.' : 'No options.';
-              });
-              return _el$1;
+              var u = Z();
+              return web.insert(u, () => {
+                var s;
+                return ((s = n()) == null ? void 0 : s.type) === b.DIRECTORY ? "This directory is empty." : "No options.";
+              }), u;
             })();
           },
           get children() {
-            var _el$0 = _tmpl$3();
-            web.insert(_el$0, web.createComponent(solidJs.For, {
+            var u = U();
+            return web.insert(u, web.createComponent(solidJs.For, {
               get each() {
-                return options();
+                return E();
               },
-              children: item => (() => {
-                var _el$10 = _tmpl$8(),
-                  _el$11 = _el$10.firstChild,
-                  _el$12 = _el$11.firstChild,
-                  _el$13 = _el$11.nextSibling;
-                _el$10.addEventListener("keypress", e => {
-                  if (e.key === 'Enter' || e.key === ' ') navigateTo(item);
-                });
-                _el$10.$$click = () => navigateTo(item);
-                web.insert(_el$11, () => item.displayIndex, _el$12);
-                web.insert(_el$13, () => item.name);
-                web.insert(_el$10, web.createComponent(solidJs.Show, {
+              children: (s) => (() => {
+                var h = te(), p = h.firstChild, B = p.firstChild, j = p.nextSibling;
+                return h.addEventListener("keypress", (x) => {
+                  (x.key === "Enter" || x.key === " ") && D(s);
+                }), h.$$click = () => D(s), web.insert(p, () => s.displayIndex, B), web.insert(j, () => s.name), web.insert(h, web.createComponent(solidJs.Show, {
                   get when() {
-                    return item.type === NodeType.DIRECTORY;
+                    return s.type === b.DIRECTORY;
                   },
                   get children() {
-                    return _tmpl$7();
+                    return ee();
                   }
-                }), null);
-                web.effect(() => web.setAttribute(_el$10, "aria-label", `Option ${item.displayIndex}: ${item.name}`));
-                return _el$10;
+                }), null), web.effect(() => web.setAttribute(h, "aria-label", `Option ${s.displayIndex}: ${s.name}`)), h;
               })()
-            }));
-            return _el$0;
+            })), u;
           }
-        }));
-        web.effect(_$p => (_$p = currentNode() ? 'block' : 'none') != null ? _el$9.style.setProperty("display", _$p) : _el$9.style.removeProperty("display"));
-        return _el$9;
+        })), web.effect((u) => (u = n() ? "block" : "none") != null ? a.style.setProperty("display", u) : a.style.removeProperty("display")), a;
       }
-    }));
-    web.effect(_p$ => {
-      var _currentNode6, _currentNode7;
-      var _v$ = ((_currentNode6 = currentNode()) == null ? void 0 : _currentNode6.parent) === null,
-        _v$2 = props.tree.getNodePathNames(((_currentNode7 = currentNode()) == null ? void 0 : _currentNode7.id) || props.tree.root.id).join(' / ');
-      _v$ !== _p$.e && (_el$4.disabled = _p$.e = _v$);
-      _v$2 !== _p$.t && web.setAttribute(_el$5, "title", _p$.t = _v$2);
-      return _p$;
+    })), web.effect((a) => {
+      var h, p;
+      var u = ((h = n()) == null ? void 0 : h.parent) === null, s = r.tree.getNodePathNames(((p = n()) == null ? void 0 : p.id) || r.tree.root.id).join(" / ");
+      return u !== a.e && (l.disabled = a.e = u), s !== a.t && web.setAttribute(I, "title", a.t = s), a;
     }, {
-      e: undefined,
-      t: undefined
-    });
-    return _el$;
+      e: void 0,
+      t: void 0
+    }), e;
   })();
 }
 web.delegateEvents(["keydown", "click"]);
@@ -1473,14 +1355,14 @@ function initializeUrlTracking() {
 // Export the reactive getter for the current record
 const getCurrentRecord = currentRecord;
 
-var _tmpl$ = /*#__PURE__*/web.template(`<p>Loading directory structure...`);
+var _tmpl$ = /*#__PURE__*/web.template(`<p style=text-align:center;padding:20px;color:#888>Loading directory structure...`);
 
 // import '../../styles.css';
 
 function Routing({
   panelRef
 }) {
-  const [treeInstance] = solidJs.createSignal(new DirectoryTree('Main Options'));
+  const [treeInstance] = solidJs.createSignal(new ae('Main Options'));
   const [actionLog, setActionLog] = solidJs.createSignal([]);
   const [statusMessage, setStatusMessage] = solidJs.createSignal('Click component to focus. Use 1-9 or Backspace.');
   const [treeReady, setTreeReady] = solidJs.createSignal(false);
@@ -1529,16 +1411,16 @@ function Routing({
     // Initialize ServiceNow URL tracking when the app mounts
     initializeUrlTracking();
     const tree = treeInstance();
-    const Accessory = tree.addNode(tree.root.id, 'Accessory', NodeType.DIRECTORY);
-    const Exit = tree.addNode(tree.root.id, 'Exit', NodeType.DIRECTORY);
-    const Laptop = tree.addNode(tree.root.id, 'Laptop', NodeType.DIRECTORY);
-    const Settings = tree.addNode(tree.root.id, 'Settings', NodeType.DIRECTORY);
+    const Accessory = tree.addNode(tree.root.id, 'Accessory', b.DIRECTORY);
+    const Exit = tree.addNode(tree.root.id, 'Exit', b.DIRECTORY);
+    const Laptop = tree.addNode(tree.root.id, 'Laptop', b.DIRECTORY);
+    const Settings = tree.addNode(tree.root.id, 'Settings', b.DIRECTORY);
     if (Accessory) {
-      tree.addNode(Accessory.id, 'Dropship', NodeType.LEAF, () => {
+      tree.addNode(Accessory.id, 'Dropship', b.LEAF, () => {
         logUserAction('Copying...');
         handleScrape('dropship');
       });
-      tree.addNode(Accessory.id, 'Chargesheet', NodeType.LEAF, () => {
+      tree.addNode(Accessory.id, 'Chargesheet', b.LEAF, () => {
         logUserAction('Copying...');
         handleScrape('chargesheet');
       });
@@ -1546,11 +1428,11 @@ function Routing({
       //   logUserAction('Copying...');
       //   showToast('TODO', { theme: 'dark' });
       // });
-      tree.addNode(Accessory.id, 'CrossCharge', NodeType.LEAF, () => {
+      tree.addNode(Accessory.id, 'CrossCharge', b.LEAF, () => {
         logUserAction('Copying...');
         handleScrape('crosscharge');
       });
-      tree.addNode(Accessory.id, 'JSON', NodeType.LEAF, () => {
+      tree.addNode(Accessory.id, 'JSON', b.LEAF, () => {
         logUserAction('Copying...');
         handleScrape('json');
       });
@@ -1564,18 +1446,18 @@ function Routing({
       //   logUserAction('Copying...');
       //   showToast('TODO', { theme: 'dark' });
       // });
-      tree.addNode(Exit.id, 'Sheet', NodeType.LEAF, () => {
+      tree.addNode(Exit.id, 'Sheet', b.LEAF, () => {
         logUserAction('Copying...');
         handleScrape('exit');
       });
       // tree.addNode(Exit.id, 'Sheet - Receiving', NodeType.LEAF, () => logUserAction('Copying...'));
-      tree.addNode(Exit.id, 'JSON', NodeType.LEAF, () => {
+      tree.addNode(Exit.id, 'JSON', b.LEAF, () => {
         logUserAction('Copying...');
         handleScrape('json');
       });
     }
     if (Laptop) {
-      tree.addNode(Laptop.id, 'TODO', NodeType.LEAF, () => {
+      tree.addNode(Laptop.id, 'TODO', b.LEAF, () => {
         logUserAction('Copying...');
         ui.showToast('TODO', {
           theme: 'dark'
@@ -1588,7 +1470,7 @@ function Routing({
       // tree.addNode(Laptop.id, 'JSON', NodeType.LEAF, () => logUserAction('Copying...'));
     }
     if (Settings) {
-      tree.addNode(Settings.id, 'Technician NT', NodeType.LEAF, () => {
+      tree.addNode(Settings.id, 'Technician NT', b.LEAF, () => {
         logUserAction('Change Tech NT...');
         const newTech = prompt('Enter new Tech NT:');
         // store the new tech in local storage
@@ -1607,16 +1489,10 @@ function Routing({
       return treeReady();
     },
     get fallback() {
-      return (() => {
-        var _el$ = _tmpl$();
-        _el$.style.setProperty("text-align", "center");
-        _el$.style.setProperty("padding", "20px");
-        _el$.style.setProperty("color", "#888");
-        return _el$;
-      })();
+      return _tmpl$();
     },
     get children() {
-      return web.createComponent(DirectoryNav, {
+      return web.createComponent(le, {
         get tree() {
           return treeInstance();
         },
