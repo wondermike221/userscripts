@@ -4,5 +4,7 @@ node_modules
 /.nyc_output
 /coverage
 /types
-.DS_Store.sample_snow_json_api/
+.DS_Store
+.sample_snow_json_api/
 fedex-billing-dropdown-example.html
+/graphify-out
