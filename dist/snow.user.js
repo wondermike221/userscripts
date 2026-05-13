@@ -517,49 +517,6 @@ let technicianNT = localStorage.getItem('techNT');
 if (technicianNT === null) {
   technicianNT = '';
 }
-function api_url(table, id) {
-  const BASE_URL = 'https://ebayinc.service-now.com';
-  const base = new URL(`/${table}.do`, BASE_URL);
-  base.searchParams.append('JSONv2', '');
-  base.searchParams.append('sysparm_sys_id', id);
-  base.searchParams.append('displayvalue', 'all');
-  base.searchParams.append('displayvariables', 'true');
-  return base.href;
-}
-function api_url_query(table, query, limit = 20) {
-  const BASE_URL = 'https://ebayinc.service-now.com';
-  const base = new URL(`/${table}.do`, BASE_URL);
-  base.searchParams.append('JSONv2', '');
-  base.searchParams.append('sysparm_action', 'getRecords');
-  base.searchParams.append('sysparm_query', query);
-  base.searchParams.append('displayvalue', 'all');
-  base.searchParams.append('sysparm_record_count', limit.toString());
-  return base.href;
-}
-function get_sys_id_from_url(table) {
-  const url = window.location.href;
-  const index = url.indexOf(table);
-  const index_sys_id_start = index + table.length + 1;
-  let index_sys_id_end = url.indexOf('/', index_sys_id_start);
-  if (index_sys_id_end == -1) {
-    index_sys_id_end = url.length;
-  }
-  const sys_id = url.substring(index_sys_id_start, index_sys_id_end);
-  return sys_id;
-}
-async function get_record(table, sys_id = null) {
-  if (sys_id == null) {
-    sys_id = get_sys_id_from_url(table);
-  }
-  const response = await fetch(api_url(table, sys_id));
-  const j = await response.json();
-  return j;
-}
-async function get_records(table, query, limit = 20) {
-  const response = await fetch(api_url_query(table, query, limit));
-  const j = await response.json();
-  return j;
-}
 function build_charge_sheet_row_cis(task, user) {
   const u_variables = JSON.parse(task.dv_u_variables);
   const row = [new Date().toLocaleDateString(), 'SLC', '', '1', task.dv_number, user.dv_email, user.dv_cost_center, user.dv_name, u_variables.street_address, '', u_variables.city, u_variables.v_state, u_variables.zip, u_variables.contact_number, 'USA'];
@@ -662,6 +619,100 @@ let assets = await snow_get_records('alm_hardware', `assigned_to=${user.records[
 console.log(build_charge_sheet_row(task.records[0], user.records[0]));
 console.log(build_bh_sheet_row(task.records[0], user.records[0]));
 */
+
+// Utility to construct the ServiceNow JSONv2 API URL
+function buildApiUrl(table, sysId) {
+  // In a browser context, window.location.origin is suitable.
+  // If this code were to run in a Node.js environment, a base URL would need to be provided.
+  const BASE_URL = 'https://ebayinc.service-now.com'; // Use a concrete base URL as seen in snow_utils.ts
+  const url = new URL(`/${table}.do`, BASE_URL);
+  url.searchParams.append('JSONv2', '');
+  url.searchParams.append('sysparm_sys_id', sysId);
+  url.searchParams.append('displayvalue', 'all');
+  url.searchParams.append('displayvariables', 'true');
+  return url.href;
+}
+
+// Utility to construct the ServiceNow JSONv2 API URL for queries
+function buildApiUrlQuery(table, query, limit = 20) {
+  const BASE_URL = 'https://ebayinc.service-now.com';
+  const url = new URL(`/${table}.do`, BASE_URL);
+  url.searchParams.append('JSONv2', '');
+  url.searchParams.append('sysparm_action', 'getRecords');
+  url.searchParams.append('sysparm_query', query);
+  url.searchParams.append('displayvalue', 'all');
+  url.searchParams.append('sysparm_record_count', limit.toString());
+  return url.href;
+}
+
+// Generic function to fetch a single record by its sys_id
+async function getSnowRecord(table, sysId) {
+  const apiUrl = buildApiUrl(table, sysId);
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${table} with sys_id ${sysId}: ${response.statusText}`);
+    }
+    const data = await response.json();
+    if (data.records && data.records.length > 0) {
+      return data.records[0];
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error fetching ${table} with sys_id ${sysId}:`, error);
+    return null;
+  }
+}
+
+// Generic function to fetch multiple records by query
+async function getSnowRecords(table, query, limit) {
+  const apiUrl = buildApiUrlQuery(table, query, limit);
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch records from ${table} with query "${query}": ${response.statusText}`);
+    }
+    const data = await response.json();
+    if (data.records) {
+      return data.records;
+    }
+    return [];
+  } catch (error) {
+    console.error(`Error fetching records from ${table} with query "${query}":`, error);
+    return [];
+  }
+}
+async function getScReqItem(sysId) {
+  const record = await getSnowRecord('sc_req_item', sysId);
+  if (!record) return null;
+  try {
+    return _extends({}, record, {
+      u_variables_parsed: JSON.parse(record.u_variables)
+    });
+  } catch (e) {
+    console.error(`Error parsing u_variables for sc_req_item ${sysId}:`, e);
+    return _extends({}, record, {
+      u_variables_parsed: {}
+    });
+  }
+}
+async function getScTask(sysId) {
+  const record = await getSnowRecord('sc_task', sysId);
+  if (!record) return null;
+  try {
+    return _extends({}, record, {
+      u_variables_parsed: JSON.parse(record.u_variables)
+    });
+  } catch (e) {
+    console.error(`Error parsing u_variables for sc_task ${sysId}:`, e);
+    return _extends({}, record, {
+      u_variables_parsed: {}
+    });
+  }
+}
+async function getSysUser(sysId) {
+  return getSnowRecord('sys_user', sysId);
+}
 
 var css_248z = ".directory-nav-container{background-color:#2c2c2c;border:1px solid #4a4a4a;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);box-sizing:border-box;color:#e0e0e0;display:flex;flex-direction:column;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;max-height:40vh;max-width:25vw;min-height:30vh;overflow:hidden;padding:6px;position:relative;width:100%}.directory-nav-container:focus{border-color:#0078d4;outline:2px solid #0078d4}.directory-header{align-items:center;border-bottom:1px solid #444;display:flex;flex-shrink:0;justify-content:space-between;margin-bottom:8px;padding-bottom:8px}.header-left-controls{align-items:center;display:flex;flex-grow:1;overflow:hidden}.back-button{background:transparent;border:none;border-radius:4px;color:#a0a0a0;cursor:pointer;flex-shrink:0;font-size:22px;font-weight:700;line-height:1;margin-right:10px;padding:4px 8px;transition:background-color .2s ease,color .2s ease}.back-button:hover{background-color:#3a3a3a;color:#e0e0e0}.back-button:disabled{color:#555;cursor:not-allowed}.current-path{color:#e0e0e0;flex-grow:1;font-size:1.1em;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.close-button{background:transparent;border:none;border-radius:4px;color:#a0a0a0;cursor:pointer;flex-shrink:0;font-size:20px;font-weight:700;line-height:1;margin-left:10px;padding:4px 8px;transition:background-color .2s ease,color .2s ease}.close-button:hover{background-color:#555;color:#fff}.current-record-info{background-color:#333;border-radius:4px;color:#b0b0b0;font-size:.85em;margin-bottom:8px;overflow:hidden;padding:4px 8px;text-align:center;text-overflow:ellipsis;white-space:nowrap}.options-list-wrapper{flex-grow:1;overflow:hidden;position:relative}.options-view{background-color:#2c2c2c;box-sizing:border-box;height:100%;left:0;padding:0;position:absolute;top:0;width:100%}.options-view ul{height:100%;list-style:none;margin:0;overflow-y:auto;padding:0}.options-list-item{align-items:center;border-bottom:1px solid #383838;cursor:pointer;display:flex;padding:12px 10px;transition:background-color .15s ease}.options-list-item:last-child{border-bottom:none}.options-list-item:hover{background-color:#3a3a3a}.option-number{color:#0090d4;font-size:.95em;font-weight:700;margin-right:15px;min-width:22px;text-align:right}.option-name{color:#d0d0d0;flex-grow:1}.option-type-indicator{color:#888;font-size:1em;margin-left:10px}.empty-directory-message{color:#888;font-style:italic;padding:30px 15px;text-align:center}:root{--transition-duration:0.25s}.slide-forward-enter-from{opacity:.8;transform:translateX(100%)}.slide-forward-enter-to{opacity:1;transform:translateX(0)}.slide-forward-enter-active{transition:transform var(--transition-duration) ease-out,opacity var(--transition-duration) ease-out}.slide-forward-exit-from{opacity:1;transform:translateX(0)}.slide-forward-exit-to{opacity:.8;transform:translateX(-100%)}.slide-forward-exit-active{transition:transform var(--transition-duration) ease-in,opacity var(--transition-duration) ease-in}.slide-backward-enter-from{opacity:.8;transform:translateX(-100%)}.slide-backward-enter-to{opacity:1;transform:translateX(0)}.slide-backward-enter-active{transition:transform var(--transition-duration) ease-out,opacity var(--transition-duration) ease-out}.slide-backward-exit-from{opacity:1;transform:translateX(0)}.slide-backward-exit-to{opacity:.8;transform:translateX(100%)}.slide-backward-exit-active{transition:transform var(--transition-duration) ease-in,opacity var(--transition-duration) ease-in}.initial-load-enter-active,.initial-load-exit-active{transition:none!important}";
 
@@ -1321,7 +1372,7 @@ function DirectoryNav(props) {
             return _el$0;
           }
         }));
-        web.effect(_$p => web.setStyleProperty(_el$9, "display", currentNode() ? 'block' : 'none'));
+        web.effect(_$p => (_$p = currentNode() ? 'block' : 'none') != null ? _el$9.style.setProperty("display", _$p) : _el$9.style.removeProperty("display"));
         return _el$9;
       }
     }));
@@ -1422,7 +1473,7 @@ function initializeUrlTracking() {
 // Export the reactive getter for the current record
 const getCurrentRecord = currentRecord;
 
-var _tmpl$ = /*#__PURE__*/web.template(`<p style=text-align:center;padding:20px;color:#888>Loading directory structure...`);
+var _tmpl$ = /*#__PURE__*/web.template(`<p>Loading directory structure...`);
 
 // import '../../styles.css';
 
@@ -1556,7 +1607,13 @@ function Routing({
       return treeReady();
     },
     get fallback() {
-      return _tmpl$();
+      return (() => {
+        var _el$ = _tmpl$();
+        _el$.style.setProperty("text-align", "center");
+        _el$.style.setProperty("padding", "20px");
+        _el$.style.setProperty("color", "#888");
+        return _el$;
+      })();
     },
     get children() {
       return web.createComponent(DirectoryNav, {
@@ -1574,9 +1631,40 @@ function Routing({
 }
 async function handleScrape(type) {
   disable();
-  const task = (await get_record('sc_task')).records[0];
-  const ritm = (await get_record('sc_req_item', task.request_item)).records[0];
-  const user = (await get_record('sys_user', ritm.requested_for)).records[0];
+  const {
+    sysId: taskSysId
+  } = getCurrentRecord();
+  if (!taskSysId) {
+    ui.showToast('No SNOW record detected in URL', {
+      theme: 'dark'
+    });
+    enable();
+    return;
+  }
+  const task = await getScTask(taskSysId);
+  if (!task) {
+    ui.showToast('Failed to load task', {
+      theme: 'dark'
+    });
+    enable();
+    return;
+  }
+  const ritm = await getScReqItem(task.request_item);
+  if (!ritm) {
+    ui.showToast('Failed to load RITM', {
+      theme: 'dark'
+    });
+    enable();
+    return;
+  }
+  const user = await getSysUser(ritm.requested_for);
+  if (!user) {
+    ui.showToast('Failed to load user', {
+      theme: 'dark'
+    });
+    enable();
+    return;
+  }
   switch (type) {
     case 'json':
       {
@@ -1585,8 +1673,8 @@ async function handleScrape(type) {
         ui.showToast('JSON successfully copied to clipboard', {
           theme: 'dark'
         });
+        break;
       }
-      break;
     case 'crosscharge':
       {
         const crosscharge_tsv = [new Date().toISOString(), 'SLC', '', '1', task.dv_number, user.dv_email, user.dv_cost_center].join('\t');
@@ -1598,20 +1686,19 @@ async function handleScrape(type) {
           costCenter: user.dv_cost_center,
           email: user.dv_email
         };
-        const crosscharge = [new ClipboardItem({
+        copyRichTextToClipboard([new ClipboardItem({
           'text/html': new Blob([crosscharge_html], {
             type: 'text/html'
           }),
           'text/plain': new Blob([JSON.stringify(crosscharge_json)], {
             type: 'text/plain'
           })
-        })];
-        copyRichTextToClipboard(crosscharge);
+        })]);
         ui.showToast('CrossCharge row successfully copied to clipboard', {
           theme: 'dark'
         });
+        break;
       }
-      break;
     case 'chargesheet':
       {
         const [chargesheet_cis] = build_charge_sheet_row_cis(task, user);
@@ -1619,8 +1706,8 @@ async function handleScrape(type) {
         ui.showToast('Chargesheet row successfully copied to clipboard', {
           theme: 'dark'
         });
+        break;
       }
-      break;
     case 'dropship':
       {
         const dropship = build_bh_sheet_row_cis(task, user);
@@ -1628,33 +1715,34 @@ async function handleScrape(type) {
         ui.showToast('Dropship row successfully copied to clipboard', {
           theme: 'dark'
         });
+        break;
       }
-      break;
     case 'exit':
       {
-        // TODO
-        const manager = (await get_record('sys_user', user.manager)).records[0];
-        const assets = await get_records('alm_hardware', `assigned_to=${user.sys_id}^install_status=1`);
-        const task_u_vars = JSON.parse(task.dv_u_variables);
-        const asset = assets.records.filter(a => task_u_vars.v_assets_to_return.includes(a.asset_tag));
-        console.log(assets);
+        const manager = await getSysUser(user.manager);
+        if (!manager) {
+          ui.showToast('Failed to load manager', {
+            theme: 'dark'
+          });
+          enable();
+          return;
+        }
+        const assets = await getSnowRecords('alm_hardware', `assigned_to=${user.sys_id}^install_status=1`);
+        const asset = assets.filter(a => task.u_variables_parsed.v_assets_to_return.includes(a.asset_tag));
         const exit = build_exit_sheet_row_cis(task, user, manager, asset[0]);
         copyRichTextToClipboard(exit);
-        console.log('exit TODO');
         ui.showToast('Exit row successfully copied to clipboard', {
           theme: 'dark'
         });
+        break;
       }
-      break;
     case 'fdx-bulk':
       {
-        // const fdx = snow.build_fdx_row_cis(task, user);
-        // copyRichTextToClipboard(fdx);
-        ui.showToast('TODO:Fdx row successfully copied to clipboard', {
+        ui.showToast('TODO: FDX bulk not yet implemented', {
           theme: 'dark'
         });
+        break;
       }
-      break;
   }
   enable();
 }
