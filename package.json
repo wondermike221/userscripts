@@ -24,9 +24,9 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.24.1",
-    "@violentmonkey/dom": "^2.1.6",
+    "@violentmonkey/dom": "^2.2.1",
     "@violentmonkey/shortcut": "^1.4.4",
-    "@violentmonkey/ui": "^0.7.8",
+    "@violentmonkey/ui": "^0.7.9",
     "dirnav": "git+https://github.com/wondermike221/DirNav.git#main",
     "solid-js": "^1.8.16",
     "solid-transition-group": "^0.3.0"
