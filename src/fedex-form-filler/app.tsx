@@ -1,268 +1,190 @@
-import { render } from 'solid-js/web';
-import { getPanel } from '@violentmonkey/ui';
-// global CSS
-import globalCss from './style.css';
-// CSS modules
-import { stylesheet } from './style.module.css';
-import { Shipment, addFedExAutofillTextArea } from './legacy';
+import { init } from 'rove';
+import { addFedExAutofillTextArea, Shipment } from './legacy';
 import { simulateUserInteraction, selectByText } from './simulate';
-import { register } from '@violentmonkey/shortcut';
-import { onMount } from 'solid-js';
 import { waitForElm } from '../utils';
 
-enum ToggleState {
-  Hidden,
-  Focused,
-  Blurred,
+const FORM_FIELDS: Record<
+  string,
+  { selector: string; value: string | null; type: string; elementType: string }
+> = {
+  country: {
+    selector: 'receiver-country-code',
+    value: '190: US',
+    type: 'dropdown',
+    elementType: 'select',
+  },
+  zip: {
+    selector: 'receiver-postal-code',
+    value: null,
+    type: 'text',
+    elementType: 'input',
+  },
+  name: {
+    selector: 'receiver-name',
+    value: null,
+    type: 'text',
+    elementType: 'input',
+  },
+  address1: {
+    selector: 'receiver-address-line1',
+    value: null,
+    type: 'text',
+    elementType: 'input',
+  },
+  address2: {
+    selector: 'receiver-address-line2',
+    value: null,
+    type: 'text',
+    elementType: 'input',
+  },
+  city: {
+    selector: 'receiver-city',
+    value: null,
+    type: 'text',
+    elementType: 'input',
+  },
+  phone: {
+    selector: 'receiver-telephone-number',
+    value: null,
+    type: 'text',
+    elementType: 'input',
+  },
+  cost_center: {
+    selector: 'references-input-control',
+    value: null,
+    type: 'text',
+    elementType: 'input',
+  },
+  signature: {
+    selector: 'signature-option',
+    value: '4: DIRECT',
+    type: 'dropdown',
+    elementType: 'select',
+  },
+  billing: {
+    selector: 'bill-to',
+    value: 'Draper Mailroom',
+    type: 'dropdown-text',
+    elementType: 'select',
+  },
+  weight: {
+    selector: 'weight-0',
+    value: '1',
+    type: 'text',
+    elementType: 'input',
+  },
+  state: {
+    selector: 'receiver-state-or-province',
+    value: null,
+    type: 'dropdown',
+    elementType: 'select',
+  },
+  service: {
+    selector: 'service',
+    value: '5: PRIORITY_OVERNIGHT',
+    type: 'dropdown',
+    elementType: 'select',
+  },
+};
+
+function fillForm(ship: Partial<Shipment>) {
+  const data = ship as Record<string, string | undefined>;
+  for (const field in FORM_FIELDS) {
+    const { selector, elementType, type, value } = FORM_FIELDS[field];
+    const el = document.querySelector(
+      `[data-test-id="${selector}"] ${elementType}`,
+    ) as HTMLInputElement | HTMLSelectElement | null;
+    if (!el) continue;
+    if (type === 'dropdown-text') {
+      selectByText(el as HTMLSelectElement, value ?? data[field] ?? '');
+    } else {
+      simulateUserInteraction(el, value ?? data[field] ?? '');
+    }
+  }
 }
 
-function GUI(props) {
-  let ref: HTMLTextAreaElement;
-  onMount(() => {
-    ref.focus();
-    const panel = props.panelRef;
+function autoFillFromRow() {
+  const row = prompt('Paste spreadsheet row:');
+  if (!row) return;
+  fillForm(new Shipment(row));
+}
 
-    panel.show();
-    let toggleState: ToggleState = ToggleState.Focused;
-    const updateToggle = () => {
-      switch (toggleState) {
-        case ToggleState.Hidden:
-          toggleState = ToggleState.Focused;
-          ref.focus();
-          panel.show();
-          break;
-        case ToggleState.Focused:
-          toggleState = ToggleState.Hidden;
-          ref.blur();
-          panel.hide();
-          break;
-        case ToggleState.Blurred:
-          toggleState = ToggleState.Focused;
-          ref.focus();
-          break;
-      }
-    };
-    register('alt-`', updateToggle);
-    register('ctrlcmd-k `', updateToggle);
+function autoFillFromJSON() {
+  const jsonStr = prompt('Paste JSON (from SNOW script):');
+  if (!jsonStr) return;
+  try {
+    const d = JSON.parse(jsonStr);
+    fillForm({
+      name: d.name ?? '',
+      address1: d.streetAddress ?? '',
+      address2: '',
+      city: d.city ?? '',
+      state: d.state ?? '',
+      zip: d.postalCode ?? '',
+      phone: d.phone ?? '',
+      cost_center: d.costCenter ?? '',
+      email: d.email ?? '',
+    });
+  } catch {
+    console.error('[fedex-form-filler] Invalid JSON');
+  }
+}
 
-    ref.addEventListener('blur', () => {
-      toggleState = ToggleState.Blurred;
-    });
-    ref.addEventListener('focus', () => {
-      toggleState = ToggleState.Focused;
-    });
+function initializeStaticFields() {
+  const signatureCheckboxSel = `ui-checkbox[data-test-id="signature-options-checkbox"] input[type="checkbox"]`;
+  waitForElm(signatureCheckboxSel).then(() => {
+    const el = document.querySelector(signatureCheckboxSel) as HTMLElement;
+    el?.click();
+    el?.dispatchEvent(new Event('change'));
   });
 
-  return (
-    <div
-      style={{
-        height: '10vh',
-        width: '100%',
-        'background-color': 'rgba(0, 0, 0, 0.8)',
-        color: 'rgba(51, 51, 51)',
-      }}
-    >
-      <textarea
-        ref={ref}
-        onInput={props.update}
-        placeholder="Paste excel row here to autofill"
-        style={{ width: '100%' }}
-      ></textarea>
-    </div>
-  );
+  const signatureOptionSel = `signature-options[data-test-id="signature-options"] select`;
+  waitForElm(signatureOptionSel).then(() => {
+    const el = document.querySelector(signatureOptionSel) as HTMLSelectElement;
+    el.value = '4: DIRECT';
+    el.dispatchEvent(new Event('change'));
+  });
+
+  const accountSwitcherSel = `account-switcher [data-test-id="account-switcher"] select`;
+  waitForElm(accountSwitcherSel).then(() => {
+    const el = document.querySelector(accountSwitcherSel) as HTMLSelectElement;
+    selectByText(el, 'Draper Mailroom');
+  });
 }
 
 window.addEventListener('load', () => {
-  initializeApp();
-});
-
-function initializeApp() {
-  // example legacy url:
-  //https://www.fedex.com/shipping/shipEntryAction.do?method=doEntry&link=1&locale=en_US&urlparams=us&sType=F
-  //Legacy autofill
   if (window.location.href.includes('shipping/shipEntryAction')) {
     addFedExAutofillTextArea();
   }
 
-  //example new url:
-  //https://www.fedex.com/shippingplus/en-us/shipment/create
-  //updated autofill
   if (window.location.href.includes('shippingplus')) {
     waitForElm('address-to-form').then(() => {
-      initializeAutofill();
+      initializeStaticFields();
+
+      const rove = init({
+        keyPrefix: 'fedex',
+        defaults: { mode: 'dir', theme: 'dark' },
+        tree: {
+          autofill: {
+            type: 'directory',
+            label: 'Autofill',
+            children: {
+              pasteRow: {
+                type: 'action',
+                label: 'Paste Row',
+                action: autoFillFromRow,
+              },
+              pasteJson: {
+                type: 'action',
+                label: 'Paste JSON',
+                action: autoFillFromJSON,
+              },
+            },
+          },
+        },
+      });
+
+      GM_registerMenuCommand('FedEx Autofill', () => rove.toggle());
     });
   }
-}
-
-function initializeAutofill() {
-  const signature_selector = `ui-checkbox[data-test-id="signature-options-checkbox"] input[type="checkbox"]`;
-  waitForElm(signature_selector).then(() => {
-    const signature_checkbox = document.querySelector(
-      signature_selector,
-    ) as HTMLElement;
-    signature_checkbox?.click();
-    const changeEvent = new Event('change');
-    signature_checkbox.dispatchEvent(changeEvent);
-  });
-  const signature_option_selector = `signature-options[data-test-id="signature-options"] select`;
-  waitForElm(signature_option_selector).then(() => {
-    const signature_option = document.querySelector(
-      signature_option_selector,
-    ) as HTMLSelectElement;
-    signature_option.value = '4: DIRECT';
-    const changeEvent = new Event('change');
-    signature_option.dispatchEvent(changeEvent);
-  });
-  const shipping_account_selector = `account-switcher [data-test-id="account-switcher"] select`;
-  waitForElm(shipping_account_selector).then(() => {
-    const shipping_account = document.querySelector(
-      shipping_account_selector,
-    ) as HTMLSelectElement;
-    selectByText(shipping_account, 'Draper Mailroom');
-  });
-
-  const FORM_FIELDS = {
-    // shipping_account: {
-    // selector: 'account-switcher',
-    // value: '2: Object',
-    // type: 'dropdown',
-    // elementType: 'select',
-    // },
-    country: {
-      selector: 'receiver-country-code',
-      value: '190: US',
-      type: 'dropdown',
-      elementType: 'select',
-    },
-    // signature_options: {
-    //   selector: 'signature-options-checkbox',
-    //   value: true,
-    //   type: 'checkbox',
-    //   elementType: 'input',
-    // },
-    zip: {
-      selector: 'receiver-postal-code',
-      value: null,
-      type: 'text',
-      elementType: 'input',
-    },
-    name: {
-      selector: 'receiver-name',
-      value: null,
-      type: 'text',
-      elementType: 'input',
-    },
-    //email: {
-    //  selector: 'receiver-email',
-    //  value: null,
-    //  type: 'text',
-    //  elementType: 'input',
-    //},
-    address1: {
-      selector: 'receiver-address-line1',
-      value: null,
-      type: 'text',
-      elementType: 'input',
-    },
-    address2: {
-      selector: 'receiver-address-line2',
-      value: null,
-      type: 'text',
-      elementType: 'input',
-    },
-    city: {
-      selector: 'receiver-city',
-      value: null,
-      type: 'text',
-      elementType: 'input',
-    },
-    phone: {
-      selector: 'receiver-telephone-number',
-      value: null,
-      type: 'text',
-      elementType: 'input',
-    },
-    cost_center: {
-      selector: 'references-input-control',
-      value: null,
-      type: 'text',
-      elementType: 'input',
-    },
-    signature: {
-      selector: 'signature-option',
-      value: '4: DIRECT',
-      type: 'dropdown',
-      elementType: 'select',
-    },
-    billing: {
-      selector: 'bill-to',
-      value: 'Draper Mailroom',
-      type: 'dropdown-text',
-      elementType: 'select',
-    },
-    weight: {
-      selector: 'weight-0',
-      value: '1',
-      type: 'text',
-      elementType: 'input',
-    },
-    state: {
-      selector: 'receiver-state-or-province',
-      value: null,
-      type: 'dropdown',
-      elementType: 'select',
-    },
-    service: {
-      selector: 'service',
-      value: '5: PRIORITY_OVERNIGHT',
-      type: 'dropdown',
-      elementType: 'select',
-    },
-  };
-
-  function autoFillAction(e) {
-    const ship = new Shipment(e.target.value);
-    for (const field in FORM_FIELDS) {
-      const selector = `[data-test-id="${FORM_FIELDS[field].selector}"] ${FORM_FIELDS[field].elementType}`;
-      const input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement =
-        document.querySelector(selector);
-
-      if (FORM_FIELDS[field].type === 'dropdown-text') {
-        // Use text-based selection for dropdowns marked as 'dropdown-text'
-        selectByText(
-          input as HTMLSelectElement,
-          FORM_FIELDS[field].value || ship[field],
-        );
-      } else {
-        simulateUserInteraction(input, FORM_FIELDS[field].value || ship[field]);
-      }
-    }
-  }
-
-  function autoFillHelper() {
-    const input = prompt('paste sheet row in');
-    const res = {
-      target: {
-        value: input,
-      },
-    };
-    autoFillAction(res);
-  }
-
-  const panel = getPanel({
-    theme: 'dark',
-    style: [globalCss, stylesheet].join('\n'),
-  });
-  Object.assign(panel.wrapper.style, {
-    display: 'block',
-    width: '100%',
-    position: 'relative',
-    bottom: 'calc(100 - var(20vh))',
-    left: 0,
-    right: 0,
-    transition: 'all 0.1s ease-out',
-    overflowY: 'scroll',
-  });
-  GM_registerMenuCommand('AutoFill', autoFillHelper);
-  render(() => <GUI update={autoFillAction} panelRef={panel} />, panel.body);
-}
+});

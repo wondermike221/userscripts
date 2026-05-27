@@ -5,10 +5,9 @@
 // @match        https://www.fedex.com/shipping/*
 // @match        https://www.fedex.com/shippingplus/*
 // @grant       GM_addStyle
-// @version     0.2.4
+// @version     0.3.0
 // @author      process.env.AUTHOR
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
-// @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
 // @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2/dist/solid.min.js
 // @downloadURL  https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/fedex-form-filler.user.js
 // @homepageURL  https://github.com/wondermike221/userscripts
