@@ -1,11 +1,10 @@
-import { render } from 'solid-js/web';
-import Routing from './modules/routing/index';
-import initShortcuts, { mainPanel, toggleMainPanel } from './modules/shortcuts';
+import { initRouting } from './modules/routing/index';
+import initShortcuts from './modules/shortcuts';
 import './style.css';
 
 window.addEventListener('load', () => {
   console.log('%cstarting snow helper...', 'font-size: 2em; color: red;');
+  const rove = initRouting();
   initShortcuts();
-  GM_registerMenuCommand('Toggle main panel', toggleMainPanel);
-  render(() => <Routing panelRef={mainPanel} />, mainPanel.body);
+  GM_registerMenuCommand('Toggle main panel', () => rove.toggle());
 });

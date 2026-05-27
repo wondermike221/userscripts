@@ -76,6 +76,7 @@ export default defineConfig(() => {
         '@violentmonkey/dom',
         'solid-js',
         'solid-js/web',
+        'solid-js/store',
       ]),
       output: {
         format: 'iife',
@@ -86,6 +87,7 @@ export default defineConfig(() => {
           // - If you don't want to use it, just remove `solid-js` related packages from `external`, `globals` and the `meta.js` file.
           'solid-js': 'VM.solid',
           'solid-js/web': 'VM.solid.web',
+          'solid-js/store': 'VM.solid.store',
           '@violentmonkey/dom': 'VM',
           '@violentmonkey/ui': 'VM',
         },

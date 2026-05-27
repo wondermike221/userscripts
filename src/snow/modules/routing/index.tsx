@@ -1,10 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// libraries
-// import { faCopy } from '@fortawesome/free-solid-svg-icons'; // https://fontawesome.com/icons/copy?style=solid
-import { createSignal, onMount, Show, For, createMemo } from 'solid-js';
-import { IPanelResult, showToast } from '@violentmonkey/ui';
+import { init } from 'rove';
+import type { ComponentInstance, ConsumerConfig } from 'rove';
 import { enable, disable } from '@violentmonkey/shortcut';
-// utils
+import { showToast } from '@violentmonkey/ui';
 import {
   convertPlainTextToHTMLTable,
   copyRichTextToClipboard,
@@ -13,175 +10,89 @@ import {
 import * as snow from '../../../utils/snow_utils';
 import { getScTask, getScReqItem, getSysUser, getSnowRecords } from '../../api';
 import type { AlmHardware } from '../../types';
-// modules
-import { toggleMainPanel } from '../shortcuts';
+import { initializeUrlTracking, getCurrentRecord } from '../snowURLParser';
 
-import { DirectoryNav, DirectoryTree, Node, NodeType } from 'dirnav';
-import {
-  initializeUrlTracking,
-  getCurrentRecord,
-  ServiceNowRecordInfo,
-} from '../snowURLParser'; // Import ServiceNow URL parser
-import { m } from '@violentmonkey/dom';
-// import '../../styles.css';
+export function initRouting(): ComponentInstance {
+  initializeUrlTracking();
 
-interface RoutingProps {
-  panelRef: IPanelResult;
-}
-
-export default function Routing({ panelRef }: RoutingProps) {
-  const [treeInstance] = createSignal(new DirectoryTree('Main Options'));
-  const [actionLog, setActionLog] = createSignal<string[]>([]);
-  const [statusMessage, setStatusMessage] = createSignal<string>(
-    'Click component to focus. Use 1-9 or Backspace.',
-  );
-  const [treeReady, setTreeReady] = createSignal(false);
-  const [isPanelVisible, setIsPanelVisible] = createSignal(true);
-
-  // Get the reactive signal for the current ServiceNow record
-  const currentSNRecord = getCurrentRecord;
-
-  // Create a memoized display string for the DirectoryNav header
-  const recordDisplayString = createMemo(() => {
-    const record = currentSNRecord();
-    if (record && record.table && record.sysId) {
-      return `Table: ${record.table}, ID: ${record.sysId.substring(0, 8)}...`; // Shorten sysId for display
-    }
-    return null; // Don't display if no record info
-  });
-
-  // Simulated toggleMainPanel function (replace with your actual import)
-  const togglePanel = () => {
-    setIsPanelVisible((prev) => !prev);
-    const message = `Panel visibility toggled to: ${!isPanelVisible() ? 'Visible' : 'Hidden'}`;
-    console.log(message); // For demonstration
-    setStatusMessage(message);
-    // Call your actual toggle function here if it's imported
-    toggleMainPanel();
+  const config: ConsumerConfig = {
+    keyPrefix: 'snow',
+    defaults: {
+      mode: 'dir',
+      theme: 'dark',
+    },
+    tree: {
+      accessory: {
+        type: 'directory',
+        label: 'Accessory',
+        children: {
+          dropship: {
+            type: 'action',
+            label: 'Dropship',
+            action: () => handleScrape('dropship'),
+          },
+          chargesheet: {
+            type: 'action',
+            label: 'Chargesheet',
+            action: () => handleScrape('chargesheet'),
+          },
+          crosscharge: {
+            type: 'action',
+            label: 'CrossCharge',
+            action: () => handleScrape('crosscharge'),
+          },
+          json: {
+            type: 'action',
+            label: 'JSON',
+            action: () => handleScrape('json'),
+          },
+        },
+      },
+      exit: {
+        type: 'directory',
+        label: 'Exit',
+        children: {
+          sheet: {
+            type: 'action',
+            label: 'Sheet',
+            action: () => handleScrape('exit'),
+          },
+          json: {
+            type: 'action',
+            label: 'JSON',
+            action: () => handleScrape('json'),
+          },
+        },
+      },
+      laptop: {
+        type: 'directory',
+        label: 'Laptop',
+        children: {
+          todo: {
+            type: 'action',
+            label: 'TODO',
+            action: () => showToast('TODO', { theme: 'dark' }),
+          },
+        },
+      },
+      settings: {
+        type: 'directory',
+        label: 'Settings',
+        children: {
+          techNT: {
+            type: 'input',
+            label: 'Technician NT',
+            inputType: 'text',
+            storageKey: 'techNT',
+            onChange: (value) =>
+              showToast(`New Tech NT set to: ${value}`, { theme: 'dark' }),
+          },
+        },
+      },
+    },
   };
 
-  const logUserAction = (message: string, node?: Node) => {
-    const logEntry = node ? `${message} (Node: ${node.name})` : message;
-    console.log(logEntry);
-    setActionLog((prev) => [logEntry, ...prev].slice(0, 7));
-    setStatusMessage(message);
-  };
-
-  onMount(() => {
-    Object.assign(panelRef.wrapper.style, {
-      bottom: '50%',
-      left: '50%',
-      minWidth: '20vw',
-    });
-    Object.assign(panelRef.body.style, {
-      fontFamily: 'sans-serif',
-      backgroundColor: '#1e1e1e',
-      color: '#f0f0f0',
-      maxWidth: '25vw',
-      borderRadius: '8px',
-    });
-    // Initialize ServiceNow URL tracking when the app mounts
-    initializeUrlTracking();
-    const tree = treeInstance();
-
-    const Accessory = tree.addNode(
-      tree.root.id,
-      'Accessory',
-      NodeType.DIRECTORY,
-    );
-    const Exit = tree.addNode(tree.root.id, 'Exit', NodeType.DIRECTORY);
-    const Laptop = tree.addNode(tree.root.id, 'Laptop', NodeType.DIRECTORY);
-    const Settings = tree.addNode(tree.root.id, 'Settings', NodeType.DIRECTORY);
-
-    if (Accessory) {
-      tree.addNode(Accessory.id, 'Dropship', NodeType.LEAF, () => {
-        logUserAction('Copying...');
-        handleScrape('dropship');
-      });
-      tree.addNode(Accessory.id, 'Chargesheet', NodeType.LEAF, () => {
-        logUserAction('Copying...');
-        handleScrape('chargesheet');
-      });
-      // tree.addNode(Accessory.id, 'FDX Bulk', NodeType.LEAF, () => {
-      //   logUserAction('Copying...');
-      //   showToast('TODO', { theme: 'dark' });
-      // });
-      tree.addNode(Accessory.id, 'CrossCharge', NodeType.LEAF, () => {
-        logUserAction('Copying...');
-        handleScrape('crosscharge');
-      });
-      tree.addNode(Accessory.id, 'JSON', NodeType.LEAF, () => {
-        logUserAction('Copying...');
-        handleScrape('json');
-      });
-    }
-
-    if (Exit) {
-      // tree.addNode(Exit.id, 'Exit', NodeType.LEAF, () => {
-      //   logUserAction('Copying...');
-      //   showToast('TODO', { theme: 'dark' });
-      // });
-      // tree.addNode(Exit.id, 'Exit - Asset', NodeType.LEAF, () => {
-      //   logUserAction('Copying...');
-      //   showToast('TODO', { theme: 'dark' });
-      // });
-      tree.addNode(Exit.id, 'Sheet', NodeType.LEAF, () => {
-        logUserAction('Copying...');
-        handleScrape('exit');
-      });
-      // tree.addNode(Exit.id, 'Sheet - Receiving', NodeType.LEAF, () => logUserAction('Copying...'));
-      tree.addNode(Exit.id, 'JSON', NodeType.LEAF, () => {
-        logUserAction('Copying...');
-        handleScrape('json');
-      });
-    }
-
-    if (Laptop) {
-      tree.addNode(Laptop.id, 'TODO', NodeType.LEAF, () => {
-        logUserAction('Copying...');
-        showToast('TODO', { theme: 'dark' });
-      });
-      // tree.addNode(Laptop.id, 'Dropship', NodeType.LEAF, () => logUserAction('Copying...'));
-      // tree.addNode(Laptop.id, 'Chargesheet', NodeType.LEAF, () => logUserAction('Copying...'));
-      // tree.addNode(Laptop.id, 'FDX Bulk', NodeType.LEAF, () => logUserAction('Copying...'));
-      // tree.addNode(Laptop.id, 'CrossCharge', NodeType.LEAF, () => logUserAction('Copying...'));
-      // tree.addNode(Laptop.id, 'JSON', NodeType.LEAF, () => logUserAction('Copying...'));
-    }
-
-    if (Settings) {
-      tree.addNode(Settings.id, 'Technician NT', NodeType.LEAF, () => {
-        logUserAction('Change Tech NT...');
-        const newTech = prompt('Enter new Tech NT:');
-        // store the new tech in local storage
-        if (newTech) {
-          localStorage.setItem('techNT', newTech);
-          showToast(`New Tech NT set to: ${newTech}`, { theme: 'dark' });
-        }
-      });
-    }
-
-    setTreeReady(true);
-  });
-
-  return (
-    <>
-      <Show
-        when={treeReady()}
-        fallback={
-          <p style={{ 'text-align': 'center', padding: '20px', color: '#888' }}>
-            Loading directory structure...
-          </p>
-        }
-      >
-        <DirectoryNav
-          tree={treeInstance()}
-          onLeafAction={logUserAction}
-          onClose={togglePanel}
-          currentRecordDisplay={recordDisplayString()}
-        />
-      </Show>
-    </>
-  );
+  return init(config);
 }
 
 type ScrapeType =
@@ -304,73 +215,3 @@ export async function handleScrape(type: ScrapeType) {
 
   enable();
 }
-
-// export default function Routing(props) {
-//   onMount(() => {
-//     Object.assign(props.panelRef.wrapper.style, {
-//       bottom: '50%',
-//       left: '50%',
-//       width: '250px',
-//     });
-//     props.panelRef.setMovable(true);
-//   });
-//   // const [getRoute, setRoute] = createSignal(window.location);
-
-//   return (
-//     <div id="routing">
-//       <p
-//         style={{
-//           width: '240px',
-//           'background-color': 'gray',
-//           margin: 0,
-//           padding: '0 0 0 10px',
-//         }}
-//       >
-//         Copy:
-//       </p>
-//       <ol id="routing-list">
-//         <li>
-//           <button
-//             id="crosscharge"
-//             on:click={(e) => handleScrape('crosscharge', e)}
-//           >
-//             CrossCharge
-//           </button>
-//         </li>
-//         <li>
-//           <button id="dropship" on:click={(e) => handleScrape('dropship', e)}>
-//             Dropship
-//           </button>
-//         </li>
-//         <li>
-//           <button id="exit" on:click={(e) => handleScrape('exit', e)}>
-//             Exit
-//           </button>
-//         </li>
-//         <li>
-//           <button
-//             id="chargesheet"
-//             on:click={(e) => handleScrape('chargesheet', e)}
-//           >
-//             Charge Sheet
-//           </button>
-//         </li>
-//         <li>
-//           <button id="fdx-bulk" on:click={(e) => handleScrape('fdx-bulk', e)}>
-//             FDX Bulk
-//           </button>
-//         </li>
-//         <li>
-//           <button id="json" on:click={(e) => handleScrape('json', e)}>
-//             JSON
-//           </button>
-//         </li>
-//         <li>
-//           <button id="hide" on:click={(e) => handleScrape('hide', e)}>
-//             Hide
-//           </button>
-//         </li>
-//       </ol>
-//     </div>
-//   );
-// }
