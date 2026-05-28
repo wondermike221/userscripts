@@ -117,7 +117,7 @@ function autoFillFromJSON() {
     fillForm({
       name: d.name ?? '',
       address1: d.streetAddress ?? '',
-      address2: '',
+      address2: d.address2 ?? '',
       city: d.city ?? '',
       state: d.state ?? '',
       zip: d.postalCode ?? '',
