@@ -6,54 +6,6 @@ if (technicianNT === null) {
   technicianNT = '';
 }
 
-export function api_url(table, id) {
-  const BASE_URL = 'https://ebayinc.service-now.com';
-  const base = new URL(`/${table}.do`, BASE_URL);
-  base.searchParams.append('JSONv2', '');
-  base.searchParams.append('sysparm_sys_id', id);
-  base.searchParams.append('displayvalue', 'all');
-  base.searchParams.append('displayvariables', 'true');
-  return base.href;
-}
-
-export function api_url_query(table, query, limit = 20) {
-  const BASE_URL = 'https://ebayinc.service-now.com';
-  const base = new URL(`/${table}.do`, BASE_URL);
-  base.searchParams.append('JSONv2', '');
-  base.searchParams.append('sysparm_action', 'getRecords');
-  base.searchParams.append('sysparm_query', query);
-  base.searchParams.append('displayvalue', 'all');
-  base.searchParams.append('sysparm_record_count', limit.toString());
-  return base.href;
-}
-
-export function get_sys_id_from_url(table) {
-  const url = window.location.href;
-  const index = url.indexOf(table);
-  const index_sys_id_start = index + table.length + 1;
-  let index_sys_id_end = url.indexOf('/', index_sys_id_start);
-  if (index_sys_id_end == -1) {
-    index_sys_id_end = url.length;
-  }
-  const sys_id = url.substring(index_sys_id_start, index_sys_id_end);
-  return sys_id;
-}
-
-export async function get_record(table, sys_id = null) {
-  if (sys_id == null) {
-    sys_id = get_sys_id_from_url(table);
-  }
-  const response = await fetch(api_url(table, sys_id));
-  const j = await response.json();
-  return j;
-}
-
-export async function get_records(table, query, limit = 20) {
-  const response = await fetch(api_url_query(table, query, limit));
-  const j = await response.json();
-  return j;
-}
-
 export function build_charge_sheet_row_cis(
   task,
   user,
@@ -208,14 +160,3 @@ export function build_exit_json(task, user, manager, assets) {
   };
   return json;
 }
-
-/*
-// Example
-let task = await snow_get_record('sc_task');
-let ritm = await snow_get_record('sc_req_item', task.records[0].parent); //or request_item instead of parent
-let user = await snow_get_record('sys_user', ritm.records[0].requested_for);
-let assets = await snow_get_records('alm_hardware', `assigned_to=${user.records[0].sys_id}^install_status=1`);
-
-console.log(build_charge_sheet_row(task.records[0], user.records[0]));
-console.log(build_bh_sheet_row(task.records[0], user.records[0]));
-*/

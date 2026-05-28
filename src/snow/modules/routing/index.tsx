@@ -1,25 +1,45 @@
 import { init } from 'rove';
 import type { ComponentInstance, ConsumerConfig } from 'rove';
 import { showToast } from '@violentmonkey/ui';
-import {
-  convertPlainTextToHTMLTable,
-  copyRichTextToClipboard,
-} from '../../../utils';
+import { copyRichTextToClipboard } from '../../../utils';
 import { createAndInvokeMailto } from '../../../utils/mailto_utils';
 import * as snow from '../../../utils/snow_utils';
-import { getScTask, getScReqItem, getSysUser, getSnowRecords } from '../../api';
-import type { AlmHardware, SysUser } from '../../types';
+import {
+  getScTask,
+  getScReqItem,
+  getSysUser,
+  getSnowRecords,
+  getIncident,
+  type TicketData,
+} from '../../api';
+import type { AlmHardware } from '../../types';
 import { initializeUrlTracking, getCurrentRecord } from '../snowURLParser';
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
-async function fetchTicketData() {
-  const { sysId: taskSysId } = getCurrentRecord();
-  if (!taskSysId) {
+async function fetchTicketData(): Promise<TicketData | null> {
+  const { sysId, table } = getCurrentRecord();
+  if (!sysId || !table) {
     showToast('No SNOW record detected in URL', { theme: 'dark' });
     return null;
   }
-  const task = await getScTask(taskSysId);
+
+  if (table === 'incident') {
+    const incident = await getIncident(sysId);
+    if (!incident) {
+      showToast('Failed to load incident', { theme: 'dark' });
+      return null;
+    }
+    const user = await getSysUser(incident.caller_id);
+    if (!user) {
+      showToast('Failed to load user', { theme: 'dark' });
+      return null;
+    }
+    const manager = user.manager ? await getSysUser(user.manager) : null;
+    return { type: 'incident', incident, user, manager };
+  }
+
+  const task = await getScTask(sysId);
   if (!task) {
     showToast('Failed to load task', { theme: 'dark' });
     return null;
@@ -34,18 +54,18 @@ async function fetchTicketData() {
     showToast('Failed to load user', { theme: 'dark' });
     return null;
   }
-  return { task, ritm, user };
+  const manager = user.manager ? await getSysUser(user.manager) : null;
+  const assets = await getSnowRecords<AlmHardware>(
+    'alm_hardware',
+    `assigned_to=${user.sys_id}^install_status=1`,
+  );
+  return { type: 'sc_task', task, ritm, user, manager, assets };
 }
 
 // ── Email helper ──────────────────────────────────────────────────────────────
 
-function openEmail(user: SysUser, subject: string, body = '') {
-  createAndInvokeMailto(
-    user.dv_email ?? '',
-    'servicenow@ebay.com',
-    subject,
-    body,
-  );
+function openEmail(email: string, subject: string, body = '') {
+  createAndInvokeMailto(email, 'servicenow@ebay.com', subject, body);
   showToast('Email draft opened', { theme: 'dark' });
 }
 
@@ -53,7 +73,7 @@ function openEmail(user: SysUser, subject: string, body = '') {
 
 async function copyJson() {
   const data = await fetchTicketData();
-  if (!data) return;
+  if (!data || data.type !== 'sc_task') return;
   const { task, user } = data;
   const [, , html, json] = snow.build_charge_sheet_row_cis(task, user);
   copyRichTextToClipboard([
@@ -65,48 +85,9 @@ async function copyJson() {
   showToast('JSON copied to clipboard', { theme: 'dark' });
 }
 
-async function copyCrosscharge() {
-  const data = await fetchTicketData();
-  if (!data) return;
-  const { task, user } = data;
-  const tsv = [
-    new Date().toISOString(),
-    'SLC',
-    '',
-    '1',
-    task.dv_number,
-    user.dv_email,
-    user.dv_cost_center,
-  ].join('\t');
-  const html = convertPlainTextToHTMLTable(tsv);
-  const json = {
-    date: new Date().toISOString(),
-    location: task.dv_location,
-    number: task.dv_number,
-    costCenter: user.dv_cost_center,
-    email: user.dv_email,
-  };
-  copyRichTextToClipboard([
-    new ClipboardItem({
-      'text/html': new Blob([html], { type: 'text/html' }),
-      'text/plain': new Blob([JSON.stringify(json)], { type: 'text/plain' }),
-    }),
-  ]);
-  showToast('CrossCharge row copied to clipboard', { theme: 'dark' });
-}
-
-async function copyChargesheet() {
-  const data = await fetchTicketData();
-  if (!data) return;
-  const { task, user } = data;
-  const [cis] = snow.build_charge_sheet_row_cis(task, user);
-  copyRichTextToClipboard(cis);
-  showToast('Chargesheet row copied to clipboard', { theme: 'dark' });
-}
-
 async function copyDropship() {
   const data = await fetchTicketData();
-  if (!data) return;
+  if (!data || data.type !== 'sc_task') return;
   const { task, user } = data;
   copyRichTextToClipboard(snow.build_bh_sheet_row_cis(task, user));
   showToast('Dropship row copied to clipboard', { theme: 'dark' });
@@ -114,17 +95,12 @@ async function copyDropship() {
 
 async function copyExit() {
   const data = await fetchTicketData();
-  if (!data) return;
-  const { task, user } = data;
-  const manager = await getSysUser(user.manager);
+  if (!data || data.type !== 'sc_task') return;
+  const { task, user, manager, assets } = data;
   if (!manager) {
     showToast('Failed to load manager', { theme: 'dark' });
     return;
   }
-  const assets = await getSnowRecords<AlmHardware>(
-    'alm_hardware',
-    `assigned_to=${user.sys_id}^install_status=1`,
-  );
   const asset = assets.filter((a) =>
     task.u_variables_parsed.v_assets_to_return.includes(a.asset_tag),
   );
@@ -138,16 +114,28 @@ async function copyExit() {
 
 async function sendYubikeyEmail() {
   const data = await fetchTicketData();
-  if (!data) return;
+  if (!data || data.type !== 'sc_task') return;
   const { task, user } = data;
-  openEmail(user, `${task.dv_short_description} | ${task.dv_number}`);
+  openEmail(
+    user.dv_email ?? '',
+    `${task.dv_short_description} | ${task.dv_number}`,
+  );
 }
 
 async function sendFirstStrikeEmail() {
   const data = await fetchTicketData();
   if (!data) return;
-  const { task, user } = data;
-  openEmail(user, `${task.dv_short_description} | ${task.dv_number}`);
+  if (data.type === 'sc_task') {
+    openEmail(
+      data.user.dv_email ?? '',
+      `${data.task.dv_short_description} | ${data.task.dv_number}`,
+    );
+  } else {
+    openEmail(
+      data.user.dv_email ?? '',
+      `${data.incident.dv_short_description} | ${data.incident.dv_number}`,
+    );
+  }
 }
 
 // ── Router ────────────────────────────────────────────────────────────────────
@@ -175,16 +163,6 @@ export function initRouting(): ComponentInstance {
             type: 'action',
             label: 'Dropship',
             action: copyDropship,
-          },
-          chargesheet: {
-            type: 'action',
-            label: 'Chargesheet',
-            action: copyChargesheet,
-          },
-          crosscharge: {
-            type: 'action',
-            label: 'CrossCharge',
-            action: copyCrosscharge,
           },
           json: {
             type: 'action',

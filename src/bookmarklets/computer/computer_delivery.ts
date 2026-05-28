@@ -1,4 +1,10 @@
-import { get_record, build_minimal_json } from '../../utils/snow_utils';
+import {
+  getSysIdFromUrl,
+  getScTask,
+  getScReqItem,
+  getSysUser,
+} from '../../snow/api';
+import { build_minimal_json } from '../../utils/snow_utils';
 import {
   EmailTemplate,
   sendEmailFromTemplate,
@@ -39,28 +45,28 @@ IT Support Team`;
 
   const htmlBody = createSimpleHtmlBody(`
         <p>Hi <strong>${input.name}</strong>,</p>
-        
+
         <p>I hope this message finds you well. I wanted to confirm that your computer equipment has been delivered to your address:</p>
-        
+
         <p><strong>Delivery Address:</strong><br>
         ${input.streetAddress}<br>
         ${input.city}, ${input.state} ${input.postalCode}</p>
-        
+
         <p><strong>Please confirm receipt of the following:</strong></p>
         <ul>
             <li>✅ Computer/Laptop</li>
             <li>✅ Power adapter</li>
             <li>✅ Any additional accessories included</li>
         </ul>
-        
+
         <p>If you have <strong>received all items</strong> and they are in good working condition, please reply to confirm delivery.</p>
-        
+
         <p><strong>⚠️ Important:</strong> If there are any issues with the delivery, missing items, or damage, please let us know immediately so we can resolve the situation.</p>
-        
+
         <p><em>For setup assistance or technical support, please don't hesitate to reach out.</em></p>
-        
+
         <p>Thank you for your time.</p>
-        
+
         <p><strong>Best regards,</strong><br>
         IT Support Team</p>
     `);
@@ -75,14 +81,18 @@ IT Support Team`;
 };
 
 async function doWork() {
-  const task = (await get_record('sc_task')).records[0];
-  const ritm = (await get_record('sc_req_item', task.request_item)).records[0];
-  const user = (await get_record('sys_user', ritm.requested_for)).records[0];
+  const taskSysId = getSysIdFromUrl('sc_task');
+  const task = await getScTask(taskSysId);
+  const ritm = task ? await getScReqItem(task.request_item) : null;
+  const user = ritm ? await getSysUser(ritm.requested_for) : null;
+
+  if (!task || !user) {
+    alert('Failed to load required ticket data.');
+    return;
+  }
 
   const input = build_minimal_json(task, user) as DeliveryInput;
-  const template = COMPUTER_DELIVERY_TEMPLATE(input);
-
-  sendEmailFromTemplate(template);
+  sendEmailFromTemplate(COMPUTER_DELIVERY_TEMPLATE(input));
 }
 
 doWork();

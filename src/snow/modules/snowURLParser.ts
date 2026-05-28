@@ -17,7 +17,7 @@ const [currentRecord, setCurrentRecord] = createSignal<ServiceNowRecordInfo>({
 // It looks for /record/TABLE_NAME/SYS_ID
 // TABLE_NAME can be sc_task, sc_req_item, sys_user, alm_hardware
 const SN_URL_REGEX =
-  /\/record\/(sc_task|sc_req_item|sys_user|alm_hardware)\/([a-f0-9]{32})/i;
+  /\/record\/(sc_task|sc_req_item|sys_user|alm_hardware|incident)\/([a-f0-9]{32})/i;
 
 function parseUrl(url: string): ServiceNowRecordInfo {
   const match = url.match(SN_URL_REGEX);

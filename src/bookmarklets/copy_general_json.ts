@@ -1,16 +1,26 @@
 import { copyTextToClipboard } from '../utils';
-import { get_record, get_records } from '../utils/snow_utils';
+import {
+  getSysIdFromUrl,
+  getScTask,
+  getScReqItem,
+  getSysUser,
+  getSnowRecords,
+} from '../snow/api';
+import type { AlmHardware } from '../snow/types';
 import { showNotification } from '../utils/mailto_utils';
 
-const task = (await get_record('sc_task')).records[0];
-const ritm = (await get_record('sc_req_item', task.request_item)).records[0];
-const user = (await get_record('sys_user', ritm.requested_for)).records[0];
-const manager = (await get_record('sys_user', user.manager)).records[0];
-const assets = await get_records(
-  'alm_hardware',
-  `assigned_to=${user.sys_id}^install_status=1`,
-);
-const task_u_vars = JSON.parse(task.dv_u_variables);
+const taskSysId = getSysIdFromUrl('sc_task');
+const task = await getScTask(taskSysId);
+const ritm = task ? await getScReqItem(task.request_item) : null;
+const user = ritm ? await getSysUser(ritm.requested_for) : null;
+const manager = user?.manager ? await getSysUser(user.manager) : null;
+const assets = user
+  ? await getSnowRecords<AlmHardware>(
+      'alm_hardware',
+      `assigned_to=${user.sys_id}^install_status=1`,
+    )
+  : [];
+const task_u_vars = task ? JSON.parse(task.dv_u_variables ?? '{}') : {};
 const result = JSON.stringify({ task, task_u_vars, user, manager, assets });
 copyTextToClipboard(result);
 showNotification('Copied JSON to Clipboard.');

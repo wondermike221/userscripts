@@ -1,13 +1,27 @@
-import { get_record, get_records } from '../../utils/snow_utils';
 import {
+  getSysIdFromUrl,
+  getScTask,
+  getScReqItem,
+  getSysUser,
+  getSnowRecords,
+} from '../../snow/api';
+import type { AlmHardware } from '../../snow/types';
+import {
+  Asset,
   EmailTemplate,
   sendEmailFromTemplate,
   formatAssets,
 } from '../../utils/mailto_utils';
 
+type TemplateInput = {
+  name: string;
+  email: string;
+  number: string;
+  assetsToReturn: Asset[];
+};
+
 // Template 1: [Add your template name here]
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TEMPLATE_1 = (input: any): EmailTemplate => {
+const TEMPLATE_1 = (input: TemplateInput): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
     to: input.email,
@@ -26,8 +40,7 @@ ITSS`,
 };
 
 // Template 2: [Add your template name here]
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TEMPLATE_2 = (input: any): EmailTemplate => {
+const TEMPLATE_2 = (input: TemplateInput): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
     to: input.email,
@@ -46,8 +59,7 @@ ITSS`,
 };
 
 // Template 3: [Add your template name here]
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TEMPLATE_3 = (input: any): EmailTemplate => {
+const TEMPLATE_3 = (input: TemplateInput): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
     to: input.email,
@@ -66,8 +78,7 @@ ITSS`,
 };
 
 // Template 4: [Add your template name here]
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TEMPLATE_4 = (input: any): EmailTemplate => {
+const TEMPLATE_4 = (input: TemplateInput): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
     to: input.email,
@@ -86,35 +97,39 @@ ITSS`,
 };
 
 async function doWork() {
-  // Fetch data from ServiceNow
-  const task = (await get_record('sc_task')).records[0];
-  const ritm = (await get_record('sc_req_item', task.request_item)).records[0];
-  const user = (await get_record('sys_user', ritm.requested_for)).records[0];
+  const taskSysId = getSysIdFromUrl('sc_task');
+  const task = await getScTask(taskSysId);
+  const ritm = task ? await getScReqItem(task.request_item) : null;
+  const user = ritm ? await getSysUser(ritm.requested_for) : null;
+  const assets = user
+    ? await getSnowRecords<AlmHardware>(
+        'alm_hardware',
+        `assigned_to=${user.sys_id}^install_status=1`,
+      )
+    : [];
 
-  // Get assets if needed
-  const assets = await get_records(
-    'alm_hardware',
-    `assigned_to=${user.sys_id}^install_status=1`,
-  );
+  if (!task || !user) {
+    alert('Failed to load required ticket data.');
+    return;
+  }
 
-  // Build input data
-  const input = {
-    name: user.name || user.user_name,
+  const input: TemplateInput = {
+    name: user.dv_name ?? user.user_name,
     email: user.email,
     number: task.number,
-    taskNumber: task.number,
-    assetsToReturn: assets.records,
-    // Add any other fields you need
+    assetsToReturn: assets.map((a) => ({
+      model: a.dv_model ?? '',
+      serialNumber: a.dv_serial_number ?? '',
+      assetTag: a.dv_asset_tag ?? '',
+    })),
   };
 
-  // Template chooser dialog
   const choice = prompt(
     'Choose a template:\n1 - [Template 1 name]\n2 - [Template 2 name]\n3 - [Template 3 name]\n4 - [Template 4 name]',
     '1',
   );
 
   let template: EmailTemplate;
-
   switch (choice) {
     case '1':
       template = TEMPLATE_1(input);

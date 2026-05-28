@@ -1,44 +1,50 @@
 import {
-  get_record,
-  get_records,
-  build_exit_json,
-} from '../../utils/snow_utils';
+  getSysIdFromUrl,
+  getScTask,
+  getScReqItem,
+  getSysUser,
+  getSnowRecords,
+} from '../../snow/api';
+import type { AlmHardware } from '../../snow/types';
+import { build_exit_json } from '../../utils/snow_utils';
 import {
   EmailTemplate,
   formatAssets,
   sendEmailFromTemplate,
 } from '../../utils/mailto_utils';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const WORKDAY_TEMPLATE = (input: any): EmailTemplate => {
+const WORKDAY_TEMPLATE = (
+  input: ReturnType<typeof build_exit_json>,
+): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
     to: input.u_variables.contact_email,
     cc: `${input.managerEmail};itreturns@ebay.com;servicenow@ebay.com`,
     subject: `Request for Returned Equipment - ${input.name} | ${input.taskNumber}`,
     body: `Dear ${input.name},
-        
+
         I hope this message finds you well. I am writing to request the return of company equipment that was assigned to you. Per our records, the following items were issued and have not been returned:
 
         ${formattedAssets}
         We kindly ask these items to be returned promptly after leaving the company. A FedEx QR code has bleenl sent to your personal email address on file . This code will allow FedEx to package and ship these items to us and makes returning items seamless and quickly and free of charge for you. This email will come directly from FedEx – not ebay. If you do not see this, please check your junk\\spam folder.
-        
+
         Thank you for your prompt attention to this matter.  If you have any questions or require further information, please feel free to contact us directly at itreturns@ebay.com.
-        
+
         Best regards,
         `,
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const PEOPLEX_TEMPLATE = (input: any): EmailTemplate => {
+const PEOPLEX_TEMPLATE = (
+  input: ReturnType<typeof build_exit_json>,
+): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
     to: input.managerEmail,
     cc: 'itreturns@ebay.com;servicenow@ebay.com',
     subject: `Request for Returned Equipment - ${input.name} | ${input.taskNumber}`,
     body: `Hi ${input.managerName},
-        
+
         Your exited employee ${input.name} has not returned their equipment.
         ${formattedAssets}
         IT can handle the return but since they were onboarded directly via peoplex we need your help to get the information necessary to start the process.
@@ -52,8 +58,9 @@ const PEOPLEX_TEMPLATE = (input: any): EmailTemplate => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const FIELDGLASS_TEMPLATE = (input: any): EmailTemplate => {
+const FIELDGLASS_TEMPLATE = (
+  input: ReturnType<typeof build_exit_json>,
+): EmailTemplate => {
   const formattedAssets = formatAssets(input.assetsToReturn);
   return {
     to: input.u_variables.contact_email,
@@ -69,7 +76,7 @@ Tracking Number:
 
 Ebay office being shipped to:
 
-As a reminder we ask for all eBay items to be returned, laptop, badge, company phone and related. We do ask for items to be returned within 10 days. 
+As a reminder we ask for all eBay items to be returned, laptop, badge, company phone and related. We do ask for items to be returned within 10 days.
 
 Thank you for your cooperation,
 
@@ -79,24 +86,30 @@ ${formattedAssets.replaceAll('\n', '\n\t')}`,
 };
 
 async function doWork() {
-  const task = (await get_record('sc_task')).records[0];
-  const ritm = (await get_record('sc_req_item', task.request_item)).records[0];
-  const user = (await get_record('sys_user', ritm.requested_for)).records[0];
-  const manager = (await get_record('sys_user', user.manager)).records[0];
-  const assets = await get_records(
-    'alm_hardware',
-    `assigned_to=${user.sys_id}^install_status=1`,
-  );
-  const task_u_vars = JSON.parse(task.dv_u_variables);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filteredAssets = assets.records.filter((a: any) =>
+  const taskSysId = getSysIdFromUrl('sc_task');
+  const task = await getScTask(taskSysId);
+  const ritm = task ? await getScReqItem(task.request_item) : null;
+  const user = ritm ? await getSysUser(ritm.requested_for) : null;
+  const manager = user?.manager ? await getSysUser(user.manager) : null;
+  const assets = user
+    ? await getSnowRecords<AlmHardware>(
+        'alm_hardware',
+        `assigned_to=${user.sys_id}^install_status=1`,
+      )
+    : [];
+
+  if (!task || !user || !manager) {
+    alert('Failed to load required ticket data.');
+    return;
+  }
+
+  const task_u_vars = JSON.parse(task.dv_u_variables ?? '{}');
+  const filteredAssets = assets.filter((a) =>
     task_u_vars.v_assets_to_return.includes(a.asset_tag),
   );
   const input = build_exit_json(task, user, manager, filteredAssets);
 
-  // Execute the appropriate template based on worker source
   let template: EmailTemplate;
-
   if (user.dv_u_worker_source == 'Workday') {
     template = WORKDAY_TEMPLATE(input);
   } else if (user.dv_u_worker_source == 'PeopleX') {
@@ -104,7 +117,6 @@ async function doWork() {
   } else if (user.dv_u_worker_source == 'Fieldglass') {
     template = FIELDGLASS_TEMPLATE(input);
   } else {
-    // Fallback template
     template = {
       to: input.managerEmail,
       cc: '',
@@ -113,7 +125,7 @@ async function doWork() {
     };
   }
 
-  // Send the email using the template
   sendEmailFromTemplate(template);
 }
+
 doWork();

@@ -139,5 +139,37 @@ export async function getSysUser(sysId: string): Promise<SysUser | null> {
   return getSnowRecord<SysUser>('sys_user', sysId);
 }
 
+// ── URL detection helper (for bookmarklets that don't have snowURLParser) ─────
+
+export function getSysIdFromUrl(table: string): string {
+  const url = window.location.href;
+  const idx = url.indexOf(table);
+  if (idx === -1) return '';
+  const start = idx + table.length + 1;
+  let end = url.indexOf('/', start);
+  if (end === -1) end = url.length;
+  return url.substring(start, end);
+}
+
+// ── Discriminated union for fetchTicketData consumers ─────────────────────────
+
+export type ScTaskTicketData = {
+  type: 'sc_task';
+  task: WithParsedVars<ScTask, ExitSCTask_UVariables>;
+  ritm: WithParsedVars<ScReqItem, ExitRITM_UVariables>;
+  user: SysUser;
+  manager: SysUser | null;
+  assets: AlmHardware[];
+};
+
+export type IncidentTicketData = {
+  type: 'incident';
+  incident: Incident;
+  user: SysUser;
+  manager: SysUser | null;
+};
+
+export type TicketData = ScTaskTicketData | IncidentTicketData;
+
 // Re-export types for convenience
 export * from './types';
