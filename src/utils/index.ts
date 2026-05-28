@@ -11,11 +11,11 @@ export function checkPermission() {
   }
 }
 
-export function wait(ms) {
+export function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function copyTextToClipboard(text, mime = 'text/plain') {
+export function copyTextToClipboard(text: string, mime = 'text/plain') {
   if (!navigator.clipboard) {
     fallbackCopyTextToClipboard(text);
     return;
@@ -34,7 +34,7 @@ export function copyTextToClipboard(text, mime = 'text/plain') {
   );
 }
 
-export async function copyRichTextToClipboard(clipboardItems) {
+export async function copyRichTextToClipboard(clipboardItems: ClipboardItem[]) {
   if (!navigator.clipboard) {
     const blb = await clipboardItems[0].getType('text/plain');
     const text = await blb.text();
@@ -51,7 +51,7 @@ export async function copyRichTextToClipboard(clipboardItems) {
   );
 }
 
-export function fallbackCopyTextToClipboard(text) {
+export function fallbackCopyTextToClipboard(text: string) {
   const textArea = document.createElement('textarea');
   textArea.value = text;
 
@@ -76,18 +76,12 @@ export function fallbackCopyTextToClipboard(text) {
 }
 
 export function poll(
-  work_func,
-  first_attempt_time,
-  max_attempt_minutes,
-  frequency,
+  work_func: CallableFunction,
+  first_attempt_time: number,
+  max_attempt_minutes: number,
+  frequency: number,
 ) {
-  const firstAttempt = new Date(first_attempt_time);
-  if (
-    first_attempt_time +
-      new Date(firstAttempt.getTime() + max_attempt_minutes * 60000) <
-    new Date()
-  )
-    return;
+  if (Date.now() > first_attempt_time + max_attempt_minutes * 60000) return;
 
   const work_result = work_func();
   if (!work_result) {
@@ -102,7 +96,7 @@ export function poll(
   }
 }
 
-export function waitForElm(selector) {
+export function waitForElm(selector: string) {
   return new Promise((resolve) => {
     if (document.querySelector(selector)) {
       return resolve(document.querySelector(selector));
@@ -123,15 +117,15 @@ export function waitForElm(selector) {
 }
 
 export async function makeRequest(
-  url,
+  url: string,
   method = 'GET',
-  payload = null,
+  payload: string | null = null,
 ): Promise<string> {
   return new Promise(function (resolve, reject) {
     GM_xmlhttpRequest({
       url,
       method,
-      data: payload,
+      data: payload ?? undefined,
       onload: (r) => {
         if (r.status === 200) {
           resolve(r.responseText);
@@ -145,7 +139,7 @@ export async function makeRequest(
 }
 
 // Converts a plain text table to an HTML table
-export function convertPlainTextToHTMLTable(plainText) {
+export function convertPlainTextToHTMLTable(plainText: string) {
   const rows = plainText.trim().split('\n');
   const htmlRows = rows.map((row) => {
     const cells = row
@@ -158,7 +152,7 @@ export function convertPlainTextToHTMLTable(plainText) {
 }
 
 // Converts an HTML table to a plain text table
-export function convertHTMLTableToPlainText(htmlTable) {
+export function convertHTMLTableToPlainText(htmlTable: string) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlTable, 'text/html');
   const rows = Array.from(doc.querySelectorAll('tr'));
@@ -173,10 +167,10 @@ export function convertHTMLTableToPlainText(htmlTable) {
 
 // Edits a specific cell in a plain text table
 export function editPlainTextTableCell(
-  plainText,
-  rowIndex,
-  colIndex,
-  newValue,
+  plainText: string,
+  rowIndex: number,
+  colIndex: number,
+  newValue: string,
 ) {
   const rows = plainText.trim().split('\n');
   rows[rowIndex] = rows[rowIndex]
@@ -187,13 +181,22 @@ export function editPlainTextTableCell(
 }
 
 // Gets the value of a specific cell in a plain text table
-export function getPlainTextTableCell(plainText, rowIndex, colIndex) {
+export function getPlainTextTableCell(
+  plainText: string,
+  rowIndex: number,
+  colIndex: number,
+) {
   const rows = plainText.trim().split('\n');
   return rows[rowIndex].split('\t')[colIndex].trim();
 }
 
 // Edits a specific cell in an HTML table
-export function editHTMLTableCell(htmlTable, rowIndex, colIndex, newValue) {
+export function editHTMLTableCell(
+  htmlTable: string,
+  rowIndex: number,
+  colIndex: number,
+  newValue: string,
+) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlTable, 'text/html');
   const cell = doc.querySelectorAll('tr')[rowIndex].querySelectorAll('td, th')[
@@ -204,7 +207,11 @@ export function editHTMLTableCell(htmlTable, rowIndex, colIndex, newValue) {
 }
 
 // Gets the value of a specific cell in an HTML table
-export function getHTMLTableCell(htmlTable, rowIndex, colIndex) {
+export function getHTMLTableCell(
+  htmlTable: string,
+  rowIndex: number,
+  colIndex: number,
+) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlTable, 'text/html');
   const cell = doc.querySelectorAll('tr')[rowIndex].querySelectorAll('td, th')[
@@ -212,44 +219,3 @@ export function getHTMLTableCell(htmlTable, rowIndex, colIndex) {
   ];
   return cell.textContent.trim();
 }
-
-// deprecated
-/* export function getCells(i) {
-  const data = getDataFromCells();
-  let text = '';
-  data.forEach((row) => {
-    const cell = row[i];
-    text = text.concat(`${cell}\n`);
-  });
-  return text;
-}
-
-// deprecated
-export function getDataFromCells() {
-  const rows = document.querySelectorAll('div[ng-row]');
-  const data = [];
-
-  rows.forEach((row, rIdx) => {
-    data.push([]);
-    const cells = row.querySelectorAll(
-      'div[ng-cell] span[ng-cell-text]',
-    ) as NodeListOf<HTMLElement>;
-    cells.forEach((cell) => data[rIdx].push(cell.outerText));
-  });
-  return data;
-}
-
-// deprecated
-export async function getCostCenterFromHub(profileURL) {
-  try {
-    const r = await makeRequest(profileURL);
-    const data = JSON.parse(r).data;
-    return data.costCenterCode;
-  } catch (e) {
-    console.error(e);
-    const title = 'Failure!';
-    const body =
-      'Data was not scraped successfully. Check that the hub is still logged in.';
-    showToast(`${title}: ${body}`, { theme: 'dark' });
-  }
-} */
