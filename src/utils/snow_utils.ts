@@ -54,7 +54,10 @@ export async function get_records(table, query, limit = 20) {
   return j;
 }
 
-export function build_charge_sheet_row_cis(task, user) {
+export function build_charge_sheet_row_cis(
+  task,
+  user,
+): [ClipboardItem[], string, string, Record<string, unknown>] {
   const u_variables = JSON.parse(task.dv_u_variables);
   const row = [
     new Date().toLocaleDateString(),
@@ -126,6 +129,7 @@ export function build_minimal_json(task, user) {
   const u_variables = JSON.parse(task.dv_u_variables);
   const json = {
     streetAddress: u_variables.street_address,
+    address2: '',
     city: u_variables.city,
     state: u_variables.v_state,
     postalCode: u_variables.zip,
