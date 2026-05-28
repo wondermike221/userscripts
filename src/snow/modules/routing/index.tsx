@@ -1,16 +1,156 @@
 import { init } from 'rove';
 import type { ComponentInstance, ConsumerConfig } from 'rove';
-import { enable, disable } from '@violentmonkey/shortcut';
 import { showToast } from '@violentmonkey/ui';
 import {
   convertPlainTextToHTMLTable,
   copyRichTextToClipboard,
-  copyTextToClipboard,
 } from '../../../utils';
+import { createAndInvokeMailto } from '../../../utils/mailto_utils';
 import * as snow from '../../../utils/snow_utils';
 import { getScTask, getScReqItem, getSysUser, getSnowRecords } from '../../api';
-import type { AlmHardware } from '../../types';
+import type { AlmHardware, SysUser } from '../../types';
 import { initializeUrlTracking, getCurrentRecord } from '../snowURLParser';
+
+// ── Data fetching ─────────────────────────────────────────────────────────────
+
+async function fetchTicketData() {
+  const { sysId: taskSysId } = getCurrentRecord();
+  if (!taskSysId) {
+    showToast('No SNOW record detected in URL', { theme: 'dark' });
+    return null;
+  }
+  const task = await getScTask(taskSysId);
+  if (!task) {
+    showToast('Failed to load task', { theme: 'dark' });
+    return null;
+  }
+  const ritm = await getScReqItem(task.request_item);
+  if (!ritm) {
+    showToast('Failed to load RITM', { theme: 'dark' });
+    return null;
+  }
+  const user = await getSysUser(ritm.requested_for);
+  if (!user) {
+    showToast('Failed to load user', { theme: 'dark' });
+    return null;
+  }
+  return { task, ritm, user };
+}
+
+// ── Email helper ──────────────────────────────────────────────────────────────
+
+function openEmail(user: SysUser, subject: string, body = '') {
+  createAndInvokeMailto(
+    user.dv_email ?? '',
+    'servicenow@ebay.com',
+    subject,
+    body,
+  );
+  showToast('Email draft opened', { theme: 'dark' });
+}
+
+// ── Copy actions ──────────────────────────────────────────────────────────────
+
+async function copyJson() {
+  const data = await fetchTicketData();
+  if (!data) return;
+  const { task, user } = data;
+  const [, , html, json] = snow.build_charge_sheet_row_cis(task, user);
+  copyRichTextToClipboard([
+    new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([JSON.stringify(json)], { type: 'text/plain' }),
+    }),
+  ]);
+  showToast('JSON copied to clipboard', { theme: 'dark' });
+}
+
+async function copyCrosscharge() {
+  const data = await fetchTicketData();
+  if (!data) return;
+  const { task, user } = data;
+  const tsv = [
+    new Date().toISOString(),
+    'SLC',
+    '',
+    '1',
+    task.dv_number,
+    user.dv_email,
+    user.dv_cost_center,
+  ].join('\t');
+  const html = convertPlainTextToHTMLTable(tsv);
+  const json = {
+    date: new Date().toISOString(),
+    location: task.dv_location,
+    number: task.dv_number,
+    costCenter: user.dv_cost_center,
+    email: user.dv_email,
+  };
+  copyRichTextToClipboard([
+    new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([JSON.stringify(json)], { type: 'text/plain' }),
+    }),
+  ]);
+  showToast('CrossCharge row copied to clipboard', { theme: 'dark' });
+}
+
+async function copyChargesheet() {
+  const data = await fetchTicketData();
+  if (!data) return;
+  const { task, user } = data;
+  const [cis] = snow.build_charge_sheet_row_cis(task, user);
+  copyRichTextToClipboard(cis);
+  showToast('Chargesheet row copied to clipboard', { theme: 'dark' });
+}
+
+async function copyDropship() {
+  const data = await fetchTicketData();
+  if (!data) return;
+  const { task, user } = data;
+  copyRichTextToClipboard(snow.build_bh_sheet_row_cis(task, user));
+  showToast('Dropship row copied to clipboard', { theme: 'dark' });
+}
+
+async function copyExit() {
+  const data = await fetchTicketData();
+  if (!data) return;
+  const { task, user } = data;
+  const manager = await getSysUser(user.manager);
+  if (!manager) {
+    showToast('Failed to load manager', { theme: 'dark' });
+    return;
+  }
+  const assets = await getSnowRecords<AlmHardware>(
+    'alm_hardware',
+    `assigned_to=${user.sys_id}^install_status=1`,
+  );
+  const asset = assets.filter((a) =>
+    task.u_variables_parsed.v_assets_to_return.includes(a.asset_tag),
+  );
+  copyRichTextToClipboard(
+    snow.build_exit_sheet_row_cis(task, user, manager, asset[0]),
+  );
+  showToast('Exit row copied to clipboard', { theme: 'dark' });
+}
+
+// ── Email actions ─────────────────────────────────────────────────────────────
+
+async function sendYubikeyEmail() {
+  const data = await fetchTicketData();
+  if (!data) return;
+  const { task, user } = data;
+  openEmail(user, `${task.dv_short_description} | ${task.dv_number}`);
+}
+
+async function sendFirstStrikeEmail() {
+  const data = await fetchTicketData();
+  if (!data) return;
+  const { task, user } = data;
+  openEmail(user, `${task.dv_short_description} | ${task.dv_number}`);
+}
+
+// ── Router ────────────────────────────────────────────────────────────────────
 
 export function initRouting(): ComponentInstance {
   initializeUrlTracking();
@@ -22,6 +162,11 @@ export function initRouting(): ComponentInstance {
       theme: 'dark',
     },
     tree: {
+      json: {
+        type: 'action',
+        label: 'Copy JSON',
+        action: copyJson,
+      },
       accessory: {
         type: 'directory',
         label: 'Accessory',
@@ -29,38 +174,65 @@ export function initRouting(): ComponentInstance {
           dropship: {
             type: 'action',
             label: 'Dropship',
-            action: () => handleScrape('dropship'),
+            action: copyDropship,
           },
           chargesheet: {
             type: 'action',
             label: 'Chargesheet',
-            action: () => handleScrape('chargesheet'),
+            action: copyChargesheet,
           },
           crosscharge: {
             type: 'action',
             label: 'CrossCharge',
-            action: () => handleScrape('crosscharge'),
+            action: copyCrosscharge,
           },
           json: {
             type: 'action',
             label: 'JSON',
-            action: () => handleScrape('json'),
+            action: copyJson,
+          },
+          yubikeyEmail: {
+            type: 'action',
+            label: 'YubiKey Email',
+            action: sendYubikeyEmail,
           },
         },
       },
-      exit: {
+      returns: {
         type: 'directory',
-        label: 'Exit',
+        label: 'Returns',
         children: {
-          sheet: {
-            type: 'action',
-            label: 'Sheet',
-            action: () => handleScrape('exit'),
+          exit: {
+            type: 'directory',
+            label: 'Exit',
+            children: {
+              sheet: {
+                type: 'action',
+                label: 'Sheet',
+                action: copyExit,
+              },
+              json: {
+                type: 'action',
+                label: 'JSON',
+                action: copyJson,
+              },
+            },
           },
-          json: {
-            type: 'action',
-            label: 'JSON',
-            action: () => handleScrape('json'),
+          returnItEquipment: {
+            type: 'directory',
+            label: 'Return IT Equipment',
+            children: {
+              json: {
+                type: 'action',
+                label: 'JSON',
+                action: copyJson,
+              },
+              first: {
+                type: 'action',
+                label: 'First Strike Email',
+                action: sendFirstStrikeEmail,
+              },
+            },
           },
         },
       },
@@ -75,7 +247,7 @@ export function initRouting(): ComponentInstance {
           },
         },
       },
-      settings: {
+      config: {
         type: 'directory',
         label: 'Settings',
         children: {
@@ -93,125 +265,4 @@ export function initRouting(): ComponentInstance {
   };
 
   return init(config);
-}
-
-type ScrapeType =
-  | 'json'
-  | 'crosscharge'
-  | 'chargesheet'
-  | 'dropship'
-  | 'exit'
-  | 'fdx-bulk';
-
-export async function handleScrape(type: ScrapeType) {
-  disable();
-
-  const { sysId: taskSysId } = getCurrentRecord();
-  if (!taskSysId) {
-    showToast('No SNOW record detected in URL', { theme: 'dark' });
-    enable();
-    return;
-  }
-
-  const task = await getScTask(taskSysId);
-  if (!task) {
-    showToast('Failed to load task', { theme: 'dark' });
-    enable();
-    return;
-  }
-
-  const ritm = await getScReqItem(task.request_item);
-  if (!ritm) {
-    showToast('Failed to load RITM', { theme: 'dark' });
-    enable();
-    return;
-  }
-
-  const user = await getSysUser(ritm.requested_for);
-  if (!user) {
-    showToast('Failed to load user', { theme: 'dark' });
-    enable();
-    return;
-  }
-
-  switch (type) {
-    case 'json': {
-      const json = snow.build_minimal_json(task, user);
-      copyTextToClipboard(JSON.stringify(json));
-      showToast('JSON successfully copied to clipboard', { theme: 'dark' });
-      break;
-    }
-    case 'crosscharge': {
-      const crosscharge_tsv = [
-        new Date().toISOString(),
-        'SLC',
-        '',
-        '1',
-        task.dv_number,
-        user.dv_email,
-        user.dv_cost_center,
-      ].join('\t');
-      const crosscharge_html = convertPlainTextToHTMLTable(crosscharge_tsv);
-      const crosscharge_json = {
-        date: new Date().toISOString(),
-        location: task.dv_location,
-        number: task.dv_number,
-        costCenter: user.dv_cost_center,
-        email: user.dv_email,
-      };
-      copyRichTextToClipboard([
-        new ClipboardItem({
-          'text/html': new Blob([crosscharge_html], { type: 'text/html' }),
-          'text/plain': new Blob([JSON.stringify(crosscharge_json)], {
-            type: 'text/plain',
-          }),
-        }),
-      ]);
-      showToast('CrossCharge row successfully copied to clipboard', {
-        theme: 'dark',
-      });
-      break;
-    }
-    case 'chargesheet': {
-      const [chargesheet_cis] = snow.build_charge_sheet_row_cis(task, user);
-      copyRichTextToClipboard(chargesheet_cis);
-      showToast('Chargesheet row successfully copied to clipboard', {
-        theme: 'dark',
-      });
-      break;
-    }
-    case 'dropship': {
-      const dropship = snow.build_bh_sheet_row_cis(task, user);
-      copyRichTextToClipboard(dropship);
-      showToast('Dropship row successfully copied to clipboard', {
-        theme: 'dark',
-      });
-      break;
-    }
-    case 'exit': {
-      const manager = await getSysUser(user.manager);
-      if (!manager) {
-        showToast('Failed to load manager', { theme: 'dark' });
-        enable();
-        return;
-      }
-      const assets = await getSnowRecords<AlmHardware>(
-        'alm_hardware',
-        `assigned_to=${user.sys_id}^install_status=1`,
-      );
-      const asset = assets.filter((a) =>
-        task.u_variables_parsed.v_assets_to_return.includes(a.asset_tag),
-      );
-      const exit = snow.build_exit_sheet_row_cis(task, user, manager, asset[0]);
-      copyRichTextToClipboard(exit);
-      showToast('Exit row successfully copied to clipboard', { theme: 'dark' });
-      break;
-    }
-    case 'fdx-bulk': {
-      showToast('TODO: FDX bulk not yet implemented', { theme: 'dark' });
-      break;
-    }
-  }
-
-  enable();
 }
