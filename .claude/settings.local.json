@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git restore *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npm install *)",
+      "Bash(git -C \"c:/Users/mhixon/repos/userscripts\" log --oneline -20)",
+      "mcp__agentmemory__memory_sessions"
+    ]
+  }
+}
