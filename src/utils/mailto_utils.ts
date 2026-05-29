@@ -161,6 +161,28 @@ export function makeTrackingLink(tracking: string): string {
   return `<a href="${trackingLink}" target="_blank"><strong>${courierName}: ${tracking}</strong></a>`;
 }
 
+// ── Outlook-safe inline-style helpers ────────────────────────────────────────
+// Outlook strips <style> blocks. Every element needs explicit inline styles.
+// Use these helpers to build HTML email bodies that paste correctly.
+
+export const s = {
+  p: (text: string) =>
+    `<p style="margin:0 0 12px 0;font-family:Calibri,sans-serif;font-size:11pt;">${text}</p>`,
+  li: (text: string) =>
+    `<li style="font-family:Calibri,sans-serif;font-size:11pt;margin-bottom:4px;">${text}</li>`,
+  ul: (items: string[]) =>
+    `<ul style="margin:8px 0 12px 0;padding-left:20px;">${items.map(s.li).join('')}</ul>`,
+  b: (text: string) => `<strong>${text}</strong>`,
+  a: (url: string, text: string) =>
+    `<a href="${url}" style="color:#0563C1;">${text}</a>`,
+  br: () => '<br>',
+};
+
+// Wraps parts in an Outlook-safe container div
+export function emailBody(...parts: string[]): string {
+  return `<div style="font-family:Calibri,sans-serif;font-size:11pt;">${parts.join('')}</div>`;
+}
+
 // Simple helper functions for markdown-equivalent HTML formatting (no custom styling)
 
 // Create basic HTML email body with no custom styling
