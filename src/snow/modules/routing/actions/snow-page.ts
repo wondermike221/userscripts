@@ -1,29 +1,22 @@
 import { showToast } from '@violentmonkey/ui';
+import { ShadowQuery } from '../../../../utils/ShadowQuery';
 
-export function fillWorkNotes(text: string): void {
-  const el = document.querySelector(
-    'textarea[id*="work_notes"]',
-  ) as HTMLTextAreaElement | null;
+function fillField(selector: string, text: string, label: string): void {
+  const el = ShadowQuery.find(selector) as HTMLTextAreaElement | null;
   if (!el) {
-    showToast('Work notes field not found', { theme: 'dark' });
+    showToast(`${label} field not found`, { theme: 'dark' });
     return;
   }
   el.value = text;
   el.dispatchEvent(new Event('change', { bubbles: true }));
   el.dispatchEvent(new Event('input', { bubbles: true }));
-  showToast('Work notes filled', { theme: 'dark' });
+  showToast(`${label} filled`, { theme: 'dark' });
+}
+
+export function fillWorkNotes(text: string): void {
+  fillField('textarea[name*="work_notes"]', text, 'Work notes');
 }
 
 export function fillComments(text: string): void {
-  const el = document.querySelector(
-    'textarea[id*="comments"]',
-  ) as HTMLTextAreaElement | null;
-  if (!el) {
-    showToast('Comments field not found', { theme: 'dark' });
-    return;
-  }
-  el.value = text;
-  el.dispatchEvent(new Event('change', { bubbles: true }));
-  el.dispatchEvent(new Event('input', { bubbles: true }));
-  showToast('Comments filled', { theme: 'dark' });
+  fillField('textarea[name*="comments"]', text, 'Comments');
 }
