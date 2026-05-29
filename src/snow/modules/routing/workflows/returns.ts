@@ -74,17 +74,20 @@ export const firstStrikeWorkflow: Workflow = {
               ]
             : [
                 'chooseTemplate',
-                step.branch('Choose Template', async () => ({
-                  workday: step.action('Workday', () =>
-                    sendEmailFromTemplate(workdayFirstStrikeTemplate(data)),
-                  ),
-                  peopleX: step.action('PeopleX', () =>
-                    sendEmailFromTemplate(peopleXFirstStrikeTemplate(data)),
-                  ),
-                  fieldglass: step.action('Fieldglass', () =>
-                    sendEmailFromTemplate(fieldglassFirstStrikeTemplate(data)),
-                  ),
-                })),
+                step.branch(
+                  'Choose Template',
+                  async () => ['Workday', 'PeopleX', 'Fieldglass'],
+                  (value) => {
+                    if (value === 'Workday')
+                      sendEmailFromTemplate(workdayFirstStrikeTemplate(data));
+                    else if (value === 'PeopleX')
+                      sendEmailFromTemplate(peopleXFirstStrikeTemplate(data));
+                    else if (value === 'Fieldglass')
+                      sendEmailFromTemplate(
+                        fieldglassFirstStrikeTemplate(data),
+                      );
+                  },
+                ),
               ];
 
     return buildSteps([...kbs, emailStep]);

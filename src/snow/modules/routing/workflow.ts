@@ -2,9 +2,10 @@ import type {
   ActionItem,
   DirectoryItem,
   DirectoryNode,
+  DirectoryNodeItem,
   InputItem,
   InputType,
-  VirtualItem,
+  SelectItem,
 } from 'rove';
 
 // ── Step builders ─────────────────────────────────────────────────────────────
@@ -33,11 +34,16 @@ export const step = {
     action: () => window.open(url, '_blank'),
   }),
 
-  branch: (label: string, load: () => Promise<DirectoryNode>): VirtualItem => ({
-    type: 'virtual',
+  // Ephemeral pick list — options loaded async, onSelect fires with chosen string
+  branch: (
+    label: string,
+    load: () => Promise<string[]>,
+    onSelect: (value: string) => void,
+  ): SelectItem => ({
+    type: 'select',
     label,
-    mode: 'ephemeral',
     load,
+    onSelect,
   }),
 };
 
@@ -62,6 +68,7 @@ export interface Workflow {
   load: () => Promise<DirectoryNode>;
 }
 
-export function workflowNode(w: Workflow): VirtualItem {
-  return { type: 'virtual', label: w.label, mode: 'persistent', load: w.load };
+// Lazy directory — first activation calls load(), result cached, navigates in
+export function workflowNode(w: Workflow): DirectoryNodeItem {
+  return { type: 'directory', label: w.label, load: w.load };
 }
