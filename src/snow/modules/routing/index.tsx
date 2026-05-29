@@ -17,10 +17,7 @@ import {
   laptopReplacementWorkflow,
   laptopNewWorkflow,
 } from './workflows/laptop';
-import {
-  awfNewPhoneWorkflow,
-  awfReplacementPhoneWorkflow,
-} from './workflows/mobile';
+import { mobileOrderWorkflow } from './workflows/mobile';
 
 export function initRouting(): ComponentInstance {
   initializeUrlTracking();
@@ -62,8 +59,7 @@ export function initRouting(): ComponentInstance {
         type: 'directory',
         label: 'Mobile',
         children: {
-          awfNewPhone: workflowNode(awfNewPhoneWorkflow),
-          awfReplacementPhone: workflowNode(awfReplacementPhoneWorkflow),
+          order: workflowNode(mobileOrderWorkflow),
         },
       },
       config: {

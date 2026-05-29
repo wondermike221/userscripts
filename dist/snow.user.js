@@ -3154,13 +3154,265 @@ const laptopNewWorkflow = {
   load: async () => errorNode('TODO: implement new laptop workflow')
 };
 
-const awfNewPhoneWorkflow = {
-  label: 'AWF New Phone',
-  load: async () => errorNode('TODO: implement AWF new phone workflow')
-};
-const awfReplacementPhoneWorkflow = {
-  label: 'AWF Replacement Phone',
-  load: async () => errorNode('TODO: implement AWF replacement phone workflow')
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+const OFFICE_ADDRESS = '339 W 13490 S Floor 5, Draper, UT 84020';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function parseMobileVars(dvUVariables) {
+  try {
+    return JSON.parse(dvUVariables != null ? dvUVariables : '{}');
+  } catch (_unused) {
+    return {
+      v_device_type: '',
+      street_address: '',
+      city: '',
+      v_state: '',
+      zip: '',
+      ship_it: ''
+    };
+  }
+}
+
+// TODO: fill in actual x_ebay_core_config_type/subtype values once extracted from SNOW
+function detectMobileTicketType(data) {
+  var _data$task$x_ebay_cor, _data$task$x_ebay_cor2;
+  const type = ((_data$task$x_ebay_cor = data.task.x_ebay_core_config_type) != null ? _data$task$x_ebay_cor : '').toLowerCase();
+  const subtype = ((_data$task$x_ebay_cor2 = data.task.x_ebay_core_config_subtype) != null ? _data$task$x_ebay_cor2 : '').toLowerCase();
+  if (type.includes('replacement') || subtype.includes('replacement')) return 'replacement';
+  if (type.includes('new') || subtype.includes('new')) return 'new';
+  return 'unknown';
+}
+function isAWF(data) {
+  return data.user.dv_u_worker_source !== 'Workday';
+}
+function isExceptionVendor(data) {
+  var _data$user$dv_u_vendo;
+  const vendor = ((_data$user$dv_u_vendo = data.user.dv_u_vendor) != null ? _data$user$dv_u_vendo : '').toLowerCase();
+  return vendor.includes('aramark') || vendor.includes('securitas');
+}
+
+// Maps raw v_device_type to display names for carrier email and confirmation email
+function mapDevice(raw) {
+  const v = raw.toLowerCase();
+  if (v.includes('iphone 17')) return {
+    carrier: 'Apple iPhone 17',
+    confirm: 'iPhone 17 - 256 GB'
+  };
+  if (v.includes('s24 fe') || v.includes('galaxy s24')) return {
+    carrier: 'Samsung Galaxy S24 FE',
+    confirm: 'Galaxy S24 FE - 128 GB'
+  };
+  // Fallback — tech should verify
+  return {
+    carrier: raw,
+    confirm: raw
+  };
+}
+function shippingAddress(vars) {
+  if (vars.ship_it === 'Office Pickup') return OFFICE_ADDRESS;
+  return `${vars.street_address}, ${vars.city}, ${vars.v_state} ${vars.zip}`;
+}
+
+// ── Email 1: Carrier Order (T-Mobile) ─────────────────────────────────────────
+
+function carrierOrderTemplate(data, ticketType, existingCarrier, existingPhone) {
+  const {
+    task,
+    user
+  } = data;
+  const vars = parseMobileVars(data.task.dv_u_variables);
+  const device = mapDevice(vars.v_device_type);
+  const address = shippingAddress(vars);
+  const isNew = ticketType === 'new';
+  const body = `Hi Jessica,
+
+Please order a ${isNew ? 'new' : 'replacement'} ${device.carrier} with ${isNew ? 'new service' : 'upgrade'} for ${user.dv_name} with overnight Shipping
+
+Existing Carrier: ${isNew ? 'N/a' : existingCarrier}
+Existing Mobile Number: ${isNew ? 'N/a' : existingPhone}
+Account Number: 391999581
+
+Upgrade – ${isNew ? 'No' : 'Yes'}
+Device Type / Model: ${device.carrier}
+Rate Plan: ZGEV36SUB
+Plan Type: Subsidy rate plan
+Term: 36-month subsidy agreement
+
+Shipping Information
+    User Name: ${user.dv_name}
+    Address: ${address}
+
+Please let me know if any further information is needed to complete this.
+
+Thank you,`;
+  return {
+    to: 'jessica.drummond7@t-mobilesupport.com',
+    cc: 'mobileadmin@ebay.com;servicenow@ebay.com',
+    subject: `${task.dv_number} - ${task.dv_short_description}`,
+    body
+  };
+}
+
+// ── Email 2: Order Confirmation to Requester ──────────────────────────────────
+
+function orderConfirmationTemplate(data, shipDate, orderNumber) {
+  var _user$dv_name, _user$dv_email;
+  const {
+    task,
+    user
+  } = data;
+  const vars = parseMobileVars(data.task.dv_u_variables);
+  const device = mapDevice(vars.v_device_type);
+  const kbLink = 'https://ebayinc.service-now.com/esc?id=kb_article&sysparm_article=KB0015388';
+  const returnForm = 'https://ebayinc.service-now.com/esc?id=return_device'; // TODO: confirm URL
+
+  const plainBody = `Hi ${user.dv_name},
+
+Your new device ${device.confirm} has been ordered with overnight shipping.
+Estimated Ship Date: ${shipDate}
+The Order number is ${orderNumber}
+
+Let us know when you receive your new device so that we can add service with eSIM as the service currently may not allow the change to happen manually.
+
+Please keep in mind that all eBay owned devices need to be returned. You may use this form to assist with returning the device: ${returnForm}
+Please make sure that when returning your device that you have removed all user information and locks.
+
+Please let me know if you do not receive your equipment, or if you have any issues during setup.
+
+Company Phone Setup (IOS/Android): ${kbLink}`;
+  const htmlBody = emailBody(s.p(`Hi ${s.b((_user$dv_name = user.dv_name) != null ? _user$dv_name : '')},`), s.p(`Your new device ${s.b(device.confirm)} has been ordered with overnight shipping.`), s.p(`${s.b('Estimated Ship Date:')} ${shipDate}<br>${s.b('Order Number:')} ${orderNumber}`), s.p('Let us know when you receive your new device so that we can add service with eSIM as the service currently may not allow the change to happen manually.'), s.p(`Please keep in mind that all eBay owned devices need to be returned. You may use ${s.a(returnForm, 'this form')} to assist with returning the device.<br>Please make sure that when returning your device that you have removed all user information and locks.`), s.p('Please let me know if you do not receive your equipment, or if you have any issues during setup.'), s.p(s.a(kbLink, 'Company Phone Setup (IOS/Android)')));
+  return {
+    to: (_user$dv_email = user.dv_email) != null ? _user$dv_email : '',
+    cc: 'mobileadmin@ebay.com;servicenow@ebay.com',
+    subject: `${task.dv_number} - ${task.dv_short_description}`,
+    body: plainBody,
+    htmlBody
+  };
+}
+
+// ── Email 3a: Legal Exception (Aramark / Securitas) ───────────────────────────
+
+function legalExceptionTemplate(data) {
+  var _user$dv_u_vendor, _user$dv_x_ebay_core_, _manager$dv_name;
+  const {
+    task,
+    user,
+    manager
+  } = data;
+  const vendor = (_user$dv_u_vendor = user.dv_u_vendor) != null ? _user$dv_u_vendor : '';
+  const qid = (_user$dv_x_ebay_core_ = user.dv_x_ebay_core_config_sam_qid) != null ? _user$dv_x_ebay_core_ : '';
+  // Country: not directly on user obj in a clean field; default USA, tech can correct
+  const country = 'USA';
+  const body = `Hi Robin,
+
+We ordered a mobile phone & service line for ${user.dv_name}, who is with ${vendor} for their role with eBay:
+
+QID: ${qid}
+Worker Name: ${user.dv_name}
+Country: ${country}
+Manager: ${(_manager$dv_name = manager == null ? void 0 : manager.dv_name) != null ? _manager$dv_name : ''}
+Vendor: ${vendor}
+
+Please add to the exception list.`;
+  return {
+    to: 'robiharris@ebay.com',
+    cc: 'servicenow@ebay.com',
+    subject: `RE: ${task.dv_number} : New Mobile Phone and Service`,
+    body
+  };
+}
+
+// ── Email 3b: Legal Approval (AWF, non-exception) ─────────────────────────────
+
+function legalApprovalTemplate(data) {
+  var _user$dv_name2, _manager$dv_name2, _manager$dv_email;
+  const {
+    task,
+    user,
+    manager
+  } = data;
+  const firstName = ((_user$dv_name2 = user.dv_name) != null ? _user$dv_name2 : '').split(' ')[0];
+  const body = `Hello ${(_manager$dv_name2 = manager == null ? void 0 : manager.dv_name) != null ? _manager$dv_name2 : ''},
+
+I am reaching out to you regarding ${user.dv_name}'s request to order a phone with a line of service. ${firstName} is an AWF, so an additional step is required to approve the phone/service line purchased. Below is the list of requested information needed. Once you have this information please respond to this email thread with the information directly to Robin Harris (robiharris@ebay.com) in the To: field and Mobile Management (mobileadmin@ebay.com) in the Cc field. For Robin to approve the purchase with legal, the email with the requested information must come directly from the AWF's manager to Robin Harris. Once we have the approval from Robin, we can proceed with ordering the phone/service line.
+
+AWF name:
+AWF title and description of role:
+AWF Vendor:
+Manager name:
+Manager Title:
+Business reason why AWF needs phone:
+
+Please let me know if you have any questions.`;
+  return {
+    to: (_manager$dv_email = manager == null ? void 0 : manager.dv_email) != null ? _manager$dv_email : '',
+    cc: 'servicenow@ebay.com',
+    subject: `${task.dv_number} : New Mobile Phone and Service`,
+    body
+  };
+}
+
+const KB_EXCEPTION_LIST = 'https://ebayinc.service-now.com/esc?id=kb_article_view&sysparm_article=KB0015781';
+const KB_MOBILE_PROCESS = 'https://ebayinc.service-now.com/kb?id=kb_article_view&sysparm_article=KB0015759';
+const KB_MOBILE_POLICY = 'https://ebayinc.service-now.com/kb?id=kb_article_view&sysparm_article=KB0015566';
+const ASSET_SHEET_URL = 'https://ebayinc.sharepoint.com/:x:/s/emeaitpurchasing/EWDXV4fE9ORJqVYV2y5NIb4BftE8XALQOdlD7J3f1Et6fw?e=Zuwflj';
+const mobileOrderWorkflow = {
+  label: 'Mobile Order',
+  load: async () => {
+    const data = await fetchTicketData();
+    if (!data || data.type !== 'sc_task') return errorNode('Open an SC task first');
+    const ticketType = detectMobileTicketType(data);
+    const awf = isAWF(data);
+    const exception = isExceptionVendor(data);
+    const steps = [
+    // ── KBs ────────────────────────────────────────────────────────────────
+    ['kbProcess', step.kb('KB: Mobile Order Process', KB_MOBILE_PROCESS)], ['kbPolicy', step.kb('KB: Mobile Policy', KB_MOBILE_POLICY)], ['kbException', step.kb('KB: AWF Exception List (Aramark/Securitas)', KB_EXCEPTION_LIST)],
+    // ── Step 1: Eligibility (manual) ────────────────────────────────────────
+    ['eligibility', step.action(`1. Evaluate Eligibility  [${ticketType.toUpperCase()} | ${awf ? 'AWF' : 'FTE'}${exception ? ' | EXCEPTION' : ''}]`, () => {})]];
+
+    // Replacement needs existing carrier/phone before the carrier email
+    if (ticketType === 'replacement') {
+      steps.push(['existingCarrier', step.input('2a. Existing Carrier', 'text', 'mobileExistingCarrier')]);
+      steps.push(['existingPhone', step.input('2b. Existing Phone Number', 'text', 'mobileExistingPhone')]);
+    }
+
+    // ── Step 2/3: Carrier order email ─────────────────────────────────────────
+    steps.push(['carrierEmail', step.action(`${ticketType === 'replacement' ? '3' : '2'}. Send T-Mobile Order Email`, () => {
+      var _localStorage$getItem, _localStorage$getItem2;
+      const existingCarrier = (_localStorage$getItem = localStorage.getItem('mobileExistingCarrier')) != null ? _localStorage$getItem : '';
+      const existingPhone = (_localStorage$getItem2 = localStorage.getItem('mobileExistingPhone')) != null ? _localStorage$getItem2 : '';
+      sendEmailFromTemplate(carrierOrderTemplate(data, ticketType, existingCarrier, existingPhone));
+    })]);
+
+    // ── Asset tracking sheet ──────────────────────────────────────────────────
+    steps.push(['assetSheet', step.action('Open Asset Tracking Sheet', () => window.open(ASSET_SHEET_URL, '_blank')
+    // TODO: add copy row format once format is defined
+    )]);
+
+    // ── Wait for T-Mobile response — collect ship date + order number ─────────
+    steps.push(['shipDate', step.input('Ship Date (from T-Mobile)', 'text', 'mobileShipDate')]);
+    steps.push(['orderNumber', step.input('Order Number (from T-Mobile)', 'text', 'mobileOrderNumber')]);
+
+    // ── Step: Confirmation email to requester ─────────────────────────────────
+    steps.push(['confirmEmail', step.action('Send Order Confirmation to Requester', () => {
+      var _localStorage$getItem3, _localStorage$getItem4;
+      const shipDate = (_localStorage$getItem3 = localStorage.getItem('mobileShipDate')) != null ? _localStorage$getItem3 : '';
+      const orderNumber = (_localStorage$getItem4 = localStorage.getItem('mobileOrderNumber')) != null ? _localStorage$getItem4 : '';
+      sendEmailFromTemplate(orderConfirmationTemplate(data, shipDate, orderNumber));
+    })]);
+
+    // ── Legal email — AWF + new only ──────────────────────────────────────────
+    if (awf && ticketType === 'new') {
+      if (exception) {
+        steps.push(['legalEmail', step.action('Send Legal Exception Email (Aramark/Securitas)', () => sendEmailFromTemplate(legalExceptionTemplate(data)))]);
+      } else {
+        steps.push(['legalEmail', step.action('Send Legal Approval Email to Manager', () => sendEmailFromTemplate(legalApprovalTemplate(data)))]);
+      }
+    }
+    return buildSteps(steps);
+  }
 };
 
 function initRouting() {
@@ -3202,8 +3454,7 @@ function initRouting() {
         type: 'directory',
         label: 'Mobile',
         children: {
-          awfNewPhone: workflowNode(awfNewPhoneWorkflow),
-          awfReplacementPhone: workflowNode(awfReplacementPhoneWorkflow)
+          order: workflowNode(mobileOrderWorkflow)
         }
       },
       config: {
