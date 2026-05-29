@@ -68,7 +68,7 @@ export function initRouting(): ComponentInstance {
       },
       config: {
         type: 'directory',
-        label: 'Settings',
+        label: 'Config',
         children: {
           techNT: {
             type: 'input',
