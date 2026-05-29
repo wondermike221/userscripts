@@ -3,6 +3,10 @@ import {
   emailBody,
   type EmailTemplate,
 } from '../../../../utils/mailto_utils';
+import {
+  convertPlainTextToHTMLTable,
+  copyRichTextToClipboard,
+} from '../../../../utils';
 import type { ScTaskTicketData } from '../../../api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -58,18 +62,80 @@ export function isExceptionVendor(data: ScTaskTicketData): boolean {
   return vendor.includes('aramark') || vendor.includes('securitas');
 }
 
-// Maps raw v_device_type to display names for carrier email and confirmation email
-function mapDevice(raw: string): { carrier: string; confirm: string } {
+interface DeviceNames {
+  carrier: string; // email 1: "Apple iPhone 17"
+  confirm: string; // email 2: "iPhone 17 - 256 GB"
+  manufacturer: string; // sheet: "APPLE" | "SAMSUNG"
+  sheetModel: string; // sheet dropdown: "IPHONE 17" | "GALAXY S25 FE"
+}
+
+// Add new models here as they are released
+function mapDevice(raw: string): DeviceNames {
   const v = raw.toLowerCase();
   if (v.includes('iphone 17'))
-    return { carrier: 'Apple iPhone 17', confirm: 'iPhone 17 - 256 GB' };
+    return {
+      carrier: 'Apple iPhone 17',
+      confirm: 'iPhone 17 - 256 GB',
+      manufacturer: 'APPLE',
+      sheetModel: 'IPHONE 17',
+    };
+  if (v.includes('s25 fe') || v.includes('galaxy s25'))
+    return {
+      carrier: 'Samsung Galaxy S25 FE',
+      confirm: 'Galaxy S25 FE - 128 GB',
+      manufacturer: 'SAMSUNG',
+      sheetModel: 'GALAXY S25 FE',
+    };
   if (v.includes('s24 fe') || v.includes('galaxy s24'))
     return {
       carrier: 'Samsung Galaxy S24 FE',
       confirm: 'Galaxy S24 FE - 128 GB',
+      manufacturer: 'SAMSUNG',
+      sheetModel: 'GALAXY S25 FE',
     };
-  // Fallback — tech should verify
-  return { carrier: raw, confirm: raw };
+  // Fallback — tech should verify sheet values
+  return {
+    carrier: raw,
+    confirm: raw,
+    manufacturer: raw.toUpperCase(),
+    sheetModel: raw.toUpperCase(),
+  };
+}
+
+// ── Asset tracking sheet row ──────────────────────────────────────────────────
+// Paste starts at Manufacturer column (cols 1-3 Asset tag/SAP PO/Line are skipped).
+// Columns: Manufacturer | Model | Location | Serial | Vendor | Owned by |
+//          User ID | IMEI | Asset function | Created | Ticket # | Ordered Date | Order #
+
+export function copyAssetSheetRow(data: ScTaskTicketData): void {
+  const { task, user } = data;
+  const vars = parseMobileVars(data.task.dv_u_variables);
+  const device = mapDevice(vars.v_device_type);
+
+  const row = [
+    device.manufacturer, // Manufacturer
+    device.sheetModel, // Model (dropdown)
+    user.dv_location ?? task.dv_location ?? '', // Location
+    '', // Serial number (empty until shipped)
+    'T-MOBILE', // Vendor
+    'ryawilson', // Owned by
+    user.user_name ?? '', // User ID
+    '', // IMEI (empty until shipped)
+    'SMARTPHONE', // Asset function
+    '', // Created (Uploaded) — skip
+    task.dv_number ?? '', // Ticket Number
+    new Date().toLocaleDateString(), // Ordered Date
+    '', // Order Number (filled after T-Mobile responds)
+  ];
+
+  const tsv = row.join('\t');
+  const html = convertPlainTextToHTMLTable(tsv);
+  copyRichTextToClipboard([
+    new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([tsv], { type: 'text/plain' }),
+    }),
+  ]);
 }
 
 function shippingAddress(vars: MobileUVariables): string {

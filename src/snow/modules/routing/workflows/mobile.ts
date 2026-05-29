@@ -9,6 +9,7 @@ import {
   orderConfirmationTemplate,
   legalExceptionTemplate,
   legalApprovalTemplate,
+  copyAssetSheetRow,
 } from '../templates/mobile';
 import type { DirectoryItem } from 'rove';
 
@@ -92,11 +93,10 @@ export const mobileOrderWorkflow: Workflow = {
     // ── Asset tracking sheet ──────────────────────────────────────────────────
     steps.push([
       'assetSheet',
-      step.action(
-        'Open Asset Tracking Sheet',
-        () => window.open(ASSET_SHEET_URL, '_blank'),
-        // TODO: add copy row format once format is defined
-      ),
+      step.action('Open Sheet + Copy Row', () => {
+        copyAssetSheetRow(data);
+        window.open(ASSET_SHEET_URL, '_blank');
+      }),
     ]);
 
     // ── Wait for T-Mobile response — collect ship date + order number ─────────
