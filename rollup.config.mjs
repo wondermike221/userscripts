@@ -10,6 +10,7 @@ const userscripts = {
   'snow': 'src/snow/index.ts',
   'shadow-query-console': 'src/shadow-query-console/index.ts',
   'wordle-solver': 'src/wordle-solver/index.ts',
+  'rove-demo': 'src/rove-demo/index.ts',
   // 'fulfillment-fedex-filler': 'src/fulfillment-fedex-filler/index.ts',
   // 'peoplex-scraper': 'src/peoplex-scraper/index.ts',
 };
