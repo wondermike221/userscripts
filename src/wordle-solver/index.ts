@@ -117,6 +117,66 @@ function filterWords(
   });
 }
 
+function letterFrequency(words: string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const word of words) {
+    for (const letter of new Set(word)) {
+      counts.set(letter, (counts.get(letter) ?? 0) + 1);
+    }
+  }
+  const pct = new Map<string, number>();
+  for (const [letter, count] of counts) {
+    pct.set(letter, (count / words.length) * 100);
+  }
+  return pct;
+}
+
+function logFrequencyChart(freq: Map<string, number>): void {
+  const sorted = [...freq.entries()].sort((a, b) => b[1] - a[1]);
+  const maxPct = sorted[0]?.[1] ?? 1;
+  const BAR = 24;
+  const rows = sorted
+    .map(([letter, pct]) => {
+      const filled = Math.round((pct / maxPct) * BAR);
+      const bar = '█'.repeat(filled) + '░'.repeat(BAR - filled);
+      return `  ${letter} │${bar}│ ${pct.toFixed(1)}%`;
+    })
+    .join('\n');
+  console.log(
+    '[Wordle Solver] Letter frequency in remaining candidates:\n' + rows,
+  );
+}
+
+function scoreWord(
+  word: string,
+  freq: Map<string, number>,
+  knownLetters: Set<string>,
+): number {
+  return [...new Set(word)]
+    .filter((l) => !knownLetters.has(l))
+    .reduce((sum, l) => sum + (freq.get(l) ?? 0), 0);
+}
+
+function recommendWords(
+  possible: string[],
+  knownLetters: Set<string>,
+  topN = 10,
+): void {
+  if (possible.length === 0) return;
+  const freq = letterFrequency(possible);
+  logFrequencyChart(freq);
+  const scored = possible
+    .map((word) => ({
+      word,
+      score: Math.round(scoreWord(word, freq, knownLetters) * 10) / 10,
+    }))
+    .sort((a, b) => b.score - a.score);
+  console.log(
+    `[Wordle Solver] Top ${Math.min(topN, scored.length)} recommendations (score = sum of unknown-letter coverage %%):`,
+  );
+  console.table(scored.slice(0, topN));
+}
+
 async function main() {
   const [guesses, answers] = await Promise.allSettled([
     loadList('guesses'),
@@ -176,6 +236,7 @@ async function main() {
       `[Wordle Solver] Guess ${completeRows}: regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`,
     );
     console.log(possible);
+    recommendWords(possible, new Set(included));
   }
 
   // Debounce to let all 5 tile animations finish before computing

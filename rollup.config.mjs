@@ -8,9 +8,11 @@ const userscripts = {
   // 'ticket-scraper': 'src/ticket-scraper/index.ts',
   'fedex-form-filler': 'src/fedex-form-filler/index.ts',
   'snow': 'src/snow/index.ts',
+  // 'snow-dashboard': 'src/snow-dashboard/index.ts',
   'shadow-query-console': 'src/shadow-query-console/index.ts',
   'wordle-solver': 'src/wordle-solver/index.ts',
   'rove-demo': 'src/rove-demo/index.ts',
+  'isabisabel-gacha': 'src/isabisabel-gacha/index.ts',
   // 'fulfillment-fedex-filler': 'src/fulfillment-fedex-filler/index.ts',
   // 'peoplex-scraper': 'src/peoplex-scraper/index.ts',
 };

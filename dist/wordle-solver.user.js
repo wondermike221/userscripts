@@ -99,6 +99,49 @@ function filterWords(words, regex, excluded, included) {
     return true;
   });
 }
+function letterFrequency(words) {
+  const counts = new Map();
+  for (const word of words) {
+    for (const letter of new Set(word)) {
+      var _counts$get;
+      counts.set(letter, ((_counts$get = counts.get(letter)) != null ? _counts$get : 0) + 1);
+    }
+  }
+  const pct = new Map();
+  for (const [letter, count] of counts) {
+    pct.set(letter, count / words.length * 100);
+  }
+  return pct;
+}
+function logFrequencyChart(freq) {
+  var _sorted$0$, _sorted$;
+  const sorted = [...freq.entries()].sort((a, b) => b[1] - a[1]);
+  const maxPct = (_sorted$0$ = (_sorted$ = sorted[0]) == null ? void 0 : _sorted$[1]) != null ? _sorted$0$ : 1;
+  const BAR = 24;
+  const rows = sorted.map(([letter, pct]) => {
+    const filled = Math.round(pct / maxPct * BAR);
+    const bar = '█'.repeat(filled) + '░'.repeat(BAR - filled);
+    return `  ${letter} │${bar}│ ${pct.toFixed(1)}%`;
+  }).join('\n');
+  console.log('[Wordle Solver] Letter frequency in remaining candidates:\n' + rows);
+}
+function scoreWord(word, freq, knownLetters) {
+  return [...new Set(word)].filter(l => !knownLetters.has(l)).reduce((sum, l) => {
+    var _freq$get;
+    return sum + ((_freq$get = freq.get(l)) != null ? _freq$get : 0);
+  }, 0);
+}
+function recommendWords(possible, knownLetters, topN = 10) {
+  if (possible.length === 0) return;
+  const freq = letterFrequency(possible);
+  logFrequencyChart(freq);
+  const scored = possible.map(word => ({
+    word,
+    score: Math.round(scoreWord(word, freq, knownLetters) * 10) / 10
+  })).sort((a, b) => b.score - a.score);
+  console.log(`[Wordle Solver] Top ${Math.min(topN, scored.length)} recommendations (score = sum of unknown-letter coverage %%):`);
+  console.table(scored.slice(0, topN));
+}
 async function main() {
   const [guesses, answers] = await Promise.allSettled([loadList('guesses'), loadList('answers')]);
   const guessesList = guesses.status === 'fulfilled' ? guesses.value : [];
@@ -132,6 +175,7 @@ async function main() {
     const possible = filterWords(guessesList, regex, excluded, included);
     console.log(`[Wordle Solver] Guess ${completeRows}: regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`);
     console.log(possible);
+    recommendWords(possible, new Set(included));
   }
 
   // Debounce to let all 5 tile animations finish before computing
