@@ -98,7 +98,10 @@ function fillForm(ship: Partial<Shipment>) {
     if (type === 'dropdown-text') {
       selectByText(el as HTMLSelectElement, value ?? data[field] ?? '');
     } else {
-      simulateUserInteraction(el, value ?? data[field] ?? '');
+      simulateUserInteraction(
+        el as HTMLInputElement,
+        value ?? data[field] ?? '',
+      );
     }
   }
 }

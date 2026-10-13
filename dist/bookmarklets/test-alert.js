@@ -1,1 +1,1 @@
-javascript:(async function(){alert("test");})();
+javascript:(async function(){alert(`test`);})();

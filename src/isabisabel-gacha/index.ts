@@ -8,9 +8,9 @@ let enabled = GM_getValue<boolean>(STORAGE_KEY, false);
 let mathEnabled = GM_getValue<boolean>(MATH_STORAGE_KEY, false);
 let buyEnabled = GM_getValue<boolean>(BUY_STORAGE_KEY, false);
 
-let menuId: number | undefined;
-let mathMenuId: number | undefined;
-let buyMenuId: number | undefined;
+let menuId: string | undefined;
+let mathMenuId: string | undefined;
+let buyMenuId: string | undefined;
 
 // Rolls required between pack purchases; spades kept in reserve after any buy
 const ROLLS_BEFORE_BUY = 6;
