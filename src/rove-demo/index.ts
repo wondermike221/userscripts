@@ -22,6 +22,8 @@
  *   workflowNode(workflow)                          → wraps Workflow as a lazy DirectoryNodeItem
  */
 
+import './meta.js?userscript-metadata';
+
 import { init } from 'rove';
 import type { ConsumerConfig, DirectoryItem } from 'rove';
 import {
@@ -532,7 +534,7 @@ const fullPatternWorkflow: Workflow = {
 
 const config: ConsumerConfig = {
   keyPrefix: 'demo',
-  defaults: { mode: 'dir', theme: 'dark' },
+  defaults: { mode: 'dir', theme: 'dark', globalShortcut: 'Ctrl+`' },
   tree: {
     // Each entry is a lazy directory — loads on first activation, then cached
     d1_helloWorld: workflowNode(minimalWorkflow),

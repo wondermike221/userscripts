@@ -18,6 +18,7 @@ import {
   laptopNewWorkflow,
 } from './workflows/laptop';
 import { mobileOrderWorkflow } from './workflows/mobile';
+import { troubleshootWorkflow } from './workflows/troubleshoot';
 
 export function initRouting(): ComponentInstance {
   initializeUrlTracking();
@@ -60,6 +61,13 @@ export function initRouting(): ComponentInstance {
         label: 'Mobile',
         children: {
           order: workflowNode(mobileOrderWorkflow),
+        },
+      },
+      troubleshoot: {
+        type: 'directory',
+        label: 'Troubleshoot',
+        children: {
+          export: workflowNode(troubleshootWorkflow),
         },
       },
       config: {

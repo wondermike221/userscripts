@@ -469,6 +469,9 @@ export interface IncidentRaw extends SnowTaskBaseRaw {
   x_syna3_synack_app_synack_patch_verification_enabled: string;
   x_syna3_synack_app_synack_status: string;
   x_syna3_synack_app_synack_tag_list: string;
+
+  resolution_notes: string;
+  u_observability_detection_source: string;
 }
 
 export type Incident = IncidentRaw &
@@ -722,3 +725,15 @@ export type SysUser = SysUserRaw &
   DVOf<SysUserRaw> & {
     __status: string;
   };
+
+// ─── sys_journal_field ────────────────────────────────────────────────────────
+// Query: element_id={sys_id}^element=work_notes^ORDERBYDESCsys_created_on
+export interface SysJournalEntry {
+  sys_id: SysId;
+  sys_created_on: SnowDate;
+  sys_created_by: string;
+  name: string;
+  element_id: SysId;
+  element: string;
+  value: string;
+}

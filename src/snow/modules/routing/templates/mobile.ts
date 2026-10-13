@@ -54,7 +54,7 @@ export function detectMobileTicketType(
 }
 
 export function isAWF(data: ScTaskTicketData): boolean {
-  return data.user.dv_u_worker_source !== 'Workday';
+  return data.user.dv_u_worker_source?.toLowerCase() !== 'workday';
 }
 
 export function isExceptionVendor(data: ScTaskTicketData): boolean {
