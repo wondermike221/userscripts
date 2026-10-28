@@ -1,4 +1,4 @@
-import { Shipment } from './legacy';
+import { Shipment } from '../fedex-form-filler/legacy';
 
 // A type guard to check if an element is an HTMLInputElement or HTMLTextAreaElement
 function isInputOrTextAreaElement(
