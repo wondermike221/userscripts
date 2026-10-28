@@ -3,7 +3,8 @@
 // @namespace   https://hixon.dev
 // @description Logs possible Wordle answers to the console after each guess
 // @match       https://www.nytimes.com/games/wordle/index.html
-// @version     0.2.0
+// @match       https://www.nytimes.com/games/bonus/wordle-in-one/*
+// @version     0.3.0
 // @author      process.env.AUTHOR
 // @grant       unsafeWindow
 // @grant       GM_getValue

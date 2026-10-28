@@ -1,14 +1,24 @@
 import { ShadowQuery } from '../../utils/ShadowQuery';
 import { showNotification } from '../../utils/mailto_utils';
 
-// Get all selected cells using ShadowQuery to traverse shadow DOMs
-const selectedCells = ShadowQuery.findAll('td.cell-selected .cell-content');
+// Each entry: [description, selector]. First selector with results wins.
+const SELECTORS: [string, string][] = [
+  ['SOW workspace', 'td.cell-selected .cell-content'],
+  ['Classic UI list view', 'td.list_edit_selected_cell'],
+];
 
-// Extract text content from each cell
-const cellContents: string[] = [];
-selectedCells.forEach((cell) => {
-  cellContents.push(cell.textContent?.trim() || '');
-});
+let selectedCells: Element[] = [];
+for (const [, selector] of SELECTORS) {
+  const found = ShadowQuery.findAll(selector);
+  if (found.length > 0) {
+    selectedCells = found;
+    break;
+  }
+}
+
+const cellContents: string[] = selectedCells.map(
+  (cell) => cell.textContent?.trim() || '',
+);
 
 // Join contents with newlines for columnar format
 const clipboardText = cellContents.join('\n');

@@ -8,6 +8,7 @@ declare global {
       includedLetters?: string,
       list?: 'guesses' | 'answers' | 'all',
     ) => string[];
+    wordleSearch: () => void;
   }
 }
 
@@ -201,6 +202,8 @@ async function main() {
     );
   }
 
+  unsafeWindow.wordleSearch = runSearch;
+
   unsafeWindow.wordleSolver = (
     regex = /.*/,
     excludedLetters = '',
@@ -216,27 +219,41 @@ async function main() {
     return filterWords(words, regex, excludedLetters, includedLetters);
   };
 
+  const isWordleInOne = location.pathname.startsWith(
+    '/games/bonus/wordle-in-one',
+  );
+
   let lastGuessCount = 0;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  function check() {
+  function runSearch() {
     const tiles = getRevealedTiles();
     const completeRows = Math.floor(tiles.length / 5);
-
-    if (completeRows <= lastGuessCount) return;
-    lastGuessCount = completeRows;
-
+    if (completeRows === 0) {
+      console.log('[Wordle Solver] No complete rows found');
+      return;
+    }
     const guesses: Tile[][] = Array.from({ length: completeRows }, (_, i) =>
       tiles.slice(i * 5, i * 5 + 5),
     );
     const { regex, excluded, included } = buildConstraints(guesses);
     const possible = filterWords(guessesList, regex, excluded, included);
-
     console.log(
-      `[Wordle Solver] Guess ${completeRows}: regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`,
+      `[Wordle Solver] ${completeRows} row(s): regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`,
     );
     console.log(possible);
     recommendWords(possible, new Set(included));
+  }
+
+  function check() {
+    const tiles = getRevealedTiles();
+    const completeRows = Math.floor(tiles.length / 5);
+    if (completeRows === 0) return;
+    // Board reset = new word loaded (count dropped back to pre-made guess row)
+    if (completeRows < lastGuessCount) lastGuessCount = 0;
+    if (completeRows <= lastGuessCount) return;
+    lastGuessCount = completeRows;
+    runSearch();
   }
 
   // Debounce to let all 5 tile animations finish before computing
@@ -251,7 +268,17 @@ async function main() {
     attributeFilter: ['data-state'],
   });
 
-  console.log('[Wordle Solver] Loaded. Watching for guesses...');
+  if (isWordleInOne) {
+    // Pre-made guess is visible at load — run once after tiles render
+    setTimeout(runSearch, 1500);
+    console.log(
+      '[Wordle Solver] Wordle In One mode. Auto-searching in 1.5s. Call wordleSearch() to re-run.',
+    );
+  } else {
+    console.log(
+      '[Wordle Solver] Loaded. Watching for guesses. Call wordleSearch() to run manually.',
+    );
+  }
 }
 
 main();

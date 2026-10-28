@@ -4,6 +4,7 @@ import {
   ScTask,
   Incident,
   SysUser,
+  SysJournalEntry,
   ExitRITM_UVariables,
   ExitSCTask_UVariables,
   WithParsedVars,
@@ -137,6 +138,14 @@ export async function getIncident(sysId: string): Promise<Incident | null> {
 
 export async function getSysUser(sysId: string): Promise<SysUser | null> {
   return getSnowRecord<SysUser>('sys_user', sysId);
+}
+
+export async function getWorkNotes(sysId: string): Promise<SysJournalEntry[]> {
+  return getSnowRecords<SysJournalEntry>(
+    'sys_journal_field',
+    `element_id=${sysId}^element=work_notes^ORDERBYDESCsys_created_on`,
+    20,
+  );
 }
 
 // ── URL detection helper (for bookmarklets that don't have snowURLParser) ─────

@@ -8,3 +8,5 @@ node_modules
 .sample_snow_json_api/
 fedex-billing-dropdown-example.html
 /graphify-out
+*example*
+temp_*

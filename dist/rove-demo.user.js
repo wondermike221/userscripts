@@ -1,3 +1,15 @@
+// ==UserScript==
+// @name        Rove Workflow Demo
+// @namespace   https://hixon.dev
+// @description Interactive reference for the rove workflow engine patterns
+// @match       *://*/*
+// @version     1.0.0
+// @author      Michael Hixon
+// @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
+// @require     https://cdn.jsdelivr.net/npm/@violentmonkey/ui@0.7
+// @require     https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2/dist/solid.min.js
+// @grant       GM_registerMenuCommand
+// ==/UserScript==
 (function(solid_js_store, solid_js_web, solid_js, _violentmonkey_ui) {
 	//#region node_modules/rove/dist/index.js
 	var St = Object.defineProperty;
@@ -2112,29 +2124,6 @@
 	}
 	//#endregion
 	//#region src/rove-demo/index.ts
-	/**
-	* ROVE WORKFLOW ENGINE — INTERACTIVE DEMO & REFERENCE
-	* =====================================================
-	* Open this userscript on any page, press the rove hotkey (default: Ctrl+Shift+P),
-	* and explore each demo live. Read the source alongside.
-	*
-	* QUICK MENTAL MODEL
-	* ------------------
-	* A Workflow is a lazy directory: rove calls load() on first activation,
-	* caches the returned DirectoryNode, and navigates into it. Every key in
-	* that node is a step the technician works through in order.
-	*
-	* Building blocks (step.*):
-	*   step.action(label, fn)                          → runs fn() immediately on select
-	*   step.input(label, inputType, storageKey)        → saves to localStorage on change
-	*   step.kb(label, url)                             → opens URL in new tab
-	*   step.branch(label, loadFn, onSelectFn)          → ephemeral pick list
-	*
-	* Workflow helpers:
-	*   buildSteps([['key', item], ...])                → object from ordered pairs
-	*   errorNode('message')                            → abort with visible error step
-	*   workflowNode(workflow)                          → wraps Workflow as a lazy DirectoryNodeItem
-	*/
 	var minimalWorkflow = {
 		label: "Hello World",
 		load: async () => buildSteps([["greet", step.action("Say Hello", () => (0, _violentmonkey_ui.showToast)("Hello from rove!", { theme: "dark" }))]])
@@ -2246,7 +2235,8 @@
 		keyPrefix: "demo",
 		defaults: {
 			mode: "dir",
-			theme: "dark"
+			theme: "dark",
+			globalShortcut: "Ctrl+`"
 		},
 		tree: {
 			d1_helloWorld: workflowNode(minimalWorkflow),

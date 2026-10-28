@@ -3,7 +3,8 @@
 // @namespace   https://hixon.dev
 // @description Logs possible Wordle answers to the console after each guess
 // @match       https://www.nytimes.com/games/wordle/index.html
-// @version     0.2.0
+// @match       https://www.nytimes.com/games/bonus/wordle-in-one/*
+// @version     0.3.0
 // @author      Michael Hixon
 // @run-at      document-idle
 // @downloadURL https://raw.githubusercontent.com/wondermike221/userscripts/main/dist/wordle-solver.user.js
@@ -113,21 +114,34 @@
 		const allWords = [.../* @__PURE__ */ new Set([...guessesList, ...answersList])];
 		if (guesses.status === "rejected") console.warn("[Wordle Solver] Failed to load guesses list:", guesses.reason);
 		if (answers.status === "rejected") console.warn("[Wordle Solver] Failed to load answers list:", answers.reason);
+		unsafeWindow.wordleSearch = runSearch;
 		unsafeWindow.wordleSolver = (regex = /.*/, excludedLetters = "", includedLetters = "", list = "guesses") => {
 			return filterWords(list === "answers" ? answersList : list === "all" ? allWords : guessesList, regex, excludedLetters, includedLetters);
 		};
+		const isWordleInOne = location.pathname.startsWith("/games/bonus/wordle-in-one");
 		let lastGuessCount = 0;
 		let debounceTimer = null;
+		function runSearch() {
+			const tiles = getRevealedTiles();
+			const completeRows = Math.floor(tiles.length / 5);
+			if (completeRows === 0) {
+				console.log("[Wordle Solver] No complete rows found");
+				return;
+			}
+			const { regex, excluded, included } = buildConstraints(Array.from({ length: completeRows }, (_, i) => tiles.slice(i * 5, i * 5 + 5)));
+			const possible = filterWords(guessesList, regex, excluded, included);
+			console.log(`[Wordle Solver] ${completeRows} row(s): regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`);
+			console.log(possible);
+			recommendWords(possible, new Set(included));
+		}
 		function check() {
 			const tiles = getRevealedTiles();
 			const completeRows = Math.floor(tiles.length / 5);
+			if (completeRows === 0) return;
+			if (completeRows < lastGuessCount) lastGuessCount = 0;
 			if (completeRows <= lastGuessCount) return;
 			lastGuessCount = completeRows;
-			const { regex, excluded, included } = buildConstraints(Array.from({ length: completeRows }, (_, i) => tiles.slice(i * 5, i * 5 + 5)));
-			const possible = filterWords(guessesList, regex, excluded, included);
-			console.log(`[Wordle Solver] Guess ${completeRows}: regex=${regex} excluded="${excluded}" included="${included}" → ${possible.length} possible words remaining`);
-			console.log(possible);
-			recommendWords(possible, new Set(included));
+			runSearch();
 		}
 		new MutationObserver(() => {
 			if (debounceTimer) clearTimeout(debounceTimer);
@@ -137,7 +151,10 @@
 			subtree: true,
 			attributeFilter: ["data-state"]
 		});
-		console.log("[Wordle Solver] Loaded. Watching for guesses...");
+		if (isWordleInOne) {
+			setTimeout(runSearch, 1500);
+			console.log("[Wordle Solver] Wordle In One mode. Auto-searching in 1.5s. Call wordleSearch() to re-run.");
+		} else console.log("[Wordle Solver] Loaded. Watching for guesses. Call wordleSearch() to run manually.");
 	}
 	main();
 	//#endregion
