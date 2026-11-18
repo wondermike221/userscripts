@@ -26,7 +26,7 @@ const WORKDAY_TEMPLATE = (
         I hope this message finds you well. I am writing to request the return of company equipment that was assigned to you. Per our records, the following items were issued and have not been returned:
 
         ${formattedAssets}
-        We kindly ask these items to be returned promptly after leaving the company. A FedEx QR code has bleenl sent to your personal email address on file . This code will allow FedEx to package and ship these items to us and makes returning items seamless and quickly and free of charge for you. This email will come directly from FedEx – not ebay. If you do not see this, please check your junk\\spam folder.
+        We kindly ask these items to be returned promptly after leaving the company. A FedEx QR code has been sent to your personal email address on file . This code will allow FedEx to package and ship these items to us and makes returning items seamless and quickly and free of charge for you. This email will come directly from FedEx – not ebay. If you do not see this, please check your junk\\spam folder.
 
         Thank you for your prompt attention to this matter.  If you have any questions or require further information, please feel free to contact us directly at itreturns@ebay.com.
 
